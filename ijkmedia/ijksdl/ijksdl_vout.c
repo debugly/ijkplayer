@@ -29,7 +29,7 @@
 #if defined(__ANDROID__)
 #include <android/native_window_jni.h>
 #endif
-#include "ijksdl_image_convert.h"
+#include "ijksdl/ffmpeg/ijksdl_image_convert.h"
 
 typedef struct _SDL_Image_Converter
 {
@@ -104,7 +104,7 @@ int  SDL_VoutConvertFrame(SDL_Vout *vout, const AVFrame *inFrame, const AVFrame 
     _SDL_Image_Converter *convert = vout->image_converter;
     if (NULL == convert) {
         convert = malloc(sizeof(_SDL_Image_Converter));
-        bzero(convert, sizeof(_SDL_Image_Converter));
+        memset(convert, 0,sizeof(_SDL_Image_Converter));
         
         convert->frame = av_frame_alloc();
         
@@ -125,12 +125,10 @@ int  SDL_VoutConvertFrame(SDL_Vout *vout, const AVFrame *inFrame, const AVFrame 
         vout->image_converter = convert;
     }
     
-    //优先使用libyuv转换
     int r = ijk_image_convert(inFrame->width, inFrame->height,
                              vout->ff_format, convert->frame->data, convert->frame->linesize,
                              inFrame->format, (const uint8_t**) inFrame->data, inFrame->linesize);
     
-    //libyuv转换失败？
     if (r) {
         if (convert->sws_ctx == NULL) {
             convert->sws_ctx = sws_getCachedContext(convert->sws_ctx, inFrame->width, inFrame->height,

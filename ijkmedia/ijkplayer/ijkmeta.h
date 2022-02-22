@@ -65,10 +65,18 @@
 // stream: audio
 #define IJKM_KEY_SAMPLE_RATE    "sample_rate"
 #define IJKM_KEY_CHANNEL_LAYOUT "channel_layout"
+#define IJKM_KEY_CHANNELS		"channels"
 
 #define IJKM_KEY_EX_SUBTITLE_URL "ex_subtile_url"
 // reserved for user
 #define IJKM_KEY_STREAMS        "streams"
+
+//others
+#define IJK_COMMENT				"comment"
+#define IJK_ORIGINAL_FORMAT		"original_format"
+#define	IJK_LENS_PARAM			"lens_param"
+#define IJK_DEVICE_SN			"device_sn"
+#define IJK_CDN_IP				"cdn_ip"
 
 struct AVFormatContext;
 struct FFPlayer;

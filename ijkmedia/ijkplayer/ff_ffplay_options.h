@@ -101,7 +101,10 @@ static const AVOption ffp_context_options[] = {
 
     // extended options in ff_ffplay.c
     { "max-fps",                        "drop frames in video whose fps is greater than max-fps",
-        OPTION_OFFSET(max_fps),         OPTION_INT(31, -1, 121) },
+        OPTION_OFFSET(max_fps),         OPTION_INT(31, 0, 121) },
+    
+    { "limit_packets",                        "limit_packets",
+        OPTION_OFFSET(limit_packets),         OPTION_INT(0, 0, 200) },
 
     { "overlay-format",                 "fourcc of overlay format",
         OPTION_OFFSET(overlay_format),  OPTION_INT(SDL_FCC_RV32, INT_MIN, INT_MAX),

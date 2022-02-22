@@ -42,7 +42,14 @@ void SDL_CalculateAudioSpec(SDL_AudioSpec * spec)
 void SDL_MixAudio(Uint8*       dst,
                   const Uint8* src,
                   Uint32       len,
-                  int          volume)
+                  int          volume,
+				  SDL_AudioSpec * spec)
 {
-    // do nothing;
+#ifdef WIN32
+	/* Mix the user-level audio format */
+	if (spec != NULL) {
+		SDL_AudioFormat format = spec->format;
+		SDL_MixAudioFormat(dst, src, format, len, volume);
+	}
+#endif
 }

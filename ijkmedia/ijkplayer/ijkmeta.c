@@ -177,6 +177,8 @@ static int64_t get_bit_rate(AVCodecParameters *codecpar)
 
 void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, AVFormatContext *ic)
 {
+	AVStream *st;
+	AVDictionaryEntry *tag;
     if (!meta || !ic)
         return;
 
@@ -191,6 +193,11 @@ void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, AVFormatContext *ic)
 
     if (ic->bit_rate)
         ijkmeta_set_int64_l(meta, IJKM_KEY_BITRATE, ic->bit_rate);
+    
+    tag = NULL;
+    while ((tag = av_dict_get(ic->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))){
+        ijkmeta_set_string_l(meta, tag->key, tag->value);
+    }
 
     IjkMediaMeta *stream_meta = NULL;
     for (int i = 0; i < ic->nb_streams; i++) {
@@ -229,6 +236,14 @@ void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, AVFormatContext *ic)
             ijkmeta_set_int64_l(stream_meta, IJKM_KEY_BITRATE, bitrate);
         }
 
+
+        AVDictionaryEntry *tag2 = NULL;
+        while ((tag2 = av_dict_get(ic->metadata, "", tag2, AV_DICT_IGNORE_SUFFIX))){
+            ijkmeta_set_string_l(meta, tag2->key, tag2->value);
+        }
+
+        
+
         switch (codecpar->codec_type) {
             case AVMEDIA_TYPE_VIDEO: {
                 ijkmeta_set_string_l(stream_meta, IJKM_KEY_TYPE, IJKM_VAL_TYPE__VIDEO);
@@ -259,6 +274,8 @@ void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, AVFormatContext *ic)
                     ijkmeta_set_int64_l(stream_meta, IJKM_KEY_SAMPLE_RATE, codecpar->sample_rate);
                 if (codecpar->channel_layout)
                     ijkmeta_set_int64_l(stream_meta, IJKM_KEY_CHANNEL_LAYOUT, codecpar->channel_layout);
+				if (codecpar->channels)
+					ijkmeta_set_int64_l(stream_meta, IJKM_KEY_CHANNELS, codecpar->channels);
                 break;
             }
             case AVMEDIA_TYPE_SUBTITLE: {
@@ -320,7 +337,7 @@ void ijkmeta_set_ex_subtitle_context_l(IjkMediaMeta *meta, struct AVFormatContex
         if (codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
             ijkmeta_set_string_l(stream_meta, IJKM_KEY_TYPE, IJKM_VAL_TYPE__TIMEDTEXT);
                 
-            ijkmeta_set_string_l(stream_meta, IJKM_KEY_EX_SUBTITLE_URL, ic->url);
+            ijkmeta_set_string_l(stream_meta, IJKM_KEY_EX_SUBTITLE_URL, ic->filename);
         }
 
         AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);

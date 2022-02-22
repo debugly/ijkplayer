@@ -22,6 +22,9 @@
 #ifndef IJKSDL__IJKSDL_GLES2__MATHUTIL__H
 #define IJKSDL__IJKSDL_GLES2__MATHUTIL__H
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 typedef struct { float x;float y;float z; } ijk_float3_vector;
 typedef struct { float c1;float c2;float c3;float c4; } ijk_float4_vector;
 /*! @abstract A matrix with 4 rows and 4 columns.*/

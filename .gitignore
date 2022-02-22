@@ -24,6 +24,25 @@ ijkprof/android-ndk-profiler/
 # Java class files
 *.class
 
+#log file
+*.log
+*.tlog
+
+#object file
+*.obj
+
+#vs project file
+*.suo
+*.vcxproj.user
+*.opensdf
+*.sdf
+*.opendb
+*.pdb
+*.db
+*.VC.db
+*.ilk
+*.idb
+
 # generated files
 bin/
 gen/

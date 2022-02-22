@@ -60,13 +60,17 @@
 #endif
 
 #include <stdbool.h>
+#if !IJK_IO_OFF
 #include "ijkavformat/ijkiomanager.h"
 #include "ijkavformat/ijkioapplication.h"
+#endif
 #include "ff_ffinc.h"
 #include "ff_ffmsg_queue.h"
 #include "ff_ffpipenode.h"
 #include "ijkmeta.h"
+#ifndef WIN32
 #include "ijkavformat/ijklas.h"
+#endif
 
 #define DEFAULT_HIGH_WATER_MARK_IN_BYTES        (256 * 1024)
 
@@ -178,6 +182,7 @@ typedef struct PacketQueue {
     MyAVPacketList *recycle_pkt;
     int recycle_count;
     int alloc_count;
+    int limit_packets;//
 
     int is_buffer_indicator;
 } PacketQueue;
@@ -191,6 +196,7 @@ typedef struct PacketQueue {
 #define FRAME_QUEUE_SIZE FFMAX(SAMPLE_QUEUE_SIZE, FFMAX(VIDEO_PICTURE_QUEUE_SIZE_MAX, SUBPICTURE_QUEUE_SIZE))
 
 #define VIDEO_MAX_FPS_DEFAULT 30
+#define VIDEO_MAX_GOP_SIZE 300
 
 typedef struct AudioParams {
     int freq;
@@ -225,6 +231,7 @@ typedef struct Frame {
     SDL_VoutOverlay *bmp;
 #endif
     int allocated;
+    int reallocate;
     int width;
     int height;
     int format;
@@ -388,6 +395,7 @@ typedef struct VideoState {
     struct SwsContext *img_convert_ctx;
 #ifdef FFP_SUB
     struct SwsContext *sub_convert_ctx;
+    SDL_Rect last_display_rect;
 #endif
     int eof;
 
@@ -426,6 +434,11 @@ typedef struct VideoState {
     volatile int latest_audio_seek_load_serial;
     volatile int64_t latest_seek_load_start_at;
 
+	//by detu, for control av_read_frame timeout!
+	int64_t ioOperationPreTime;
+	int isForceTimeout;
+	int64_t readTimeOutUs;
+
     int drop_aframe_count;
     int drop_vframe_count;
     int64_t accurate_seek_start_time;
@@ -449,6 +462,8 @@ typedef struct VideoState {
 static AVInputFormat *file_iformat;
 static const char *input_filename;
 static const char *window_title;
+static int fs_screen_width;
+static int fs_screen_height;
 static int default_width  = 640;
 static int default_height = 480;
 static int screen_width  = 0;
@@ -500,6 +515,7 @@ static AVPacket eof_pkt;
 
 static SDL_Window *window;
 static SDL_Renderer *renderer;
+static SDL_Surface *screen;
 #endif
 
 /*****************************************************************************
@@ -669,6 +685,7 @@ typedef struct FFPlayer {
     char *subtitle_codec_info;
     Uint32 overlay_format;
 
+	int last_error;
     int prepared;
     int auto_resume;
     int error;
@@ -686,6 +703,7 @@ typedef struct FFPlayer {
     int pictq_size;
     int max_fps;
     int startup_volume;
+	int limit_packets;
 
     int videotoolbox;
     int vtb_max_frame_width;
@@ -733,6 +751,14 @@ typedef struct FFPlayer {
     AVApplicationContext *app_ctx;
     IjkIOManagerContext *ijkio_manager_ctx;
 #endif
+	int gopSize;
+	int64_t packetSize;
+	int showDetuStatisticsInfo;
+
+	int video_gop_size;
+	int drop_pframe_nums;
+	int frame_counter;
+
     int enable_accurate_seek;
     int accurate_seek_timeout;
     int mediacodec_sync;
@@ -747,7 +773,7 @@ typedef struct FFPlayer {
 #if ! IJK_IO_OFF
     int is_manifest;
 #endif
-    LasPlayerStatistic las_player_statistic;
+    //LasPlayerStatistic las_player_statistic;
 } FFPlayer;
 
 #define fftime_to_milliseconds(ts) (av_rescale(ts, 1000, AV_TIME_BASE))
@@ -820,6 +846,7 @@ inline static void ffp_reset_internal(FFPlayer *ffp)
 #else
     ffp->overlay_format         = SDL_FCC_RV32;
 #endif
+	ffp->last_error				= 0;
     ffp->prepared               = 0;
     ffp->auto_resume            = 0;
     ffp->error                  = 0;
@@ -885,6 +912,10 @@ inline static void ffp_reset_internal(FFPlayer *ffp)
     ffp->ijkio_inject_opaque = NULL;
     ffp_reset_statistic(&ffp->stat);
     ffp_reset_demux_cache_control(&ffp->dcc);
+
+	ffp->video_gop_size = VIDEO_MAX_GOP_SIZE;
+	ffp->drop_pframe_nums = 0;
+	ffp->frame_counter = 0;
 }
 
 inline static void ffp_notify_msg1(FFPlayer *ffp, int what) {

@@ -155,6 +155,7 @@ void            ijkmp_global_init(void);
 void            ijkmp_global_uninit(void);
 void            ijkmp_global_set_log_report(int use_report);
 void            ijkmp_global_set_log_level(int log_level);   // log_level = AV_LOG_xxx
+void			ijkmp_global_set_log_callback(void(*callback)(void*, int, const char*, va_list));
 void            ijkmp_global_set_inject_callback(ijk_inject_callback cb);
 const char     *ijkmp_version(void);
 void            ijkmp_io_stat_register(void (*cb)(const char *url, int type, int bytes));
@@ -224,4 +225,7 @@ float           ijkmp_get_subtitle_extra_delay(IjkMediaPlayer *mp);
 int             ijkmp_set_external_subtitle(IjkMediaPlayer* mp, const char* file_name);
 /*only load ex-subtitle, not use*/
 int             ijkmp_load_external_subtitle(IjkMediaPlayer* mp, const char* file_name);
+
+int				ijkmp_set_decoder_name(IjkMediaPlayer *mp, const char* decoder_name);
+
 #endif

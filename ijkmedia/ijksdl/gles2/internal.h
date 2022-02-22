@@ -92,7 +92,11 @@ typedef struct IJK_GLES2_Renderer
     
     GLboolean (*func_use)(IJK_GLES2_Renderer *renderer);
     GLsizei   (*func_getBufferWidth)(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay);
-    GLboolean (*func_uploadTexture)(IJK_GLES2_Renderer *renderer, void *texture);
+#ifdef WIN32 
+	GLboolean(*func_uploadTexture)(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay);
+#else
+	GLboolean(*func_uploadTexture)(IJK_GLES2_Renderer *renderer, void *texture);
+#endif
     GLvoid    (*func_useSubtitle)(IJK_GLES2_Renderer *renderer,GLboolean subtitle);
     GLboolean (*func_uploadSubtitle)(IJK_GLES2_Renderer *renderer,void* subtitle);
     void*     (*func_getVideoImage)(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay);
@@ -139,33 +143,34 @@ ijk_matrix IJK_GLES2_makeOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfl
 
 ijk_matrix IJK_GLES2_defaultOrtho(void);
 
+#ifdef __APPLE__
 void IJK_GLES2_getVertexShader_default(char *out,int ver);
-
-#ifndef __APPLE__
-const char *IJK_GLES2_getFragmentShader_rgb(void);
-const char *IJK_GLES2_getFragmentShader_argb(void);
-
-const char *IJK_GL_getFragmentShader_yuv420sp(void);
-const char *IJK_GL_getFragmentShader_yuv420p(void);
-
-IJK_GLES2_Renderer *IJK_GL_Renderer_create_rgbx(void);
-IJK_GLES2_Renderer *IJK_GL_Renderer_create_xrgb(void);
-
 #else
+const char *IJK_GLES2_getVertexShader_default();
+#endif
 
+#ifdef __APPLE__
 IJK_GLES2_Renderer *IJK_GL_Renderer_create_common_vtb(SDL_VoutOverlay *overlay,IJK_SHADER_TYPE type,int openglVer);
 void IJK_GL_getAppleCommonFragmentShader(IJK_SHADER_TYPE type,char *out,int ver);
-
 #endif
 
-#if TARGET_OS_IOS
+#ifndef __APPLE__
+const char *IJK_GLES2_getFragmentShader_yuv420p();
 const char *IJK_GLES2_getFragmentShader_yuv444p10le();
+const char *IJK_GLES2_getFragmentShader_yuv420sp();
+const char *IJK_GLES2_getFragmentShader_rgb();
+
+const GLfloat *IJK_GLES2_getColorMatrix_bt709();
+const GLfloat *IJK_GLES2_getColorMatrix_bt601();
+
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_yuv420p();
 IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_yuv444p10le();
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_yuv420sp();
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_rgb565();
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_rgb888();
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_rgbx8888();
 #endif
 
-const GLfloat *IJK_GLES2_getColorMatrix_bt709(void);
-const GLfloat *IJK_GLES2_getColorMatrix_bt601(void);
-
-IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_base(const char *fragment_shader_source,int openglVer);
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_base(const char *fragment_shader_source, int openglVer);
 
 #endif

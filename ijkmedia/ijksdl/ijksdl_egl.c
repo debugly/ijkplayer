@@ -99,20 +99,20 @@ static EGLBoolean IJK_EGL_setSurfaceSize(IJK_EGL* egl, int width, int height)
     if (!IJK_EGL_isValid(egl))
         return EGL_FALSE;
 
-#ifdef __ANDROID__
+//#ifdef __ANDROID__
     egl->width  = IJK_EGL_getSurfaceWidth(egl);
     egl->height = IJK_EGL_getSurfaceHeight(egl);
 
     if (width != egl->width || height != egl->height) {
-        int format = ANativeWindow_getFormat(egl->window);
-        ALOGI("ANativeWindow_setBuffersGeometry(w=%d,h=%d) -> (w=%d,h=%d);",
-            egl->width, egl->height,
-            width, height);
-        int ret = ANativeWindow_setBuffersGeometry(egl->window, width, height, format);
-        if (ret) {
-            ALOGE("[EGL] ANativeWindow_setBuffersGeometry() returned error %d", ret);
-            return EGL_FALSE;
-        }
+        //int format = ANativeWindow_getFormat(egl->window);
+        //ALOGI("ANativeWindow_setBuffersGeometry(w=%d,h=%d) -> (w=%d,h=%d);",
+        //    egl->width, egl->height,
+        //    width, height);
+        //int ret = ANativeWindow_setBuffersGeometry(egl->window, width, height, format);
+        //if (ret) {
+        //    ALOGE("[EGL] ANativeWindow_setBuffersGeometry() returned error %d", ret);
+        //    return EGL_FALSE;
+        //}
 
         egl->width  = IJK_EGL_getSurfaceWidth(egl);
         egl->height = IJK_EGL_getSurfaceHeight(egl);
@@ -120,9 +120,9 @@ static EGLBoolean IJK_EGL_setSurfaceSize(IJK_EGL* egl, int width, int height)
     }
 
     return EGL_TRUE;
-#else
+//#else
     // FIXME: other platform?
-#endif
+//#endif
     return EGL_FALSE;
 }
 
@@ -278,7 +278,11 @@ static EGLBoolean IJK_EGL_prepareRenderer(IJK_EGL* egl, SDL_VoutOverlay *overlay
         IJK_GLES2_Renderer_reset(opaque->renderer);
         IJK_GLES2_Renderer_freeP(&opaque->renderer);
 
-        opaque->renderer = IJK_GLES2_Renderer_create(overlay);
+		int openglVer = 330;
+#if USE_LEGACY_OPENGL
+		openglVer = 120;
+#endif
+        opaque->renderer = IJK_GLES2_Renderer_create(overlay, openglVer);
         if (!opaque->renderer) {
             ALOGE("[EGL] Could not create render.");
             return EGL_FALSE;
@@ -309,7 +313,7 @@ static EGLBoolean IJK_EGL_display_internal(IJK_EGL* egl, EGLNativeWindowType win
         return EGL_FALSE;
     }
 
-    if (!IJK_GLES2_Renderer_renderOverlay(opaque->renderer, overlay)) {
+    if (!IJK_GLES2_Renderer_updateVetex(opaque->renderer, overlay)) {
         ALOGE("[EGL] IJK_GLES2_render failed\n");
         return EGL_FALSE; 
     }

@@ -184,6 +184,12 @@ static int func_fill_frame(SDL_VoutOverlay *overlay, const AVFrame *frame)
                 dst_format = AV_PIX_FMT_YUV420P;
             }
             break;
+		case SDL_FCC_NV12:
+			if (frame->format == AV_PIX_FMT_NV12) {
+				use_linked_frame = 1;
+				dst_format = frame->format;
+			}
+			break;
         case SDL_FCC_I444P10LE:
             if (frame->format == AV_PIX_FMT_YUV444P10LE) {
                 // ALOGE("direct draw frame");
@@ -293,6 +299,28 @@ SDL_VoutOverlay *SDL_VoutFFmpeg_CreateOverlay(int width, int height, int frame_f
             }
             break;
         }
+            
+            //add by hcm,support rtsp liveplayer
+        default:
+            switch (frame_format) {
+                case AV_PIX_FMT_YUV444P10LE:
+                    overlay_format = SDL_FCC_I444P10LE;
+                    break;
+				case AV_PIX_FMT_NV12:
+					overlay_format = SDL_FCC_NV12;
+					break;
+                case AV_PIX_FMT_YUV420P:
+                case AV_PIX_FMT_YUVJ420P:
+                default:
+#if defined(__ANDROID__)
+                    overlay_format = SDL_FCC_YV12;
+#else
+                    overlay_format = SDL_FCC_I420;
+#endif
+                    break;
+            }
+            break;
+            //end add
     }
 
     SDLTRACE("SDL_VoutFFmpeg_CreateOverlay(w=%d, h=%d, fmt=%.4s(0x%x, dp=%p)\n",
@@ -362,49 +390,6 @@ SDL_VoutOverlay *SDL_VoutFFmpeg_CreateOverlay(int width, int height, int frame_f
             ff_format = AV_PIX_FMT_NV12;
             buf_width = IJKALIGN(width, 4); // 4 bytes per pixel
             opaque->planes = 2;
-            break;
-        }
-        case SDL_FCC_RGB565: {
-            ff_format = AV_PIX_FMT_RGB565;
-            buf_width = IJKALIGN(width, 8); // 2 bytes per pixel
-            opaque->planes = 1;
-            break;
-        }
-        case SDL_FCC_BGR565: {
-            ff_format = AV_PIX_FMT_BGR565;
-            buf_width = IJKALIGN(width, 8); // 2 bytes per pixel
-            opaque->planes = 1;
-            break;
-        }
-        case SDL_FCC_RGB24: {
-            ff_format = AV_PIX_FMT_RGB24;
-    #if defined(__ANDROID__)
-            // 16 bytes align pitch for arm-neon image-convert
-            buf_width = IJKALIGN(width, 16); // 1 bytes per pixel for Y-plane
-    #elif defined(__APPLE__)
-            buf_width = width;
-    #else
-            buf_width = IJKALIGN(width, 16); // unknown platform
-    #endif
-            opaque->planes = 1;
-            break;
-        }
-        case SDL_FCC_BGR24: {
-            ff_format = AV_PIX_FMT_BGR24;
-            buf_width = IJKALIGN(width, 3); // 3 bytes per pixel
-            opaque->planes = 1;
-            break;
-        }
-        case SDL_FCC_RGBA: {
-            ff_format = AV_PIX_FMT_RGBA;
-            buf_width = IJKALIGN(width, 4); // 4 bytes per pixel
-            opaque->planes = 1;
-            break;
-        }
-        case SDL_FCC_RGB0: {
-            ff_format = AV_PIX_FMT_RGB0;//AV_PIX_FMT_0BGR32;
-            buf_width = IJKALIGN(width, 4); // 4 bytes per pixel
-            opaque->planes = 1;
             break;
         }
         case SDL_FCC_BGRA: {

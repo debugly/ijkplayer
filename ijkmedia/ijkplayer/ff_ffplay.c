@@ -20,6 +20,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#ifdef WIN32
+#include "utils.h"
+#endif
+
 #include "ff_ffplay.h"
 
 /**
@@ -48,8 +52,13 @@
 #include "libavutil/avassert.h"
 #include "libavutil/time.h"
 #include "libavutil/bprint.h"
-#include "libavformat/avformat.h"
+#ifdef WIN32
+#include "libavutil/pixfmt.h"
+#else
 #include "ijkavformat/ijklas.h"
+#endif
+
+#include "libavformat/avformat.h"
 #if CONFIG_AVDEVICE
 #include "libavdevice/avdevice.h"
 #endif
@@ -73,9 +82,14 @@
 #include "ff_ffpipenode.h"
 #include "ff_ffplay_debug.h"
 #include "ijkmeta.h"
+#include "version.h"
 #include "ijkversion.h"
 #include "ijkplayer.h"
-#include <stdatomic.h>
+#ifdef WIN32
+#include <time.h>
+#include "ffmpeg_dxva2.h"
+#endif
+
 #if defined(__ANDROID__)
 #include "ijksoundtouch/ijksoundtouch_wrap.h"
 #endif
@@ -853,8 +867,7 @@ static void remove_last_n(char *buffer)
 
 static char * remove_ass_line_effect(const char *ass)
 {
-    while (ass && strlen(ass) > 2) {
-        //移除 { 开头并且 } 结尾的特效内容
+    while (ass && strlen(ass) > 2) {  
         if (ass[0] == '{') {
             char* end = strchr(ass, '}');
             if (end) {
@@ -868,7 +881,7 @@ static char * remove_ass_line_effect(const char *ass)
     }
     
     char *buffer = malloc(strlen(ass) + 1);
-    bzero(buffer, strlen(ass) + 1);
+    memset(buffer, 0, strlen(ass) + 1);
     memcpy(buffer, ass, strlen(ass));
     
     while (1) {
@@ -876,11 +889,11 @@ static char * remove_ass_line_effect(const char *ass)
         char *right = strstr(buffer, "}");
         if (left && right > left) {
             if (right - buffer == strlen(buffer)) {
-                bzero(left, right - left);
+				memset(left, 0, right - left);
             } else {
                 int count = (int)strlen(buffer) - (int)(right - buffer);
                 memmove(left, right + 1, count);
-                bzero(left + count + 1, 1);
+				memset(left + count + 1, 0, 1);
             }
         } else {
             break;
@@ -1018,7 +1031,11 @@ static void video_image_display2(FFPlayer *ffp)
         }
 
         if (is->latest_video_seek_load_serial == vp->serial) {
-            int latest_video_seek_load_serial = __atomic_exchange_n(&(is->latest_video_seek_load_serial), -1, memory_order_seq_cst);
+#ifdef WIN32
+			int latest_video_seek_load_serial = InterlockedExchange(&(is->latest_video_seek_load_serial), -1);
+#else
+			int latest_video_seek_load_serial = __atomic_exchange_n(&(is->latest_video_seek_load_serial), -1, memory_order_seq_cst);
+#endif
             if (latest_video_seek_load_serial == vp->serial) {
                 ffp->stat.latest_seek_load_duration = (av_gettime() - is->latest_seek_load_start_at) / 1000;
                 if (ffp->av_sync_type == AV_SYNC_VIDEO_MASTER) {
@@ -1140,7 +1157,7 @@ static void stream_close(FFPlayer *ffp)
     is->abort_request = 1;
     packet_queue_abort(&is->videoq);
     packet_queue_abort(&is->audioq);
-    av_log(NULL, AV_LOG_DEBUG, "wait for read_tid\n");
+	av_log(NULL, AV_LOG_INFO, "wait for read_tid\n");
     SDL_WaitThread(is->read_tid, NULL);
 
     /* close each stream */
@@ -1602,7 +1619,7 @@ display:
         AVBPrint buf;
         static int64_t last_time;
         int64_t cur_time;
-        int aqsize, vqsize, sqsize __unused;
+        int aqsize, vqsize, sqsize;
         double av_diff;
 
         cur_time = av_gettime_relative();
@@ -1807,7 +1824,7 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
 #endif
 
     /* alloc or resize hardware picture buffer */
-    if (!vp->bmp || !vp->allocated ||
+    if (!vp->bmp || vp->reallocate || !vp->allocated ||
         vp->width  != src_frame->width ||
         vp->height != src_frame->height ||
         vp->format != src_frame->format) {
@@ -1815,7 +1832,8 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
         if (vp->width != src_frame->width || vp->height != src_frame->height)
             ffp_notify_msg3(ffp, FFP_MSG_VIDEO_SIZE_CHANGED, src_frame->width, src_frame->height);
 
-        vp->allocated = 0;
+        vp->allocated  = 0;
+        vp->reallocate = 0;
         vp->width = src_frame->width;
         vp->height = src_frame->height;
         vp->format = src_frame->format;
@@ -2041,6 +2059,10 @@ static int configure_video_filters(FFPlayer *ffp, AVFilterGraph *graph, VideoSta
                                                                              \
     last_filter = filt_ctx;                                                  \
 } while (0)
+
+    /* SDL YUV code is not handling odd width/height for some driver
+     * combinations, therefore we crop the picture to an even width/height. */
+    INSERT_FILT("crop", "floor(in_w/2)*2:floor(in_h/2)*2");
 
     if (ffp->autorotate) {
         double theta  = get_rotation(is->video_st);
@@ -2835,6 +2857,8 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
 {
     FFPlayer *ffp = opaque;
     VideoState *is = ffp->is;
+	SDL_AudioSpec * spec = NULL;
+	spec = SDL_AoutGetSpec(ffp->aout);
     int audio_size, len1;
     if (!ffp || !is) {
         memset(stream, 0, len);
@@ -2887,8 +2911,8 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
             memcpy(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, len1);
         else {
             memset(stream, 0, len1);
-            if (!is->muted && is->audio_buf)
-                SDL_MixAudio(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, len1, is->audio_volume);
+			if (!is->muted && is->audio_buf)
+				SDL_MixAudio(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, len1, SDL_MIX_MAXVOLUME, spec);
         }
         len -= len1;
         stream += len1;
@@ -2906,7 +2930,11 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
     }
 
     if (is->latest_audio_seek_load_serial == is->audio_clock_serial) {
-        int latest_audio_seek_load_serial = __atomic_exchange_n(&(is->latest_audio_seek_load_serial), -1, memory_order_seq_cst);
+#ifdef WIN32
+		int latest_audio_seek_load_serial = InterlockedExchange(&(is->latest_audio_seek_load_serial), -1);
+#else
+		int latest_audio_seek_load_serial = __atomic_exchange_n(&(is->latest_audio_seek_load_serial), -1, memory_order_seq_cst);
+#endif
         if (latest_audio_seek_load_serial == is->audio_clock_serial) {
             if (ffp->av_sync_type == AV_SYNC_AUDIO_MASTER) {
                 ffp_notify_msg2(ffp, FFP_MSG_AUDIO_SEEK_RENDERING_START, 1);
@@ -3006,13 +3034,23 @@ static int audio_open(FFPlayer *opaque, int64_t wanted_channel_layout, int wante
     return spec.size;
 }
 
+#ifdef WIN32
+static enum AVPixelFormat get_hwaccek_format(AVCodecContext *s, const enum AVPixelFormat *pix_fmts)
+{
+	InputStream* ist = (InputStream*)s->opaque;
+	ist->active_hwaccel_id = HWACCEL_DXVA2;
+	ist->hwaccel_pix_fmt = AV_PIX_FMT_DXVA2_VLD;
+	return ist->hwaccel_pix_fmt;
+}
+#endif
+
 /* open a given stream. Return 0 if OK */
 static int stream_component_open(FFPlayer *ffp, int stream_index)
 {
     VideoState *is = ffp->is;
     AVFormatContext *ic = is->ic;
     AVCodecContext *avctx;
-    const AVCodec *codec = NULL;
+    AVCodec *codec = NULL;
     const char *forced_codec_name = NULL;
     AVDictionary *opts = NULL;
     AVDictionaryEntry *t = NULL;
@@ -3060,14 +3098,23 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
     }
     avctx->lowres = stream_lowres;
 
+#if FF_API_EMU_EDGE
+    if(stream_lowres) avctx->flags |= CODEC_FLAG_EMU_EDGE;
+#endif
     if (ffp->fast)
         avctx->flags2 |= AV_CODEC_FLAG2_FAST;
+#if FF_API_EMU_EDGE
+    if(codec->capabilities & AV_CODEC_CAP_DR1)
+        avctx->flags |= CODEC_FLAG_EMU_EDGE;
+#endif
 
     opts = filter_codec_opts(ffp->codec_opts, avctx->codec_id, ic, ic->streams[stream_index], (AVCodec *)codec);
     if (!av_dict_get(opts, "threads", NULL, 0))
         av_dict_set(&opts, "threads", "auto", 0);
     if (stream_lowres)
         av_dict_set_int(&opts, "lowres", stream_lowres, 0);
+    if (avctx->codec_type == AVMEDIA_TYPE_VIDEO || avctx->codec_type == AVMEDIA_TYPE_AUDIO)
+        av_dict_set(&opts, "refcounted_frames", "1", 0);
     if ((ret = avcodec_open2(avctx, codec, &opts)) < 0) {
         goto fail;
     }
@@ -3248,8 +3295,8 @@ static int is_realtime(AVFormatContext *s)
     )
         return 1;
 
-    if(s->pb && (   !strncmp(s->url, "rtp:", 4)
-                 || !strncmp(s->url, "udp:", 4)
+    if(s->pb && (   !strncmp(s->filename, "rtp:", 4)
+                 || !strncmp(s->filename, "udp:", 4)
                 )
     )
         return 1;
@@ -3365,9 +3412,9 @@ static int external_subtitle_open(FFPlayer* ffp)
     }
     
     //字幕流的索引
-    for (size_t i = 0; i < ic->nb_streams; ++i) {
+    for (int i = 0; i < ic->nb_streams; ++i) {
         if (ic->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
-            ss->sub_st_idx  = (int)i;
+            ss->sub_st_idx  = i;
             ss->subtitle_st = ic->streams[i];
             break;
         }
@@ -3423,7 +3470,7 @@ static int read_thread(void *arg)
     FFPlayer *ffp = arg;
     VideoState *is = ffp->is;
     AVFormatContext *ic = NULL;
-    int err, i, ret __unused;
+    int err, i, ret;
     int st_index[AVMEDIA_TYPE_NB];
     AVPacket *pkt = NULL;
     AVPacket *ex_subpkt = NULL;
@@ -3792,7 +3839,7 @@ static int read_thread(void *arg)
             ret = avformat_seek_file(is->ic, -1, seek_min, seek_target, seek_max, is->seek_flags);
             if (ret < 0) {
                 av_log(NULL, AV_LOG_ERROR,
-                       "%s: error while seeking\n", is->ic->url);
+                       "%s: error while seeking\n", is->ic->filename);
             } else {
                 if (is->audio_stream >= 0)
                     packet_queue_flush(&is->audioq);
@@ -3820,7 +3867,7 @@ static int read_thread(void *arg)
                 ret = avformat_seek_file(is->subtitle_ex->ic, -1, seek_min, seek_target, seek_max, 0);
                 if (ret < 0) {
                     av_log(NULL, AV_LOG_ERROR,
-                           "%s: external subtitle error while seeking\n", is->subtitle_ex->ic->url);
+                           "%s: external subtitle error while seeking\n", is->subtitle_ex->ic->filename);
                 } else {
                     if (is->subtitle_ex->sub_st_idx >= 0) {
                         packet_queue_flush(&is->subtitle_ex->subtitleq);
@@ -4014,7 +4061,7 @@ static int read_thread(void *arg)
         }
         
         if (pkt->flags & AV_PKT_FLAG_DISCONTINUITY) {
-        #warning TESTME
+        #pragma TESTME
             if (is->audio_stream >= 0) {
                 is->audioq.serial++;
                 //packet_queue_put(&is->audioq, &flush_pkt);
@@ -4147,6 +4194,7 @@ static VideoState *stream_open(FFPlayer *ffp, const char *filename, AVInputForma
     init_clock(&is->audclk, &is->audioq.serial);
     init_clock(&is->extclk, &is->extclk.serial);
     is->audio_clock_serial = -1;
+	is->audio_volume = SDL_MIX_MAXVOLUME;
     if (ffp->startup_volume < 0)
         av_log(NULL, AV_LOG_WARNING, "-volume=%d < 0, setting to 0\n", ffp->startup_volume);
     if (ffp->startup_volume > 100)
@@ -4230,11 +4278,37 @@ static int video_refresh_thread(void *arg)
     return 0;
 }
 
+static int lockmgr(void **mtx, enum AVLockOp op)
+{
+    switch (op) {
+    case AV_LOCK_CREATE:
+        *mtx = SDL_CreateMutex();
+        if (!*mtx) {
+            av_log(NULL, AV_LOG_FATAL, "SDL_CreateMutex(): %s\n", SDL_GetError());
+            return 1;
+        }
+        return 0;
+    case AV_LOCK_OBTAIN:
+        return !!SDL_LockMutex(*mtx);
+    case AV_LOCK_RELEASE:
+        return !!SDL_UnlockMutex(*mtx);
+    case AV_LOCK_DESTROY:
+        SDL_DestroyMutex(*mtx);
+        return 0;
+    }
+    return 1;
+}
+
 // FFP_MERGE: main
 
 /*****************************************************************************
  * end last line in ffplay.c
  ****************************************************************************/
+
+#ifdef WIN32
+typedef void(*logCallback)(void*, int, const char*, va_list);
+static logCallback ijk_log_callback = NULL;
+#endif
 
 static bool g_ffmpeg_global_inited = false;
 
@@ -4276,8 +4350,33 @@ static void ffp_log_callback_brief(void *ptr, int level, const char *fmt, va_lis
     if (level > av_log_get_level())
         return;
 
+#ifndef WIN32
     int ffplv __unused = log_level_av_to_ijk(level);
-    VLOG(ffplv, IJK_LOG_TAG, fmt, vl);
+#else
+	int ffplv = log_level_av_to_ijk(level);
+	if (ijk_log_callback && (ffplv >= IJK_LOG_INFO)) {//info¼¶±ðÒÔÏÂ²»»Øµ÷
+		ijk_log_callback(ptr, ffplv, fmt, vl);
+		return;
+	}
+#endif
+    
+    char fmt_str[500];
+  
+    
+    time_t rawtime;
+    struct tm * timeinfo;
+    
+    time ( &rawtime );
+    timeinfo = localtime ( &rawtime );
+    
+    
+    char tmpBuf[100];
+    strftime(tmpBuf, 100, "%Y-%m-%d %H:%M:%S", timeinfo); //format date and time.
+    
+    sprintf(fmt_str, "%s-%s\n", tmpBuf,fmt);
+    
+    
+    VLOG(ffplv, IJK_LOG_TAG, fmt_str, vl);
 }
 
 static void ffp_log_callback_report(void *ptr, int level, const char *fmt, va_list vl)
@@ -4285,7 +4384,15 @@ static void ffp_log_callback_report(void *ptr, int level, const char *fmt, va_li
     if (level > av_log_get_level())
         return;
 
+#ifndef WIN32
     int ffplv __unused = log_level_av_to_ijk(level);
+#else
+	int ffplv = log_level_av_to_ijk(level);
+	if (ijk_log_callback){
+		ijk_log_callback(ptr, ffplv, fmt, vl);
+		return;
+	}
+#endif
 
     va_list vl2;
     char line[1024];
@@ -4295,8 +4402,25 @@ static void ffp_log_callback_report(void *ptr, int level, const char *fmt, va_li
     // av_log_default_callback(ptr, level, fmt, vl);
     av_log_format_line(ptr, level, fmt, vl2, line, sizeof(line), &print_prefix);
     va_end(vl2);
-
-    ALOG(ffplv, IJK_LOG_TAG, "%s", line);
+    
+    
+    char fmt_str[500];
+    
+    
+    time_t rawtime;
+    struct tm * timeinfo;
+    
+    time ( &rawtime );
+    timeinfo = localtime ( &rawtime );
+    
+    
+    char tmpBuf[100];
+    strftime(tmpBuf, 100, "%Y-%m-%d %H:%M:%S", timeinfo); //format date and time.
+    
+    sprintf(fmt_str, "%s-%s\n", tmpBuf,fmt);
+    
+    
+    VLOG(ffplv, IJK_LOG_TAG, fmt_str, vl);
 }
 #if ! IJK_IO_OFF
 int ijkav_register_all(void);
@@ -4311,8 +4435,11 @@ void ffp_global_init()
 #if ! IJK_IO_OFF
     ijkav_register_all();
 #endif
+    av_register_all();
+
     avformat_network_init();
 
+    av_lockmgr_register(lockmgr);
     av_log_set_callback(ffp_log_callback_brief);
 
     g_ffmpeg_global_inited = true;
@@ -4322,6 +4449,8 @@ void ffp_global_uninit()
 {
     if (!g_ffmpeg_global_inited)
         return;
+
+    av_lockmgr_register(NULL);
 
     // FFP_MERGE: uninit_opts
 
@@ -4343,6 +4472,13 @@ void ffp_global_set_log_level(int log_level)
 {
     int av_level = log_level_ijk_to_av(log_level);
     av_log_set_level(av_level);
+}
+
+void ffp_global_set_log_callback(void(*callback)(void*, int, const char*, va_list))
+{
+#ifdef WIN32
+	ijk_log_callback = callback;
+#endif
 }
 
 static ijk_inject_callback s_inject_callback;
@@ -4498,7 +4634,9 @@ static int app_func_event(AVApplicationContext *h, int message ,void *data, size
     }
     return inject_callback(ffp->inject_opaque, message , data, size);
 }
+#endif
 
+#ifndef WIN32
 static int ijkio_app_func_event(IjkIOApplicationContext *h, int message ,void *data, size_t size)
 {
     if (!h || !h->opaque || !data)
@@ -4520,6 +4658,7 @@ static int ijkio_app_func_event(IjkIOApplicationContext *h, int message ,void *d
     return 0;
 }
 #endif
+
 void ffp_set_frame_at_time(FFPlayer *ffp, const char *path, int64_t start_time, int64_t end_time, int num, int definition) {
     if (!ffp->get_img_info) {
         ffp->get_img_info = av_mallocz(sizeof(GetImgInfo));
@@ -4552,6 +4691,7 @@ void ffp_set_frame_at_time(FFPlayer *ffp, const char *path, int64_t start_time, 
 }
 
 #if ! IJK_IO_OFF
+#ifndef WIN32
 void *ffp_set_ijkio_inject_opaque(FFPlayer *ffp, void *opaque)
 {
     if (!ffp)
@@ -4566,6 +4706,7 @@ void *ffp_set_ijkio_inject_opaque(FFPlayer *ffp, void *opaque)
 
     return prev_weak_thiz;
 }
+#endif
 
             
 void *ffp_set_inject_opaque(FFPlayer *ffp, void *opaque)
@@ -4604,7 +4745,7 @@ void ffp_set_option_int(FFPlayer *ffp, int opt_category, const char *name, int64
 
 void ffp_set_overlay_format(FFPlayer *ffp, int chroma_fourcc)
 {
-#warning TODO REVIEW
+#pragma TODO REVIEW
     switch (chroma_fourcc) {
         case SDL_FCC__GLES2:
         case SDL_FCC_I420:
@@ -4633,7 +4774,11 @@ int ffp_get_video_codec_info(FFPlayer *ffp, char **codec_info)
 
     // FIXME: not thread-safe
     if (ffp->video_codec_info) {
+#ifndef WIN32
         *codec_info = strdup(ffp->video_codec_info);
+#else
+		*codec_info = _strdup(ffp->video_codec_info);
+#endif
     } else {
         *codec_info = NULL;
     }
@@ -4647,7 +4792,11 @@ int ffp_get_audio_codec_info(FFPlayer *ffp, char **codec_info)
 
     // FIXME: not thread-safe
     if (ffp->audio_codec_info) {
+#ifndef WIN32
         *codec_info = strdup(ffp->audio_codec_info);
+#else
+		*codec_info = _strdup(ffp->audio_codec_info);
+#endif
     } else {
         *codec_info = NULL;
     }
@@ -5546,6 +5695,24 @@ IjkMediaMeta *ffp_get_meta_l(FFPlayer *ffp)
         return NULL;
 
     return ffp->meta;
+}
+
+int ffp_set_decoder_name(FFPlayer *ffp, const char *name)
+{
+#ifdef WIN32
+	if (!ffp) {
+		return -1;
+	}
+
+	if (name != NULL) {
+		ffp->video_codec_name = av_strdup(name);
+	}
+	else {
+		ffp->video_codec_name = NULL;
+	}
+
+#endif
+	return 0;
 }
 
 void ffp_set_subtitle_extra_delay(FFPlayer *ffp, const float delay)

@@ -34,15 +34,26 @@
 #include "libavutil/fifo.h"
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
+#ifndef WIN32
 #include "libavutil/thread.h"
+#endif
 #include "libavutil/time.h"
 #include "libavformat/url.h"
 #include <stdint.h>
 
+#ifndef WIN32
 #include "libavutil/application.h"
+#else
+#include "application.h"
+#endif
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef WIN32
+#include <pthread.h>
+#include "utils.h"
 #endif
 
 #define SHORT_SEEK_THRESHOLD    (256 * 1024)

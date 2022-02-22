@@ -20,13 +20,22 @@
  */
 
 #include <assert.h>
+
+#ifdef WIN32
+#include "utils.h"
+#endif
+
 #include "libavformat/avformat.h"
 #include "libavformat/url.h"
 #include "libavutil/avstring.h"
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
 
+#ifndef WIN32
 #include "libavutil/application.h"
+#else
+#include "application.h"
+#endif
 
 typedef struct Context {
     AVClass        *class;
@@ -285,9 +294,11 @@ static int ijkhttphook_open(URLContext *h, const char *arg, int flags, AVDiction
         if (!c->app_io_ctrl.is_handled)
             goto fail;
 
-        av_log(h, AV_LOG_INFO, "%s: will reconnect at start\n", __func__);
-        ret = ijkhttphook_reconnect_at(h, 0);
-        av_log(h, AV_LOG_INFO, "%s: did reconnect at start: %d\n", __func__, ret);
+        av_log(h, AV_LOG_INFO, "ijkhttphook_open: will reconnect at start\n");
+        ret = ijkurlhook_reconnect(h, NULL);
+        av_log(h, AV_LOG_INFO, "ijkhttphook_open: did reconnect at start: %d\n", ret);
+        if (ret)
+            c->app_io_ctrl.retry_counter++;
     }
 
 fail:
@@ -316,9 +327,9 @@ static int ijkhttphook_read(URLContext *h, unsigned char *buf, int size)
         if (!c->app_io_ctrl.is_handled)
             goto fail;
 
-        av_log(h, AV_LOG_INFO, "%s: will reconnect(%d) at %"PRId64"\n", __func__, c->app_io_ctrl.retry_counter, c->logical_pos);
+        av_log(h, AV_LOG_INFO, "ijkhttphook_read: will reconnect(%d) at %"PRId64"\n", c->app_io_ctrl.retry_counter, c->logical_pos);
         ret = ijkhttphook_reconnect_at(h, c->logical_pos);
-        av_log(h, AV_LOG_INFO, "%s: did reconnect(%d) at %"PRId64": %d\n", __func__, c->app_io_ctrl.retry_counter, c->logical_pos, ret);
+        av_log(h, AV_LOG_INFO, "ijkhttphook_read: did reconnect(%d) at %"PRId64": %d\n", c->app_io_ctrl.retry_counter, c->logical_pos, ret);
         if (ret < 0)
             continue;
 
@@ -398,9 +409,9 @@ static int64_t ijkhttphook_seek(URLContext *h, int64_t pos, int whence)
         if (!c->app_io_ctrl.is_handled)
             goto fail;
 
-        av_log(h, AV_LOG_INFO, "%s: will reseek(%d) at pos=%"PRId64", whence=%d\n", __func__, c->app_io_ctrl.retry_counter, pos, whence);
+        av_log(h, AV_LOG_INFO, "ijkhttphook_seek: will reseek(%d) at pos=%"PRId64", whence=%d\n", c->app_io_ctrl.retry_counter, pos, whence);
         seek_ret = ijkhttphook_reseek_at(h, pos, whence, c->app_io_ctrl.is_url_changed);
-        av_log(h, AV_LOG_INFO, "%s: did reseek(%d) at pos=%"PRId64", whence=%d: %"PRId64"\n", __func__, c->app_io_ctrl.retry_counter, pos, whence, seek_ret);
+        av_log(h, AV_LOG_INFO, "ijkhttphook_seek: did reseek(%d) at pos=%"PRId64", whence=%d: %"PRId64"\n", c->app_io_ctrl.retry_counter, pos, whence, seek_ret);
     }
 
     if (c->test_fail_point)

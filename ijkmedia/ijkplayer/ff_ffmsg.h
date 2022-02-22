@@ -25,6 +25,10 @@
 #ifndef FFPLAY__FF_FFMSG_H
 #define FFPLAY__FF_FFMSG_H
 
+//by detu, ∩赤?車??
+#define FFP_MSG_ERROR_CODE_CODEC            -400    //米㊣?～?a???¯?那足a
+#define FFP_MSG_ERROR_CODE_STREAM           -401    //芍¯?那足a㏒??D??豕赤車2?a???TD∫
+
 #define FFP_MSG_FLUSH                       0
 #define FFP_MSG_ERROR                       100     /* arg1 = error */
 #define FFP_MSG_PREPARED                    200
@@ -51,6 +55,11 @@
 #define FFP_MSG_PLAYBACK_STATE_CHANGED      700
 #define FFP_MSG_TIMED_TEXT                  800
 #define FFP_MSG_SELECTED_STREAM_CHANGED     850     /* stream changed */
+
+#define FFP_MSG_DETU_STATISTICS_DATA        801
+#define FFP_MSG_VIDEO_DECODE_FPS			802		/* arg1 = video decode fps */
+#define FFP_MSG_VIDEO_GOP_SIZE				851		/* arg1 = video gop size */
+
 #define FFP_MSG_ACCURATE_SEEK_COMPLETE      900     /* arg1 = current position*/
 #define FFP_MSG_GET_IMG_STATE               1000    /* arg1 = timestamp, arg2 = result code, obj = file name*/
 

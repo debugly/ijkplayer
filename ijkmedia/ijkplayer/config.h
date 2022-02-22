@@ -22,7 +22,9 @@
 #ifndef FFPLAY__CONFIG_H
 #define FFPLAY__CONFIG_H
 
+#ifndef WIN32
 #include "libffmpeg/config.h"
+#endif
 
 // FIXME: merge filter related code and enable it
 // remove these lines to enable avfilter

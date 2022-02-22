@@ -44,6 +44,7 @@ int nanosleep(const struct timespec *, struct timespec *) __DARWIN_ALIAS_C(nanos
 
 void SDL_Delay(Uint32 ms)
 {
+#ifndef WIN32
     int was_error;
     struct timespec elapsed, tv;
 
@@ -55,6 +56,9 @@ void SDL_Delay(Uint32 ms)
         tv.tv_nsec = elapsed.tv_nsec;
         was_error = nanosleep(&tv, &elapsed);
     } while (was_error);
+#else
+	usleep(ms * 1000);
+#endif
 }
 
 Uint64 SDL_GetTickHR(void)
@@ -81,6 +85,10 @@ Uint64 SDL_GetTickHR(void)
         gettimeofday(&now, NULL);
         clock = now.tv_sec  * 1000 + now.tv_usec / 1000;
     }
+#elif defined(WIN32)
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	clock = now.tv_sec * 1000 + now.tv_usec / 1000;
 #endif
     return (clock);
 }

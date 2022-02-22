@@ -24,6 +24,9 @@
 #include "ijkplayer.h"
 #include "ijkplayer_internal.h"
 #include "ijkversion.h"
+#ifdef WIN32
+#include "utils.h"
+#endif
 
 #define MP_RET_IF_FAILED(ret) \
     do { \
@@ -86,6 +89,13 @@ void ijkmp_global_set_log_level(int log_level)
     ffp_global_set_log_level(log_level);
 }
 
+//日志打印回调
+void ijkmp_global_set_log_callback(void(*callback)(void*, int, const char*, va_list))
+{
+	ffp_global_set_log_callback(callback);
+}
+
+//设置回调
 void ijkmp_global_set_inject_callback(ijk_inject_callback cb)
 {
     ffp_global_set_inject_callback(cb);
@@ -315,7 +325,11 @@ void ijkmp_shutdown(IjkMediaPlayer *mp)
 void ijkmp_inc_ref(IjkMediaPlayer *mp)
 {
     assert(mp);
+#ifndef WIN32
     __sync_fetch_and_add(&mp->ref_count, 1);
+#else
+	InterlockedIncrement(&mp->ref_count);
+#endif
 }
 
 void ijkmp_dec_ref(IjkMediaPlayer *mp)
@@ -323,7 +337,11 @@ void ijkmp_dec_ref(IjkMediaPlayer *mp)
     if (!mp)
         return;
 
+#ifndef WIN32
     int ref_count = __sync_sub_and_fetch(&mp->ref_count, 1);
+#else
+	int ref_count = InterlockedDecrement(&mp->ref_count);
+#endif
     if (ref_count == 0) {
         MPTRACE("ijkmp_dec_ref(): ref=0\n");
         ijkmp_shutdown(mp);
@@ -357,7 +375,11 @@ static int ijkmp_set_data_source_l(IjkMediaPlayer *mp, const char *url)
     MPST_RET_IF_EQ(mp->mp_state, MP_STATE_END);
 
     freep((void**)&mp->data_source);
+#ifndef WIN32
     mp->data_source = strdup(url);
+#else
+	mp->data_source = _strdup(url);
+#endif
     if (!mp->data_source)
         return EIJK_OUT_OF_MEMORY;
 
@@ -834,4 +856,17 @@ int ijkmp_load_external_subtitle(IjkMediaPlayer* mp, const char* file_name)
     int retval = ffp_set_external_subtitle(mp->ffplayer, file_name);
     MPTRACE("ijkmp_load_external_subtitle()=%d\n", retval);
     return retval;
+}
+
+int ijkmp_set_decoder_name(IjkMediaPlayer *mp, const char* decoder_name)
+{
+#ifdef WIN32
+	assert(mp);
+
+	pthread_mutex_lock(&mp->mutex);
+	ffp_set_decoder_name(mp->ffplayer, decoder_name);
+	pthread_mutex_unlock(&mp->mutex);
+#endif
+
+	return 0;
 }

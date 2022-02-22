@@ -31,6 +31,11 @@
 #include "ijksdl/android/ijksdl_android_jni.h"
 #endif
 
+#ifdef WIN32
+#include <utils.h>
+#include "win-pthread.h"
+#endif
+
 #if !defined(__APPLE__)
 // using ios implement for autorelease
 static void *SDL_RunThread(void *data)
@@ -49,7 +54,11 @@ SDL_Thread *SDL_CreateThreadEx(SDL_Thread *thread, int (*fn)(void *), void *data
 {
     thread->func = fn;
     thread->data = data;
+#ifdef WIN32
+	strcpy_s(thread->name, sizeof(thread->name) - 1, name);
+#else
     strlcpy(thread->name, name, sizeof(thread->name) - 1);
+#endif
     int retval = pthread_create(&thread->id, NULL, SDL_RunThread, thread);
     if (retval)
         return NULL;

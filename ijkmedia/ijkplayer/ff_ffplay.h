@@ -126,4 +126,6 @@ int       ffp_set_external_subtitle(FFPlayer *ffp, const char *file_name);
 /*only load ex-subtitle*/
 int       ffp_load_external_subtitle(FFPlayer *ffp, const char *file_name);
 
+int		  ffp_set_decoder_name(FFPlayer *ffp, const char *name);
+
 #endif

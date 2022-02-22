@@ -276,6 +276,7 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openg
             case SDL_FCC_YV12:      renderer = IJK_GLES2_Renderer_create_yuv420p(); break;
             case SDL_FCC_I420:      renderer = IJK_GLES2_Renderer_create_yuv420p(); break;
             case SDL_FCC_I444P10LE: renderer = IJK_GLES2_Renderer_create_yuv444p10le(); break;
+			case SDL_FCC_NV12:		renderer = IJK_GLES2_Renderer_create_yuv420sp(); break;
             default:
                 ALOGE("[GLES2] unknown format %4s(%d)\n", (char *)&overlay->format, overlay->format);
                 return NULL;
@@ -448,6 +449,18 @@ static void IJK_GLES2_Renderer_Vertices_apply(IJK_GLES2_Renderer *renderer)
     renderer->vertices[6] =   nW;
     renderer->vertices[7] =   nH;
 }
+
+static void IJK_GLES2_Renderer_Vertices_reloadVertex(IJK_GLES2_Renderer *renderer)
+{
+    glVertexAttribPointer(renderer->av4_position, 2, GL_FLOAT, GL_FALSE, 0, renderer->vertices);    IJK_GLES2_checkError_TRACE("glVertexAttribPointer(av2_texcoord)");
+    glEnableVertexAttribArray(renderer->av4_position);                                      IJK_GLES2_checkError_TRACE("glEnableVertexAttribArray(av2_texcoord)");
+}
+
+#define IJK_GLES2_GRAVITY_MIN                   (0)
+#define IJK_GLES2_GRAVITY_RESIZE                (0) // Stretch to fill layer bounds.
+#define IJK_GLES2_GRAVITY_RESIZE_ASPECT         (1) // Preserve aspect ratio; fit within layer bounds.
+#define IJK_GLES2_GRAVITY_RESIZE_ASPECT_FILL    (2) // Preserve aspect ratio; fill layer bounds.
+#define IJK_GLES2_GRAVITY_MAX                   (2)
 
 GLboolean IJK_GLES2_Renderer_setGravity(IJK_GLES2_Renderer *renderer, int gravity, GLsizei layer_width, GLsizei layer_height)
 {
