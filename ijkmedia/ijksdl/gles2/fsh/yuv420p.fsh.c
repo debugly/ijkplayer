@@ -24,9 +24,21 @@ static const char g_shader[] = IJK_GLES_STRING(
     precision highp float;
     varying   highp vec2 vv2_Texcoord;
     uniform         mat3 um3_ColorConversion;
+	uniform			vec3 um3_rgbAdjustment;
+
     uniform   lowp  sampler2D us2_SamplerX;
     uniform   lowp  sampler2D us2_SamplerY;
     uniform   lowp  sampler2D us2_SamplerZ;
+
+	vec3 rgb_adjust(vec3 rgb, vec3 rgbAdjustment) {
+		float B = rgbAdjustment.x;
+		float S = rgbAdjustment.y;
+		float C = rgbAdjustment.z;
+		rgb = (rgb - 0.5) * C + 0.5;
+		rgb = rgb + (0.75 * B - 0.5) / 2.5 - 0.1;
+		vec3 intensity = vec3(dot(rgb, vec3(0.299, 0.587, 0.114)));
+		return intensity + S * (rgb - intensity);
+	}
 
     void main()
     {
@@ -37,6 +49,7 @@ static const char g_shader[] = IJK_GLES_STRING(
         yuv.y = (texture2D(us2_SamplerY, vv2_Texcoord).r - 0.5);
         yuv.z = (texture2D(us2_SamplerZ, vv2_Texcoord).r - 0.5);
         rgb = um3_ColorConversion * yuv;
+
         gl_FragColor = vec4(rgb, 1);
     }
 );

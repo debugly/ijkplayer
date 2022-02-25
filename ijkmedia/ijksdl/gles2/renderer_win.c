@@ -284,8 +284,23 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openg
                 return NULL;
         }
 #endif
-	renderer->format = overlay->format;
-	return renderer;
+    if (renderer) {
+        renderer->format = overlay->format;
+        
+        glGenVertexArrays(1, &renderer->vao);
+		IJK_GLES2_checkError_TRACE("glGenVertexArrays");
+        /// 创建顶点缓存对象
+        glGenBuffers(1, &renderer->vbo);
+		IJK_GLES2_checkError_TRACE("glGenBuffers");
+        
+        glBindVertexArray(renderer->vao);
+		IJK_GLES2_checkError_TRACE("glBindVertexArray");
+        /// 绑定顶点缓存对象到当前的顶点位置,之后对GL_ARRAY_BUFFER的操作即是对_VBO的操作
+        /// 同时也指定了_VBO的对象类型是一个顶点数据对象
+        glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
+		IJK_GLES2_checkError_TRACE("glBindBuffer");
+    }
+    return renderer;
 }
 
 GLboolean IJK_GLES2_Renderer_isValid(IJK_GLES2_Renderer *renderer)
@@ -610,11 +625,8 @@ GLboolean IJK_GLES2_Renderer_use(IJK_GLES2_Renderer *renderer)
     renderer->rgb_adjustment[1] = 1.0;
     renderer->rgb_adjustment[2] = 1.0;
     IJK_GLES2_Renderer_TexCoords_reset(renderer);
-    IJK_GLES2_Renderer_TexCoords_reloadVertex(renderer);
-
     IJK_GLES2_Renderer_Vertices_reset(renderer);
-    IJK_GLES2_Renderer_Vertices_reloadVertex(renderer);
-
+    IJK_GLES2_Renderer_Upload_Vbo_Data(renderer);
     return GL_TRUE;
 }
 
@@ -661,9 +673,6 @@ GLboolean IJK_GLES2_Renderer_updateVetex(IJK_GLES2_Renderer *renderer, SDL_VoutO
         }
 
         renderer->last_buffer_width = renderer->func_getBufferWidth(renderer, overlay);
-
-        if (!renderer->func_uploadTexture(renderer, overlay))
-            return GL_FALSE;
     } else {
         // NULL overlay means force reload vertice
         renderer->vertices_changed = 1;
@@ -679,7 +688,6 @@ GLboolean IJK_GLES2_Renderer_updateVetex(IJK_GLES2_Renderer *renderer, SDL_VoutO
         renderer->vertices_changed = 0;
 
         IJK_GLES2_Renderer_Vertices_apply(renderer);
-        IJK_GLES2_Renderer_Vertices_reloadVertex(renderer);
 
         renderer->buffer_width  = buffer_width;
         renderer->visible_width = visible_width;
@@ -689,10 +697,47 @@ GLboolean IJK_GLES2_Renderer_updateVetex(IJK_GLES2_Renderer *renderer, SDL_VoutO
 
         IJK_GLES2_Renderer_TexCoords_reset(renderer);
         IJK_GLES2_Renderer_TexCoords_cropRight(renderer, padding_normalized);
-		IJK_GLES2_Renderer_TexCoords_reloadVertex(renderer);
+        IJK_GLES2_Renderer_Upload_Vbo_Data(renderer);
     }
     
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);      IJK_GLES2_checkError_TRACE("glDrawArrays");
+    ijk_float3_vector rotate_v3 = { 0.0 };
+    //rotate x
+    if (renderer->rotate_type == 1) {
+        rotate_v3.x = 1.0;
+    }
+    //rotate y
+    else if (renderer->rotate_type == 2) {
+        rotate_v3.y = 1.0;
+    }
+    //rotate z
+    else if (renderer->rotate_type == 3) {
+        rotate_v3.z = 1.0;
+    }
+    
+    ijk_matrix rotation_matrix;
+    
+    float radians = radians_from_degrees(renderer->rotate_degrees);
+    ijk_matrix rotation_matrix_1 = ijk_make_rotate_matrix(radians, rotate_v3);
+    
+    if (renderer->auto_z_rotate_degrees != 0) {
+        ijk_matrix rotation_matrix_0 = ijk_make_rotate_matrix_xyz(radians_from_degrees(renderer->auto_z_rotate_degrees), 0.0, 0.0, 1.0);
+        ijk_matrix_multiply(&rotation_matrix_0,&rotation_matrix_1,&rotation_matrix);
+    } else {
+        rotation_matrix = rotation_matrix_1;
+    }
+    
+    ijk_matrix proj_matrix = IJK_GLES2_defaultOrtho();
+    ijk_matrix r_matrix;
+    ijk_matrix_multiply(&proj_matrix,&rotation_matrix,&r_matrix);
+    
+    if (renderer->um3_rgb_adjustment >= 0) {
+        glUniform3fv(renderer->um3_rgb_adjustment, 1, renderer->rgb_adjustment);
+            IJK_GLES2_checkError_TRACE("glUniform3fv(um3_rgb_adjustment)");
+    }
+    
+    glUniformMatrix4fv(renderer->um4_mvp, 1, GL_FALSE, (GLfloat*)(&r_matrix.e)); IJK_GLES2_checkError_TRACE("glUniformMatrix4fv(um4_mvp)");
+    
+    glBindVertexArray(renderer->vao); IJK_GLES2_checkError_TRACE("glBindVertexArray");
 
     return GL_TRUE;
 }
@@ -715,7 +760,7 @@ GLboolean IJK_GLES2_Renderer_resetVao(IJK_GLES2_Renderer *renderer)
 /*
  * upload video texture
  */
-GLboolean IJK_GLES2_Renderer_uploadTexture(IJK_GLES2_Renderer *renderer, void *texture)
+GLboolean IJK_GLES2_Renderer_uploadTexture(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *texture)
 {
     if (!renderer || !renderer->func_uploadTexture)
         return GL_FALSE;

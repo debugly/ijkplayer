@@ -172,7 +172,7 @@ static EGLBoolean IJK_EGL_makeCurrent(IJK_EGL* egl, EGLNativeWindowType window)
     };
 
     static const EGLint contextAttribs[] = {
-        EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL_CONTEXT_CLIENT_VERSION, 3,
         EGL_NONE
     };
 
@@ -314,9 +314,16 @@ static EGLBoolean IJK_EGL_display_internal(IJK_EGL* egl, EGLNativeWindowType win
     }
 
     if (!IJK_GLES2_Renderer_updateVetex(opaque->renderer, overlay)) {
-        ALOGE("[EGL] IJK_GLES2_render failed\n");
+        ALOGE("[EGL] IJK_GLES2_Renderer_updateVetex failed\n");
         return EGL_FALSE; 
     }
+
+	if (!IJK_GLES2_Renderer_uploadTexture(opaque->renderer, overlay)) {
+		ALOGE("[EGL] IJK_GLES2_Renderer_updateVetex failed\n");
+		return EGL_FALSE;
+	}
+
+	IJK_GLES2_Renderer_drawArrays();
 
     eglSwapBuffers(egl->display, egl->surface);
 
