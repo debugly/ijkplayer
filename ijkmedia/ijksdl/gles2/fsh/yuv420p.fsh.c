@@ -49,7 +49,7 @@ static const char g_shader[] = IJK_GLES_STRING(
         yuv.y = (texture2D(us2_SamplerY, vv2_Texcoord).r - 0.5);
         yuv.z = (texture2D(us2_SamplerZ, vv2_Texcoord).r - 0.5);
         rgb = um3_ColorConversion * yuv;
-
+		rgb = rgb_adjust(rgb, um3_rgbAdjustment);
         gl_FragColor = vec4(rgb, 1);
     }
 );
