@@ -211,6 +211,11 @@
     _auUnit = NULL;
 }
 
+- (double)get_latency_seconds
+{
+    return _spec.samples / _spec.freq;
+}
+
 static OSStatus RenderCallback(void                        *inRefCon,
                                AudioUnitRenderActionFlags  *ioActionFlags,
                                const AudioTimeStamp        *inTimeStamp,

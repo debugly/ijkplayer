@@ -17,8 +17,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSArray <NSString *>*)subtitleType;
 + (NSArray <NSString *>*)acceptMediaType;
 
-+ (NSDictionary *)makeBookmarkWithURL:(NSURL *)url;
-+ (NSArray <NSDictionary *>*)scanFolderWithPath:(NSString *)dir filter:(NSArray<NSString *>*)types;
 + (BOOL)saveImageToFile:(CGImageRef)img path:(NSString *)imgPath;
 
 @end

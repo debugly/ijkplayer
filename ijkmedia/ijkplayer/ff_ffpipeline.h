@@ -36,11 +36,13 @@ struct IJKFF_Pipeline {
     SDL_Class             *opaque_class;
     IJKFF_Pipeline_Opaque *opaque;
 
-    void            (*func_destroy)             (IJKFF_Pipeline *pipeline);
-    IJKFF_Pipenode *(*func_open_video_decoder)  (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
-    SDL_Aout       *(*func_open_audio_output)   (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
-    IJKFF_Pipenode *(*func_init_video_decoder)  (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
-    int           (*func_config_video_decoder)  (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
+    void            (*func_destroy)                   (IJKFF_Pipeline *pipeline);
+    IJKFF_Pipenode *(*func_open_video_decoder)        (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
+    SDL_Aout       *(*func_open_audio_output)         (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
+    IJKFF_Pipenode *(*func_init_video_decoder)        (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
+    int           (*func_config_video_decoder)        (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
+    int            (*func_has_another_video_decoder)  (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
+    IJKFF_Pipenode *(*func_open_another_video_decoder)(IJKFF_Pipeline *pipeline, FFPlayer *ffp);
 };
 
 IJKFF_Pipeline *ffpipeline_alloc(SDL_Class *opaque_class, size_t opaque_size);
@@ -52,5 +54,9 @@ SDL_Aout       *ffpipeline_open_audio_output(IJKFF_Pipeline *pipeline, FFPlayer 
 
 IJKFF_Pipenode* ffpipeline_init_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp);
 int ffpipeline_config_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp);
+//return value greater than zero means has other decoder.
+int ffpipeline_has_another_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp);
+//create other video decoder pipenode.
+IJKFF_Pipenode* ffpipeline_open_another_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp);
 
 #endif

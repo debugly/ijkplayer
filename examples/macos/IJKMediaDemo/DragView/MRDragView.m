@@ -11,11 +11,14 @@
 
 - (void)registerDragTypes
 {
+    
     if (@available(macOS 10.13, *)) {
         [self registerForDraggedTypes:[NSArray arrayWithObjects:NSPasteboardTypeFileURL, nil]];
     } else if (@available(macOS 10.0, *)){
-        // Fallback on earlier versions
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored"-Wdeprecated-declarations"
         [self registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
+#pragma clang diagnostic pop
     }
 }
 
@@ -49,9 +52,12 @@
             list = [pboard readObjectsForClasses:@[[NSURL class]] options:nil];
         }
     } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored"-Wdeprecated-declarations"
         if ([[pboard types] containsObject:NSFilenamesPboardType]) {
             list = [pboard propertyListForType:NSFilenamesPboardType];
         }
+#pragma clang diagnostic pop
     }
     
     NSMutableArray *result = [NSMutableArray arrayWithArray:list];

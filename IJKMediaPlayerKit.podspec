@@ -36,7 +36,7 @@ TODO: Add long description of the pod here.
       '${PODS_TARGET_SRCROOT}/shell/build/product/macos/universal/libyuv/include',
       '${PODS_TARGET_SRCROOT}/ijkmedia'
     ],
-    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) IJK_IO_OFF=1'
+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) IJK_IO_OFF=0'
   }
 
   s.script_phases = [
@@ -76,7 +76,7 @@ TODO: Add long description of the pod here.
       'ijkmedia/ijksdl/ijksdl_extra_log.c',
       'ijkmedia/ijkplayer/ijkversion.h',
       'ijkmedia/ijkplayer/ijkavformat/ijkioandroidio.c',
-      'ijkmedia/ijkplayer/ijkavformat/*.*',
+      # 'ijkmedia/ijkplayer/ijkavformat/*.*',
       'ijkmedia/ijkplayer/android/**/*.*',
       'ijkmedia/ijksdl/android/**/*.*',
       'ijkmedia/ijksdl/ffmpeg/ijksdl_vout_overlay_ffmpeg.{h,c}'

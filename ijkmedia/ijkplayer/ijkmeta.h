@@ -96,7 +96,7 @@ void ijkmeta_set_int64_l(IjkMediaMeta *meta, const char *name, int64_t value);
 void ijkmeta_set_string_l(IjkMediaMeta *meta, const char *name, const char *value);
 void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, struct AVFormatContext *ic);
 
-void ijkmeta_set_ex_subtitle_context_l(IjkMediaMeta *meta, struct AVFormatContext *ic, struct VideoState *is);
+void ijkmeta_set_ex_subtitle_context_l(IjkMediaMeta *meta, struct AVFormatContext *ic, struct VideoState *is, int actived);
 
 // must be freed with free();
 const char   *ijkmeta_get_string_l(IjkMediaMeta *meta, const char *name);

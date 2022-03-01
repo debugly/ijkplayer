@@ -2,6 +2,210 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>mov</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>MOV.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Apple Media Document (MOV)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>qt</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>QT.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Apple Media Document (QT)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>mp4</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>MP4.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>MPEG4 Media Document (MP4)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>m4v</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>M4V.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>MPEG4 Media Document (M4V)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>flv</string>
+				<string>f4v</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>FLV.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Flash Media Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>webm</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>WEBM.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Webm Media Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>3gp2</string>
+				<string>3gpp</string>
+				<string>3gp</string>
+				<string>3g2</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>3GP.icns</string>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
+			<key>CFBundleTypeName</key>
+			<string>3GP Media Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>rm</string>
+				<string>rmvb</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>REAL.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Real Media Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>wmv</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>WMV.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Windows Media Document (WMV)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>avi</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>AVI.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Windows Media Document (AVI)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>asf</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>ASF.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Windows Media Document (ASF)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>mpg</string>
+				<string>mpeg</string>
+				<string>mpe</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>MPEG.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>MPEG Media Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>ts</string>
+				<string>m2ts</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>TS.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>TS Media Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>mkv</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>MKV.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Matroska video</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>dirac</string>
+				<string>cpk</string>
+				<string>lavf</string>
+				<string>dat</string>
+				<string>div</string>
+				<string>dv</string>
+				<string>divx</string>
+				<string>vob</string>
+				<string>mxf</string>
+				<string>wtv</string>
+				<string>wsf</string>
+				<string>ogv</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>VIDEO.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Other Media Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
@@ -23,7 +227,7 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2019 IJK Mac. All rights reserved.</string>
+	<string>Copyright © 2022 IJK Mac. All rights reserved.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>

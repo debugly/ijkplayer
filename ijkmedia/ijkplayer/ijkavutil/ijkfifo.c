@@ -83,12 +83,12 @@ int ijk_av_fifo_size(const IjkFifoBuffer *f)
 
 int ijk_av_fifo_space(const IjkFifoBuffer *f)
 {
-    return f->end - f->buffer - ijk_av_fifo_size(f);
+    return (int)(f->end - f->buffer - ijk_av_fifo_size(f));
 }
 
 int ijk_av_fifo_realloc2(IjkFifoBuffer *f, unsigned int new_size)
 {
-    unsigned int old_size = f->end - f->buffer;
+    unsigned int old_size = (unsigned int)(f->end - f->buffer);
 
     if (old_size < new_size) {
         int len          = ijk_av_fifo_size(f);
@@ -108,7 +108,7 @@ int ijk_av_fifo_realloc2(IjkFifoBuffer *f, unsigned int new_size)
 
 int ijk_av_fifo_grow(IjkFifoBuffer *f, unsigned int size)
 {
-    unsigned int old_size = f->end - f->buffer;
+    unsigned int old_size = (unsigned int)(f->end - f->buffer);
     if(size + (unsigned)ijk_av_fifo_size(f) < size)
         return -1;
 
@@ -125,11 +125,11 @@ int ijk_av_fifo_generic_write(IjkFifoBuffer *f, void *src, int size,
                           int (*func)(void *, void *, int))
 {
     int total = size;
-    uint32_t wndx= f->wndx;
+    uint32_t wndx= (uint32_t)f->wndx;
     uint8_t *wptr= f->wptr;
 
     do {
-        int len = FFMIN(f->end - wptr, size);
+        int len = (int)(FFMIN(f->end - wptr, size));
         if (func) {
             len = func(src, wptr, len);
             if (len <= 0)
@@ -173,7 +173,7 @@ int ijk_av_fifo_generic_peek_at(IjkFifoBuffer *f, void *dest, int offset, int bu
         if (rptr >= f->end)
             rptr -= f->end - f->buffer;
 
-        len = FFMIN(f->end - rptr, buf_size);
+        len = (int)(FFMIN(f->end - rptr, buf_size));
         if (func)
             func(dest, rptr, len);
         else {
@@ -195,7 +195,7 @@ int ijk_av_fifo_generic_peek(IjkFifoBuffer *f, void *dest, int buf_size,
     uint8_t *rptr = f->rptr;
 
     do {
-        int len = FFMIN(f->end - rptr, buf_size);
+        int len = (int)(FFMIN(f->end - rptr, buf_size));
         if (func)
             func(dest, rptr, len);
         else {
@@ -217,7 +217,7 @@ int ijk_av_fifo_generic_read(IjkFifoBuffer *f, void *dest, int buf_size,
 {
 // Read memory barrier needed for SMP here in theory
     do {
-        int len = FFMIN(f->end - f->rptr, buf_size);
+        int len = (int)(FFMIN(f->end - f->rptr, buf_size));
         if (func)
             func(dest, f->rptr, len);
         else {

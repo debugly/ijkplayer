@@ -25,11 +25,11 @@
 
 #if TARGET_OS_IOS
 #import <UIKit/UIKit.h>
-#import "IJKSDLHudViewController.h"
 #import "IJKAudioKit.h"
 #else
 #import <AppKit/AppKit.h>
 #endif
+#import "IJKSDLHudControl.h"
 #import "IJKFFMoviePlayerDef.h"
 #import "IJKMediaPlayback.h"
 #import "IJKMediaModule.h"
@@ -80,9 +80,9 @@ static const char *kIJKFFRequiredFFmpegVersion = "ff4.0--ijk0.8.8--20210426--001
     IjkIOAppCacheStatistic _cacheStat;
 #endif
     NSTimer *_hudTimer;
+    IJKSDLHudControl *_hudCtrl;
 #if TARGET_OS_IOS
     IJKNotificationManager *_notificationManager;
-    IJKSDLHudViewController *_hudViewController;
 #endif
 }
 
@@ -226,13 +226,8 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
     ijkmp_set_option(_mediaPlayer,IJKMP_OPT_CATEGORY_FORMAT,"protocol_whitelist","ijkhttphook,concat,http,tcp,https,tls,file");
     
     // init hud
-#if TARGET_OS_IOS
-    _hudViewController = [[IJKSDLHudViewController alloc] init];
-    [_hudViewController setRect:_glView.frame];
-    _shouldShowHudView = NO;
-    _hudViewController.tableView.hidden = YES;
-    [_view addSubview:_hudViewController.tableView];
-
+    _hudCtrl = [IJKSDLHudControl new];
+    
     [self setHudValue:nil forKey:@"scheme"];
     [self setHudValue:nil forKey:@"host"];
     [self setHudValue:nil forKey:@"path"];
@@ -247,8 +242,6 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
     [self setHudValue:nil forKey:@"t-http-seek"];
     
     self.shouldShowHudView = options.showHudView;
-#endif
-    
 #ifdef DEBUG
     [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_DEBUG];
 #else
@@ -359,16 +352,22 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
 
     _monitor.prepareStartTick = (int64_t)SDL_GetTickHR();
     ijkmp_prepare_async(_mediaPlayer);
-    
-//    ijkmp_set_external_subtitle(_mediaPlayer, "/Users/sohu/Downloads/FreeGuySub.ass");
 }
 
-- (void)loadSubtitleFile:(NSString *)url
+- (void)loadThenActiveSubtitleFile:(NSString *)url
 {
     if (!_mediaPlayer)
         return;
     
     ijkmp_set_external_subtitle(_mediaPlayer, [url UTF8String]);
+}
+
+- (void)loadSubtitleFileOnly:(NSString *)url
+{
+    if (!_mediaPlayer)
+        return;
+    
+    ijkmp_load_external_subtitle(_mediaPlayer, [url UTF8String]);
 }
 
 - (void)setHudUrl:(NSString *)urlString
@@ -740,7 +739,7 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
     return _glView.fps;
 }
 #else
-#warning TODO mac hud
+#warning TODO mac fps
 - (CGFloat)fpsAtOutput
 {
     return 0.0;
@@ -755,12 +754,14 @@ inline static NSString *formatedDurationMilli(int64_t duration) {
     }
 }
 
+#if ! IJK_IO_OFF
 inline static NSString *formatedDurationBytesAndBitrate(int64_t bytes, int64_t bitRate) {
     if (bitRate <= 0) {
         return @"inf";
     }
     return formatedDurationMilli(((float)bytes) * 8 * 1000 / bitRate);
 }
+#endif
 
 inline static NSString *formatedSize(int64_t bytes) {
     if (bytes >= 100 * 1024) {
@@ -797,9 +798,10 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
         return;
 
     int64_t vdec = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
+    int64_t vdec2 = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_ANOTHER_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
     float   vdps = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VIDEO_DECODE_FRAMES_PER_SECOND, .0f);
     float   vfps = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VIDEO_OUTPUT_FRAMES_PER_SECOND, .0f);
-
+    
     switch (vdec) {
         case FFP_PROPV_DECODER_VIDEOTOOLBOX:
             [self setHudValue:@"VideoToolbox" forKey:@"vdec"];
@@ -816,6 +818,22 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
             break;
     }
 
+    switch (vdec2) {
+        case FFP_PROPV_DECODER_VIDEOTOOLBOX:
+            [self setHudValue:@"VideoToolbox" forKey:@"vdec-swithing"];
+            break;
+        case FFP_PROPV_DECODER_AVCODEC:
+            [self setHudValue:[NSString stringWithFormat:@"avcodec %d.%d.%d",
+                                  LIBAVCODEC_VERSION_MAJOR,
+                                  LIBAVCODEC_VERSION_MINOR,
+                                  LIBAVCODEC_VERSION_MICRO]
+                          forKey:@"vdec-swithing"];
+            break;
+        default:
+            [self setHudValue:@"N/A" forKey:@"vdec-swithing"];
+            break;
+    }
+    
     [self setHudValue:[NSString stringWithFormat:@"%.2f / %.2f", vdps, vfps] forKey:@"fps"];
 
     int64_t vcacheb = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_CACHED_BYTES, 0);
@@ -839,8 +857,8 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
     float avdiff  = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_AVDIFF, .0f);
     [self setHudValue:[NSString stringWithFormat:@"%.3f %.3f", avdelay, -avdiff] forKey:@"delay"];
 
-    int64_t bitRate = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_BIT_RATE, 0);
 #if ! IJK_IO_OFF
+    int64_t bitRate = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_BIT_RATE, 0);
     [self setHudValue:[NSString stringWithFormat:@"-%@, %@",
                          formatedSize(_cacheStat.cache_file_forwards),
                           formatedDurationBytesAndBitrate(_cacheStat.cache_file_forwards, bitRate)] forKey:@"cache-forwards"];
@@ -883,11 +901,21 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
         return;
 
     if ([[NSThread currentThread] isMainThread]) {
+        UIView *hudView = [_hudCtrl contentView];
+        [hudView setHidden:NO];
+        CGRect rect = self.view.bounds;
 #if TARGET_OS_IOS
-        _hudViewController.tableView.hidden = NO;
+        hudView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleLeftMargin;
+        CGFloat screenWidth = [[UIScreen mainScreen]bounds].size.width;
 #else
-#warning TODO mac hud
+        hudView.autoresizingMask = NSViewHeightSizable | NSViewMinXMargin;
+        CGFloat screenWidth = [[NSScreen mainScreen]frame].size.width;
 #endif
+        rect.size.width = MIN(screenWidth / 3.0, 350);
+        rect.origin.x = CGRectGetWidth(self.view.bounds) - rect.size.width;
+        hudView.frame = rect;
+        [self.view addSubview:hudView];
+        
         _hudTimer = [NSTimer scheduledTimerWithTimeInterval:.5f
                                                      target:self
                                                    selector:@selector(refreshHudView)
@@ -906,11 +934,8 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
         return;
 
     if ([[NSThread currentThread] isMainThread]) {
-#if TARGET_OS_IOS
-        _hudViewController.tableView.hidden = YES;
-#else
-#warning TODO mac hud
-#endif
+        UIView *hudView = [_hudCtrl contentView];
+        [hudView setHidden:YES];
         [_hudTimer invalidate];
         _hudTimer = nil;
     } else {
@@ -1100,6 +1125,24 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
     }
 }
 
+- (void)updateMonitor4VideoDecoder:(int64_t)vdec
+{
+    switch (vdec) {
+        case FFP_PROPV_DECODER_VIDEOTOOLBOX:
+            _monitor.vdecoder = @"VideoToolbox";
+            break;
+        case FFP_PROPV_DECODER_AVCODEC:
+            _monitor.vdecoder = [NSString stringWithFormat:@"avcodec %d.%d.%d",
+                                 LIBAVCODEC_VERSION_MAJOR,
+                                 LIBAVCODEC_VERSION_MINOR,
+                                 LIBAVCODEC_VERSION_MICRO];
+            break;
+        default:
+            _monitor.vdecoder = @"Unknown";
+            break;
+    }
+}
+
 - (void)postEvent: (IJKFFMoviePlayerMessage *)msg
 {
     if (!msg)
@@ -1133,21 +1176,9 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
         }
         case FFP_MSG_PREPARED: {
             _monitor.prepareDuration = (int64_t)SDL_GetTickHR() - _monitor.prepareStartTick;
-            int64_t vdec = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
-            switch (vdec) {
-                case FFP_PROPV_DECODER_VIDEOTOOLBOX:
-                    _monitor.vdecoder = @"VideoToolbox";
-                    break;
-                case FFP_PROPV_DECODER_AVCODEC:
-                    _monitor.vdecoder = [NSString stringWithFormat:@"avcodec %d.%d.%d",
-                                         LIBAVCODEC_VERSION_MAJOR,
-                                         LIBAVCODEC_VERSION_MINOR,
-                                         LIBAVCODEC_VERSION_MICRO];
-                    break;
-                default:
-                    _monitor.vdecoder = @"Unknown";
-                    break;
-            }
+            //prepared not send,beacuse FFP_MSG_VIDEO_DECODER_OPEN event already send
+            //int64_t vdec = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
+            //[self updateMonitor4VideoDecoder:vdec];
 
             IjkMediaMeta *rawMeta = ijkmp_get_meta_l(_mediaPlayer);
             [self traverseIJKMetaData:rawMeta];
@@ -1251,6 +1282,9 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
         }
         case FFP_MSG_VIDEO_DECODER_OPEN: {
             _isVideoToolboxOpen = avmsg->arg1;
+            int64_t vdec = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
+            [self updateMonitor4VideoDecoder:vdec];
+            
             [[NSNotificationCenter defaultCenter]
              postNotificationName:IJKMPMoviePlayerVideoDecoderOpenNotification
              object:self];
@@ -1785,14 +1819,11 @@ static int ijkff_inject_callback(void *opaque, int message, void *data, size_t d
 #endif
 
 #pragma mark IJKFFHudController
+
 - (void)setHudValue:(NSString *)value forKey:(NSString *)key
 {
     if ([[NSThread currentThread] isMainThread]) {
-#if TARGET_OS_IOS
-        [_hudViewController setHudValue:value forKey:key];
-#else
-#warning todo mac hud
-#endif
+        [_hudCtrl setHudValue:value forKey:key];
     } else {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self setHudValue:value forKey:key];
@@ -1829,6 +1860,11 @@ static int ijkff_inject_callback(void *opaque, int message, void *data, size_t d
 - (float)currentSubtitleExtraDelay
 {
     return ijkmp_get_subtitle_extra_delay(_mediaPlayer);
+}
+
+- (int)exchangeVideoDecoder
+{
+    return jkmp_exchange_video_decoder(_mediaPlayer);
 }
 
 @end

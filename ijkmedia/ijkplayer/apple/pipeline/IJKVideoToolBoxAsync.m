@@ -995,7 +995,7 @@ int videotoolbox_async_decode_frame(Ijk_VideoToolBox_Opaque* context)
                     ALOGI("flushed last keyframe pts %lld \n",d->pkt->pts);
                     d->next_pts = d->start_pts;
                     d->next_pts_tb = d->start_pts_tb;
-                    av_packet_unref(d->pkt);
+                    break;
                 }
             } while (old_serial != d->pkt_serial || d->queue->serial != d->pkt_serial);
             d->packet_pending = 1;

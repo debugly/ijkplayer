@@ -228,4 +228,7 @@ int             ijkmp_load_external_subtitle(IjkMediaPlayer* mp, const char* fil
 
 int				ijkmp_set_decoder_name(IjkMediaPlayer *mp, const char* decoder_name);
 
+/*force exchange decoder*/
+int				ijkmp_exchange_video_decoder(IjkMediaPlayer *mp);
+
 #endif

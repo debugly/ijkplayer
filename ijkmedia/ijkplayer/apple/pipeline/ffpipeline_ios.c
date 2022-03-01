@@ -28,17 +28,40 @@
 
 struct IJKFF_Pipeline_Opaque {
     FFPlayer    *ffp;
-    bool         is_videotoolbox_open;
 };
 
 static void func_destroy(IJKFF_Pipeline *pipeline)
 {
+    
+}
+
+static int func_has_another_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
+{
+    return 1;
+}
+
+static IJKFF_Pipenode *func_open_another_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
+{
+    IJKFF_Pipenode* node = ffp->node_vdec ?: ffp->node_vdec_2;
+    IJKFF_Pipenode* node2 = NULL;
+    
+    if (node->vdec_type == FFP_PROPV_DECODER_AVCODEC) {
+        node2 = ffpipenode_create_video_decoder_from_ios_videotoolbox(ffp);
+        if (node2) {
+            node2->vdec_type = FFP_PROPV_DECODER_VIDEOTOOLBOX;
+        }
+    } else if (node->vdec_type == FFP_PROPV_DECODER_VIDEOTOOLBOX) {
+        node2 = ffpipenode_create_video_decoder_from_ffplay(ffp);
+        if (node2) {
+            node2->vdec_type = FFP_PROPV_DECODER_AVCODEC;
+        }
+    }
+    return node2;
 }
 
 static IJKFF_Pipenode *func_open_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
 {
     IJKFF_Pipenode* node = NULL;
-    IJKFF_Pipeline_Opaque *opaque = pipeline->opaque;
     if (ffp->videotoolbox) {
         node = ffpipenode_create_video_decoder_from_ios_videotoolbox(ffp);
         if (!node)
@@ -46,13 +69,12 @@ static IJKFF_Pipenode *func_open_video_decoder(IJKFF_Pipeline *pipeline, FFPlaye
     }
     if (node == NULL) {
         node = ffpipenode_create_video_decoder_from_ffplay(ffp);
-        ffp->stat.vdec_type = FFP_PROPV_DECODER_AVCODEC;
-        opaque->is_videotoolbox_open = false;
+        node->vdec_type = FFP_PROPV_DECODER_AVCODEC;
     } else {
-        ffp->stat.vdec_type = FFP_PROPV_DECODER_VIDEOTOOLBOX;
-        opaque->is_videotoolbox_open = true;
+        node->vdec_type = FFP_PROPV_DECODER_VIDEOTOOLBOX;
     }
-    ffp_notify_msg2(ffp, FFP_MSG_VIDEO_DECODER_OPEN, opaque->is_videotoolbox_open);
+    ffp_notify_msg2(ffp, FFP_MSG_VIDEO_DECODER_OPEN, node->vdec_type == FFP_PROPV_DECODER_VIDEOTOOLBOX);
+    node->is_using = 1;
     return node;
 }
 
@@ -71,11 +93,13 @@ IJKFF_Pipeline *ffpipeline_create_from_ios(FFPlayer *ffp)
     if (!pipeline)
         return pipeline;
 
-    IJKFF_Pipeline_Opaque *opaque     = pipeline->opaque;
-    opaque->ffp                       = ffp;
-    pipeline->func_destroy            = func_destroy;
-    pipeline->func_open_video_decoder = func_open_video_decoder;
-    pipeline->func_open_audio_output  = func_open_audio_output;
-
+    IJKFF_Pipeline_Opaque *opaque             = pipeline->opaque;
+    opaque->ffp                               = ffp;
+    pipeline->func_destroy                    = func_destroy;
+    pipeline->func_open_video_decoder         = func_open_video_decoder;
+    pipeline->func_open_audio_output          = func_open_audio_output;
+    pipeline->func_has_another_video_decoder  = func_has_another_video_decoder;
+    pipeline->func_open_another_video_decoder = func_open_another_video_decoder;
+    
     return pipeline;
 }

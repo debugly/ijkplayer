@@ -46,7 +46,7 @@ IjkAVDictionaryEntry *ijk_av_dict_get(const IjkAVDictionary *m, const char *key,
         return NULL;
 
     if (prev)
-        i = prev - m->elems + 1;
+        i = (unsigned int)(prev - m->elems + 1);
     else
         i = 0;
 

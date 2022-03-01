@@ -53,7 +53,7 @@ void     *ffp_set_ijkio_inject_opaque(FFPlayer *ffp, void *opaque);
 #endif
 void      ffp_set_option(FFPlayer *ffp, int opt_category, const char *name, const char *value);
 void      ffp_set_option_int(FFPlayer *ffp, int opt_category, const char *name, int64_t value);
-
+void      ffp_set_option_intptr(FFPlayer *ffp, int opt_category, const char *name, uintptr_t value);
 int       ffp_get_video_codec_info(FFPlayer *ffp, char **codec_info);
 int       ffp_get_audio_codec_info(FFPlayer *ffp, char **codec_info);
 
@@ -118,13 +118,14 @@ void      ffp_set_property_int64(FFPlayer *ffp, int id, int64_t value);
 
 // must be freed with free();
 struct IjkMediaMeta *ffp_get_meta_l(FFPlayer *ffp);
-void ffp_set_subtitle_extra_delay(FFPlayer *ffp, const float delay);
-float ffp_get_subtitle_extra_delay(FFPlayer *ffp);
+void      ffp_set_subtitle_extra_delay(FFPlayer *ffp, const float delay);
+float     ffp_get_subtitle_extra_delay(FFPlayer *ffp);
 
 void      subtitle_invalidate_uploaded(FFPlayer *ffp);
 int       ffp_set_external_subtitle(FFPlayer *ffp, const char *file_name);
 /*only load ex-subtitle*/
 int       ffp_load_external_subtitle(FFPlayer *ffp, const char *file_name);
+int       ffp_exchange_video_decoder(FFPlayer *ffp);
 
 int		  ffp_set_decoder_name(FFPlayer *ffp, const char *name);
 

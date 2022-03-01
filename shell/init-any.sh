@@ -27,6 +27,9 @@ LIBS=$2
 
 set -e
 
+cd $(dirname "$0")
+c_dir="$PWD"
+
 function usage()
 {
     echo " useage:"
@@ -41,8 +44,8 @@ if [[ "$PLAT" == 'ios' || "$PLAT" == 'macos' || "$PLAT" == 'all' ]]; then
     for lib in $LIBS
     do
         echo "===[init $lib]===================="
-        source init-cfgs/$lib
-        ./tools/init-repo.sh "$PLAT"
+        source $c_dir/init-cfgs/$lib
+        $c_dir/tools/init-repo.sh "$PLAT"
         echo "===================================="
     done
 else

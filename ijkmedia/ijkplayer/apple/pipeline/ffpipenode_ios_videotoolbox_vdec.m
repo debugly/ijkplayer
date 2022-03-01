@@ -62,15 +62,10 @@ int videotoolbox_video_thread(void *arg)
             goto the_end;
         if (!ret)
             continue;
-
-        if (ret < 0)
-            goto the_end;
     }
 the_end:
-    return 0;
+    return ret;
 }
-
-
 
 static void func_destroy(IJKFF_Pipenode *node)
 {
@@ -90,8 +85,6 @@ static int func_run_sync(IJKFF_Pipenode *node)
 
     return ret;
 }
-
-
 
 IJKFF_Pipenode *ffpipenode_create_video_decoder_from_ios_videotoolbox(FFPlayer *ffp)
 {

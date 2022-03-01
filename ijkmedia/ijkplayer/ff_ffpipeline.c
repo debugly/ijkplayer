@@ -82,3 +82,21 @@ SDL_Aout *ffpipeline_open_audio_output(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
 {
     return pipeline->func_open_audio_output(pipeline, ffp);
 }
+
+int ffpipeline_has_another_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
+{
+    if (pipeline->func_has_another_video_decoder) {
+        return pipeline->func_has_another_video_decoder(pipeline, ffp);
+    } else {
+        return 0;
+    }
+}
+
+IJKFF_Pipenode* ffpipeline_open_another_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
+{
+    if (pipeline->func_open_another_video_decoder) {
+        return pipeline->func_open_another_video_decoder(pipeline, ffp);
+    } else {
+        return NULL;
+    }
+}

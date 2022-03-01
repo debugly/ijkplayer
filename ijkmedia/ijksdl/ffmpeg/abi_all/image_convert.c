@@ -23,7 +23,7 @@
 
 #include "../ijksdl_image_convert.h"
 #if defined(__ANDROID__) || defined(__APPLE__)
-#include "libyuv.h"
+#include "libyuv/convert_from.h"
 #endif
 
 int ijk_image_convert(int width, int height,

@@ -311,13 +311,15 @@ void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, AVFormatContext *ic)
         ijkmeta_destroy_p(&stream_meta);
 }
 
-void ijkmeta_set_ex_subtitle_context_l(IjkMediaMeta *meta, struct AVFormatContext *ic, struct VideoState *is)
+void ijkmeta_set_ex_subtitle_context_l(IjkMediaMeta *meta, struct AVFormatContext *ic, struct VideoState *is, int actived)
 {
     if (!meta || !ic || !is)
         return;
 
-    int stream_idx = (is->ex_sub_index - 1) % MAX_EX_SUBTITLE_NUM + is->ic->nb_streams;
-    ijkmeta_set_int64_l(meta, IJKM_KEY_TIMEDTEXT_STREAM, stream_idx);
+    if (actived) {
+        int stream_idx = (is->ex_sub_index - 1) % MAX_EX_SUBTITLE_NUM + is->ic->nb_streams;
+        ijkmeta_set_int64_l(meta, IJKM_KEY_TIMEDTEXT_STREAM, stream_idx);
+    }
     
     IjkMediaMeta *stream_meta = NULL;
     for (int i = 0; i < ic->nb_streams; i++) {

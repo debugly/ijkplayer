@@ -72,7 +72,7 @@ int ijk_map_size(void *data) {
     if (!map_data)
         return 0;
 
-    return map_data->size();
+    return (int)map_data->size();
 }
 
 int ijk_map_max_size(void *data) {
@@ -80,7 +80,7 @@ int ijk_map_max_size(void *data) {
     if (!map_data)
         return 0;
 
-    return map_data->max_size();
+    return (int)map_data->max_size();
 }
 
 void* ijk_map_index_get(void *data, int index) {

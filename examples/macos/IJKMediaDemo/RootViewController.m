@@ -8,48 +8,46 @@
 
 #import "RootViewController.h"
 #import "MRDragView.h"
-#import "MRUtil.h"
+#import "MRUtil+SystemPanel.h"
 #import <IJKMediaPlayerKit/IJKMediaPlayerKit.h>
 #import <Carbon/Carbon.h>
 #import "NSFileManager+Sandbox.h"
 #import "SHBaseView.h"
 #import <Quartz/Quartz.h>
+#import "MRGlobalNotification.h"
+#import "AppDelegate.h"
+#import "MRProgressSlider.h"
+#import "MRBaseView.h"
 
-#ifndef __MRWS__
-#define __MRWS__
+@interface RootViewController ()<MRDragViewDelegate,SHBaseViewDelegate,NSMenuDelegate>
 
-#ifndef __weakSelf__
-#define __weakSelf__  __weak    typeof(self)weakSelf = self;
-#endif
+@property (weak) IBOutlet NSView *moreView;
+@property (weak) IBOutlet NSLayoutConstraint *moreViewBottomCons;
+@property (assign) BOOL isMoreViewAnimating;
 
-#ifndef __strongSelf__
-#define __strongSelf__ __strong typeof(weakSelf)self = weakSelf;
-#endif
-
-#define __weakObj(obj)   __weak   typeof(obj)weak##obj = obj;
-#define __strongObj(obj) __strong typeof(weak##obj)obj = weak##obj;
-
-#endif
-
-@interface RootViewController ()<MRDragViewDelegate,SHBaseViewDelegate>
-
-@property (weak) IBOutlet NSView *ctrlView;
-@property (weak) IBOutlet NSLayoutConstraint *ctrlViewBottomCons;
-@property (assign) BOOL isCtrlViewAnimating;
+@property (weak) IBOutlet MRBaseView *playerCtrlPanel;
 
 @property (strong) IJKFFMoviePlayerController * player;
+@property (strong) IJKKVOController * kvoCtrl;
+
 @property (weak) IBOutlet NSTextField *playedTimeLb;
+@property (weak) IBOutlet NSTextField *durationTimeLb;
+
+@property (weak) IBOutlet NSButton *playCtrlBtn;
+@property (weak) IBOutlet MRProgressSlider *playerSlider;
+
+
 @property (nonatomic, strong) NSMutableArray *playList;
 @property (copy) NSURL *playingUrl;
 @property (weak) NSTimer *tickTimer;
-@property (weak) IBOutlet NSTextField *urlInput;
-@property (weak) IBOutlet NSButton *playCtrlBtn;
+
 @property (weak) IBOutlet NSPopUpButton *subtitlePopUpBtn;
 @property (weak) IBOutlet NSPopUpButton *audioPopUpBtn;
 
 @property (weak) NSTrackingArea *trackingArea;
 
 //for cocoa binding begin
+@property (assign) float volume;
 @property (assign) float subtitleFontSize;
 @property (assign) float subtitleDelay;
 @property (assign) float subtitleMargin;
@@ -83,28 +81,26 @@
     //[self.view setWantsLayer:YES];
     //self.view.layer.backgroundColor = [[NSColor redColor] CGColor];
     
-    [self.ctrlView setWantsLayer:YES];
+    [self.moreView setWantsLayer:YES];
     //self.ctrlView.layer.backgroundColor = [[NSColor colorWithWhite:0.2 alpha:0.5] CGColor];
-    self.ctrlView.layer.cornerRadius = 4;
-    self.ctrlView.layer.masksToBounds = YES;
+    self.moreView.layer.cornerRadius = 4;
+    self.moreView.layer.masksToBounds = YES;
 
     self.subtitleFontSize = 25;
     self.subtitleMargin = 0.7;
     self.useVideoToolBox = YES;
     self.fcc = @"fcc-_es2";
     self.snapshot = 3;
+    self.volume = 0.4;
     [self onReset:nil];
     
-    [self.playList addObject:[NSURL URLWithString:@"https://data.vod.itc.cn/?new=/73/15/oFed4wzSTZe8HPqHZ8aF7J.mp4&vid=77972299&plat=14&mkey=XhSpuZUl_JtNVIuSKCB05MuFBiqUP7rB&ch=null&user=api&qd=8001&cv=3.13&uid=F45C89AE5BC3&ca=2&pg=5&pt=1&prod=ifox"]];
+    NSArray *bundleNameArr = @[@"5003509-693880-3.m3u8",@"996747-5277368-31.m3u8"];
     
-    NSString *localM3u8 = [[NSBundle mainBundle] pathForResource:@"996747-5277368-31" ofType:@"m3u8"];
-    [self.playList addObject:[NSURL fileURLWithPath:localM3u8]];
-    
-    if ([self.playList count] > 0) {
-        self.urlInput.placeholderString = [[self.playList firstObject] description];
-    } else {
-        self.urlInput.placeholderString = @"请输入播放地址或者拖入视频播放";
+    for (NSString *fileName in bundleNameArr) {
+        NSString *localM3u8 = [[NSBundle mainBundle] pathForResource:[fileName stringByDeletingPathExtension] ofType:[fileName pathExtension]];
+        [self.playList addObject:[NSURL fileURLWithPath:localM3u8]];
     }
+    [self.playList addObject:[NSURL URLWithString:@"https://data.vod.itc.cn/?new=/73/15/oFed4wzSTZe8HPqHZ8aF7J.mp4&vid=77972299&plat=14&mkey=XhSpuZUl_JtNVIuSKCB05MuFBiqUP7rB&ch=null&user=api&qd=8001&cv=3.13&uid=F45C89AE5BC3&ca=2&pg=5&pt=1&prod=ifox"]];
     
     if ([self.view isKindOfClass:[SHBaseView class]]) {
         SHBaseView *baseView = (SHBaseView *)self.view;
@@ -120,35 +116,97 @@
         }
         return theEvent;
     }];
-}
-
-- (void)baseView:(SHBaseView *)baseView mouseEntered:(NSEvent *)event
-{
-    [self showCtrlView];
-}
-
-- (void)baseView:(SHBaseView *)baseView mouseMoved:(NSEvent *)event
-{
-    [self showCtrlView];
-}
-
-- (void)baseView:(SHBaseView *)baseView mouseExited:(NSEvent *)event
-{
-    [self hideCtrlView];
-}
-
-- (void)switchCtrlView:(BOOL)wantShow
-{
-    float constant = wantShow ? 0 : - self.ctrlView.bounds.size.height;
     
-    if (self.ctrlViewBottomCons.constant == constant) {
+    OBSERVER_NOTIFICATION(self, _playExplorerMovies:,kPlayExplorerMovieNotificationName_G, nil);
+    
+    [self prepareRightMenu];
+    
+    [self.playerSlider onDraggedIndicator:^(double progress, MRProgressSlider * _Nonnull indicator, BOOL isEndDrag) {
+        __strongSelf__
+        self.player.currentPlaybackTime = progress;
+    }];
+}
+
+- (void)prepareRightMenu
+{
+    NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Root"];
+    menu.delegate = self;
+    self.view.menu = menu;
+}
+
+- (void)menuWillOpen:(NSMenu *)menu
+{
+    if (menu == self.view.menu) {
+        
+        [menu removeAllItems];
+        
+        [menu addItemWithTitle:@"打开文件" action:@selector(openFile:)keyEquivalent:@""];
+        
+        if (self.playingUrl) {
+            if ([self.player isPlaying]) {
+                [menu addItemWithTitle:@"暂停" action:@selector(pauseOrPlay:)keyEquivalent:@""];
+            } else {
+                [menu addItemWithTitle:@"播放" action:@selector(pauseOrPlay:)keyEquivalent:@""];
+            }
+            [menu addItemWithTitle:@"停止" action:@selector(stop:)keyEquivalent:@""];
+            [menu addItemWithTitle:@"下一集" action:@selector(playNext:)keyEquivalent:@""];
+            [menu addItemWithTitle:@"上一集" action:@selector(playPrevious:)keyEquivalent:@""];
+            
+            [menu addItemWithTitle:@"前进50s" action:@selector(fastForward:)keyEquivalent:@""];
+            [menu addItemWithTitle:@"后退50s" action:@selector(fastRewind:)keyEquivalent:@""];
+            
+            NSMenuItem *speedItem = [menu addItemWithTitle:@"倍速" action:nil keyEquivalent:@""];
+            
+            [menu setSubmenu:({
+                NSMenu *menu = [[NSMenu alloc] initWithTitle:@"倍速"];
+                menu.delegate = self;
+                ;menu;
+            }) forItem:speedItem];
+        } else {
+            if ([self.playList count] > 0) {
+                [menu addItemWithTitle:@"下一集" action:@selector(playNext:)keyEquivalent:@""];
+                [menu addItemWithTitle:@"上一集" action:@selector(playPrevious:)keyEquivalent:@""];
+            }
+        }
+    } else if ([menu.title isEqualToString:@"倍速"]) {
+        [menu removeAllItems];
+        [menu addItemWithTitle:@"0.8x" action:@selector(updateSpeed:) keyEquivalent:@""].tag = 80;
+        [menu addItemWithTitle:@"1.0x" action:@selector(updateSpeed:) keyEquivalent:@""].tag = 100;
+        [menu addItemWithTitle:@"1.25x" action:@selector(updateSpeed:) keyEquivalent:@""].tag = 125;
+        [menu addItemWithTitle:@"1.5x" action:@selector(updateSpeed:) keyEquivalent:@""].tag = 150;
+        [menu addItemWithTitle:@"2.0x" action:@selector(updateSpeed:) keyEquivalent:@""].tag = 200;
+    }
+}
+
+- (void)openFile:(NSMenuItem *)sender
+{
+    AppDelegate *delegate = NSApp.delegate;
+    [delegate openDocument:sender];
+}
+
+- (void)_playExplorerMovies:(NSNotification *)notifi
+{
+    NSDictionary *info = notifi.userInfo;
+    NSArray *movies = info[@"obj"];
+    
+    if ([movies count] > 0) {
+        // 开始播放
+        [self appendToPlayList:movies];
+    }
+}
+
+- (void)switchMoreView:(BOOL)wantShow
+{
+    float constant = wantShow ? 0 : - self.moreView.bounds.size.height;
+    
+    if (self.moreViewBottomCons.constant == constant) {
         return;
     }
     
-    if (self.isCtrlViewAnimating) {
+    if (self.isMoreViewAnimating) {
         return;
     }
-    self.isCtrlViewAnimating = YES;
+    self.isMoreViewAnimating = YES;
     
     __weakSelf__
     [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
@@ -156,94 +214,170 @@
         context.allowsImplicitAnimation = YES;
         context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
         __strongSelf__
-        self.ctrlViewBottomCons.animator.constant = wantShow ? 0 : - self.ctrlView.bounds.size.height;
+        self.moreViewBottomCons.animator.constant = wantShow ? 0 : - self.moreView.bounds.size.height;
     } completionHandler:^{
         __strongSelf__
-        self.isCtrlViewAnimating = NO;
+        self.isMoreViewAnimating = NO;
     }];
 }
 
-- (void)showCtrlView
+- (void)toggleMoreViewShow
 {
-    [self switchCtrlView:YES];
+    BOOL isShowing = self.moreView.frame.origin.y >= 0;
+    [self switchMoreView:!isShowing];
 }
 
-- (void)hideCtrlView
+- (void)baseView:(SHBaseView *)baseView mouseEntered:(NSEvent *)event
 {
-    [self switchCtrlView:NO];
+    
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
+        context.duration = 0.35;
+        self.playerCtrlPanel.animator.alphaValue = 1.0;
+        [[self.view.window standardWindowButton:NSWindowCloseButton] setHidden:NO];
+        [[self.view.window standardWindowButton:NSWindowMiniaturizeButton] setHidden:NO];
+        [[self.view.window standardWindowButton:NSWindowZoomButton] setHidden:NO];
+    }];
 }
 
-- (void)toggleCtrlViewShow
+- (void)baseView:(SHBaseView *)baseView mouseExited:(NSEvent *)event
 {
-    BOOL isShowing = self.ctrlView.frame.origin.y >= 0;
-    [self switchCtrlView:!isShowing];
+    [self switchMoreView:NO];
+    if (self.playingUrl) {
+        [[self.view.window standardWindowButton:NSWindowCloseButton] setHidden:YES];
+        [[self.view.window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
+        [[self.view.window standardWindowButton:NSWindowZoomButton] setHidden:YES];
+        
+        [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
+            context.duration = 0.35;
+            self.playerCtrlPanel.animator.alphaValue = 0.0;
+        }];
+    }
 }
 
 - (void)keyDown:(NSEvent *)event
 {
-    if ([event keyCode] == kVK_RightArrow && event.modifierFlags & NSEventModifierFlagCommand) {
-        [self playNext:nil];
-    } else if ([event keyCode] == kVK_ANSI_B && event.modifierFlags & NSEventModifierFlagCommand) {
-        
-        [self toggleCtrlViewShow];
-        
-    } else if ([event keyCode] == kVK_ANSI_R && event.modifierFlags & NSEventModifierFlagCommand) {
-        
-        IJKSDLRotatePreference preference = self.player.view.rotatePreference;
-        
-        if (preference.type == IJKSDLRotateNone) {
-            preference.type = IJKSDLRotateZ;
-        }
-        
-        if (event.modifierFlags & NSEventModifierFlagOption) {
-            
-            preference.type --;
-            
-            if (preference.type <= IJKSDLRotateNone) {
-                preference.type = IJKSDLRotateZ;
+    if (event.modifierFlags & NSEventModifierFlagCommand) {
+        switch ([event keyCode]) {
+            case kVK_LeftArrow:
+            {
+                [self playPrevious:nil];
             }
+                break;
+            case kVK_RightArrow:
+            {
+                [self playNext:nil];
+            }
+                break;
+            case kVK_ANSI_B:
+            {
+                [self toggleMoreViewShow];
+            }
+                break;
+            case kVK_ANSI_R:
+            {
+                IJKSDLRotatePreference preference = self.player.view.rotatePreference;
+                
+                if (preference.type == IJKSDLRotateNone) {
+                    preference.type = IJKSDLRotateZ;
+                }
+                
+                if (event.modifierFlags & NSEventModifierFlagOption) {
+                    
+                    preference.type --;
+                    
+                    if (preference.type <= IJKSDLRotateNone) {
+                        preference.type = IJKSDLRotateZ;
+                    }
+                }
+                
+                if (event.modifierFlags & NSEventModifierFlagShift) {
+                    preference.degrees --;
+                } else {
+                    preference.degrees ++;
+                }
+                
+                if (preference.degrees >= 360) {
+                    preference.degrees = 0;
+                }
+                self.player.view.rotatePreference = preference;
+                
+                NSLog(@"rotate:%@ %d",@[@"X",@"Y",@"Z"][preference.type-1],(int)preference.degrees);
+            }
+                break;
+            case kVK_ANSI_S:
+            {
+                [self onCaptureShot:nil];
+            }
+                break;
+            case kVK_ANSI_Period:
+            {
+                [self stopPlay:nil];
+            }
+                break;
+            case kVK_ANSI_I:
+            {
+                [self toggleHUD:nil];
+            }
+                break;
+            default:
+            {
+                NSLog(@"0x%X",[event keyCode]);
+            }
+                break;
         }
-        
-        if (event.modifierFlags & NSEventModifierFlagShift) {
-            preference.degrees --;
-        } else {
-            preference.degrees ++;
+    } else if (event.modifierFlags & NSEventModifierFlagControl) {
+        switch ([event keyCode]) {
+            case kVK_ANSI_H:
+            {
+                [self exchangeVideoDecoder];
+            }
+                break;
         }
-        
-        if (preference.degrees >= 360) {
-            preference.degrees = 0;
-        }
-        self.player.view.rotatePreference = preference;
-        
-        NSLog(@"rotate:%@ %d",@[@"X",@"Y",@"Z"][preference.type-1],(int)preference.degrees);
-    } else if ([event keyCode] == kVK_RightArrow) {
-        [self fastForward:nil];
-    } else if ([event keyCode] == kVK_LeftArrow) {
-        [self fastRewind:nil];
-    } else if ([event keyCode] == kVK_DownArrow) {
-        float volume = self.player.playbackVolume;
-        volume -= 0.1;
-        if (volume < 0) {
-            volume = .0f;
-        }
-        self.player.playbackVolume = volume;
-        NSLog(@"volume:%0.1f",volume);
-    } else if ([event keyCode] == kVK_UpArrow) {
-        float volume = self.player.playbackVolume;
-        volume += 0.1;
-        if (volume > 1) {
-            volume = 1.0f;
-        }
-        self.player.playbackVolume = volume;
-        NSLog(@"volume:%0.1f",volume);
-    } else if ([event keyCode] == kVK_Space) {
-        [self pauseOrPlay:nil];
-    } else if ([event keyCode] == kVK_ANSI_S && event.modifierFlags & NSEventModifierFlagCommand) {
-        [self onCaptureShot:nil];
-    } else if ([event keyCode] == kVK_ANSI_Period && event.modifierFlags & NSEventModifierFlagCommand) {
-        [self stopPlay:nil];
     } else {
-        NSLog(@"0x%X",[event keyCode]);
+        switch ([event keyCode]) {
+            case kVK_RightArrow:
+            {
+                [self fastForward:nil];
+            }
+                break;
+            case kVK_LeftArrow:
+            {
+                [self fastRewind:nil];
+            }
+                break;
+            case kVK_DownArrow:
+            {
+                float volume = self.volume;
+                volume -= 0.1;
+                if (volume < 0) {
+                    volume = .0f;
+                }
+                self.volume = volume;
+                [self onVolumeChange:nil];
+            }
+                break;
+            case kVK_UpArrow:
+            {
+                float volume = self.volume;
+                volume += 0.1;
+                if (volume > 1) {
+                    volume = 1.0f;
+                }
+                self.volume = volume;
+                [self onVolumeChange:nil];
+            }
+                break;
+            case kVK_Space:
+            {
+                [self pauseOrPlay:nil];
+            }
+                break;
+            default:
+            {
+                NSLog(@"0x%X",[event keyCode]);
+            }
+                break;
+        }
     }
 }
 
@@ -278,9 +412,10 @@
     [options setPlayerOptionIntValue:self.useVideoToolBox forKey:@"videotoolbox"];
     [options setPlayerOptionIntValue:self.useAsyncVTB forKey:@"videotoolbox-async"];
     [options setPlayerOptionIntValue:3840 forKey:@"videotoolbox-max-frame-width"];
+    [options setShowHudView:NO];
     
     [self stopPlay:nil];
-    
+    [NSDocumentController.sharedDocumentController noteNewRecentDocumentURL:url];
     self.player = [[IJKFFMoviePlayerController alloc] initWithContentURL:url withOptions:options];
     CGRect rect = self.view.frame;
     rect.origin = CGPointZero;
@@ -301,6 +436,7 @@
     
     self.player.scalingMode = IJKMPMovieScalingModeAspectFit;
     self.player.shouldAutoplay = YES;
+    [self onVolumeChange:nil];
 }
 
 - (void)ijkPlayerDidFinish:(NSNotification *)notifi
@@ -372,8 +508,7 @@
 {
     [self perpareIJKPlayer:url];
     self.playingUrl = url;
-    self.urlInput.stringValue = [url isFileURL] ? [url path] : [url absoluteString];
-    self.urlInput.placeholderString = @"";
+
     NSString *title = [url isFileURL] ? [url path] : [[url resourceSpecifier] lastPathComponent];
     [self.view.window setTitle:title];
     
@@ -388,6 +523,17 @@
     }
     
     [self.player prepareToPlay];
+    self.kvoCtrl = [[IJKKVOController alloc] initWithTarget:self.player.monitor];
+    [self.kvoCtrl safelyAddObserver:self forKeyPath:@"vdecoder" options:NSKeyValueObservingOptionNew context:nil];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context
+{
+    if (object == self.player.monitor) {
+        if ([keyPath isEqualToString:@"vdecoder"]) {
+            NSLog(@"current video decoder:%@",change[NSKeyValueChangeNewKey]);
+        }
+    }
 }
 
 - (void)onTick:(NSTimer *)sender
@@ -396,10 +542,14 @@
         
         long interval = (long)self.player.currentPlaybackTime;
         long duration = self.player.monitor.duration / 1000;
-        self.playedTimeLb.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
-                                         (int)(interval/60),(int)(interval%60),(int)(duration/60),(int)(duration%60)];
+        self.playedTimeLb.stringValue = [NSString stringWithFormat:@"%02d:%02d",(int)(interval/60),(int)(interval%60)];
+        self.durationTimeLb.stringValue = [NSString stringWithFormat:@"%02d:%02d",(int)(duration/60),(int)(duration%60)];
+        self.playerSlider.currentValue = interval;
+        self.playerSlider.minValue = 0;
+        self.playerSlider.maxValue = duration;
     } else {
-        self.playedTimeLb.stringValue = @"--:--/--:--";
+        self.playedTimeLb.stringValue = @"--:--";
+        self.durationTimeLb.stringValue = @"--:--";
         [sender invalidate];
     }
 }
@@ -415,6 +565,39 @@
     }
     return t;
 }
+
+- (void)appendToPlayList:(NSArray *)bookmarkArr
+{
+    NSMutableArray *videos = [NSMutableArray array];
+    NSMutableArray *subtitles = [NSMutableArray array];
+    
+    for (NSDictionary *dic in bookmarkArr) {
+        NSURL *url = dic[@"url"];
+        
+        if ([self existTaskForUrl:url]) {
+            continue;
+        }
+        if ([dic[@"type"] intValue] == 0) {
+            [videos addObject:url];
+        } else if ([dic[@"type"] intValue] == 1) {
+            [subtitles addObject:url];
+        } else {
+            NSAssert(NO, @"没有处理的文件:%@",url);
+        }
+    }
+    
+    //拖进来新的视频时，清理老的视频列表
+    if ([videos count] > 0) {
+        [self.playList addObjectsFromArray:videos];
+        [self playFirstIfNeed];
+    }
+    
+    for (NSURL *url in subtitles) {
+        [self.player loadThenActiveSubtitleFile:[url path]];
+    }
+}
+
+#pragma mark - 拖拽
 
 - (void)handleDragFileList:(nonnull NSArray<NSURL *> *)fileUrls
 {
@@ -440,37 +623,9 @@
             }
         }
     }
-    
-    NSMutableArray *videos = [NSMutableArray array];
-    NSMutableArray *subtitles = [NSMutableArray array];
-    
-    for (NSDictionary *dic in bookmarkArr) {
-        NSURL *url = dic[@"url"];
-        
-        if ([self existTaskForUrl:url]) {
-            continue;
-        }
-        
-        NSString *pathExtension = [[url pathExtension] lowercaseString];
-        if ([[MRUtil videoType] containsObject:pathExtension] || [[MRUtil audioType] containsObject:pathExtension]) {
-            [videos addObject:url];
-        } else if ([MRUtil subtitleType]) {
-            [subtitles addObject:url];
-        } else {
-            NSAssert(NO, @"没有处理的文件:%@",url);
-        }
-    }
-    
-    //拖进来新的视频时，清理老的视频列表
-    if ([videos count] > 0) {
-        [self.playList removeAllObjects];
-        self.playList = videos;
-        [self playFirstIfNeed];
-    }
-    
-    for (NSURL *url in subtitles) {
-        [self.player loadSubtitleFile:[url path]];
-    }
+    //拖拽播放时清空原先的列表
+    [self.playList removeAllObjects];
+    [self appendToPlayList:bookmarkArr];
 }
 
 - (NSDragOperation)acceptDragOperation:(NSArray<NSURL *> *)list
@@ -510,49 +665,64 @@
     }
 }
 
-#pragma mark 播放控制
+#pragma mark - 点击事件
 
-- (IBAction)onPlay:(NSButton *)sender
+- (IBAction)pauseOrPlay:(NSButton *)sender
 {
-    if (self.urlInput.stringValue.length > 0) {
-        NSUInteger idx = [self.playList indexOfObject:self.playingUrl];
-        if (idx == NSNotFound) {
-            idx = -1;
+    if (self.playingUrl) {
+        if (self.playCtrlBtn.state == NSControlStateValueOff) {
+            [self.player pause];
+        } else {
+            [self.player play];
         }
-        idx ++;
-        NSURL *url = [NSURL URLWithString:self.urlInput.stringValue];
-        self.playList[idx] = url;
-        [self playURL:url];
     } else {
         [self playNext:nil];
     }
 }
 
-- (IBAction)stopPlay:(NSButton *)sender
+- (IBAction)toggleHUD:(id)sender
 {
-    [self.player.view removeFromSuperview];
-    [self.player stop];
-    [self.player shutdown];
-    self.player = nil;
-    self.playingUrl = nil;
-    self.urlInput.stringValue = @"";
-    [self.view.window setTitle:@""];
-    if ([self.playList count] > 0) {
-        self.urlInput.placeholderString = [[self.playList firstObject] description];
-    } else {
-        self.urlInput.placeholderString = @"请输入播放地址或者拖入视频播放";
-    }
+    self.player.shouldShowHudView = !self.player.shouldShowHudView;
 }
 
-- (IBAction)pauseOrPlay:(NSButton *)sender
+- (IBAction)onMoreFunc:(id)sender
 {
-    if ([self.playCtrlBtn.title isEqualToString:@"Pause"]) {
-        [self.playCtrlBtn setTitle:@"Play"];
-        [self.player pause];
-    } else {
-        [self.playCtrlBtn setTitle:@"Pause"];
-        [self.player play];
+    [self toggleMoreViewShow];
+}
+
+- (void)stopPlay:(NSButton *)sender
+{
+    if (self.player) {
+        [self.player.view removeFromSuperview];
+        [self.player stop];
+        [self.player shutdown];
+        self.player = nil;
     }
+    
+    if (self.playingUrl) {
+        self.playingUrl = nil;
+    }
+    
+    [self.view.window setTitle:@""];
+}
+
+- (IBAction)playPrevious:(NSButton *)sender
+{
+    if ([self.playList count] == 0) {
+        return;
+    }
+    
+    NSUInteger idx = [self.playList indexOfObject:self.playingUrl];
+    if (idx == NSNotFound) {
+        idx = 0;
+    } else if (idx <= 0) {
+        idx = [self.playList count] - 1;
+    } else {
+        idx --;
+    }
+    
+    NSURL *url = self.playList[idx];
+    [self playURL:url];
 }
 
 - (IBAction)playNext:(NSButton *)sender
@@ -594,9 +764,15 @@
     self.player.currentPlaybackTime = cp;
 }
 
+- (IBAction)onVolumeChange:(NSSlider *)sender
+{
+    self.player.playbackVolume = self.volume;
+}
+
+
 #pragma mark 倍速设置
 
-- (IBAction)updateSpeed:(NSButton *)sender
+- (void)updateSpeed:(NSButton *)sender
 {
     NSInteger tag = sender.tag;
     float speed = tag / 100.0;
@@ -781,6 +957,22 @@
     NSString *title = sender.selectedItem.title;
     NSString *fcc = [@"fcc-" stringByAppendingString:title];
     self.fcc = fcc;
+}
+
+- (void)exchangeVideoDecoder
+{
+    int r = [self.player exchangeVideoDecoder];
+    if (r == 1) {
+        NSLog(@"exchang decoder begin");
+    } else if (r == -1) {
+        NSLog(@"exchanging decoder");
+    } else if (r == -2) {
+        NSLog(@"can't exchange decoder,try later");
+    } else if (r == -3) {
+        NSLog(@"no more decoder can exchange.");
+    } else if (r == -4) {
+        NSLog(@"exchange decoder faild.");
+    }
 }
 
 @end

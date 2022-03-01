@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="19455" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19455"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="SubtitleSettingViewController">
+            <connections>
+                <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customView id="Hz6-mo-xeY">
+            <rect key="frame" x="0.0" y="0.0" width="480" height="165"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="m9P-UW-yL6">
+                    <rect key="frame" x="0.0" y="0.0" width="100" height="165"/>
+                    <subviews>
+                        <textField horizontalHuggingPriority="1000" verticalHuggingPriority="750" verticalCompressionResistancePriority="748" translatesAutoresizingMaskIntoConstraints="NO" id="Man-EW-FdU">
+                            <rect key="frame" x="-2" y="165" width="68" height="0.0"/>
+                            <textFieldCell key="cell" lineBreakMode="clipping" title="字幕设置：" id="teW-da-J9M">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" red="0.99215686270000003" green="0.99215686270000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                        <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="cM6-t9-e46">
+                            <rect key="frame" x="-2" y="121" width="104" height="38"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="100" id="FMj-bK-xUE"/>
+                                <constraint firstAttribute="height" constant="30" id="OM6-Re-ujf"/>
+                            </constraints>
+                            <sliderCell key="cell" continuous="YES" state="on" alignment="left" maxValue="1" doubleValue="0.69999999999999996" tickMarkPosition="above" sliderType="linear" id="gz5-i6-C0r"/>
+                        </slider>
+                        <popUpButton verticalHuggingPriority="750" verticalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="dCC-dO-l3m">
+                            <rect key="frame" x="-3" y="101" width="86" height="19"/>
+                            <popUpButtonCell key="cell" type="push" title="Black" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="b3F-VS-UEz" id="jm9-6P-0MV">
+                                <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                <font key="font" metaFont="menu"/>
+                                <menu key="menu" id="aDN-T5-yuN">
+                                    <items>
+                                        <menuItem title="Black" state="on" id="b3F-VS-UEz"/>
+                                        <menuItem title="Gray" tag="8421504" id="I12-dO-vAv"/>
+                                        <menuItem title="Silver" tag="12632256" id="sKD-yW-k2J"/>
+                                        <menuItem title="White" tag="16777215" id="4Ty-uj-FhD"/>
+                                        <menuItem title="Maroon" tag="8388608" id="cO5-t8-Nxh"/>
+                                        <menuItem title="Red" tag="16711680" id="sbv-BY-U8Y"/>
+                                        <menuItem title="Fuchsia" tag="16711935" id="uyB-rh-HB4"/>
+                                        <menuItem title="Yellow" tag="16776960" id="f3f-p7-WvA"/>
+                                        <menuItem title="Olive" tag="8421376" id="qnG-Aq-qPx"/>
+                                        <menuItem title="Green" tag="32768" id="kAu-1s-DLh"/>
+                                        <menuItem title="Teal" tag="32896" id="wu4-Em-h9k"/>
+                                        <menuItem title="Lime" tag="65280" id="DZN-lP-oHN"/>
+                                        <menuItem title="Purple" tag="8388736" id="xEg-on-kma"/>
+                                        <menuItem title="Navy" tag="128" id="UeK-Ai-UtD"/>
+                                        <menuItem title="Blue" tag="255" id="AHx-fh-N7c"/>
+                                        <menuItem title="Aqua" tag="65535" id="kwt-Xh-kIH"/>
+                                    </items>
+                                </menu>
+                            </popUpButtonCell>
+                        </popUpButton>
+                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="C7j-Bv-RZV">
+                            <rect key="frame" x="-2" y="81" width="13" height="16"/>
+                            <textFieldCell key="cell" lineBreakMode="clipping" title="0" id="BcP-VY-Odd">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" red="0.99215686270000003" green="0.99215686270000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="fP5-15-EbR">
+                            <rect key="frame" x="48" y="57" width="13" height="16"/>
+                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <textFieldCell key="cell" lineBreakMode="clipping" title="0" id="zwy-sN-vU8">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" red="0.99215686270000003" green="0.99215686270000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                        <stepper toolTip="延迟" horizontalHuggingPriority="750" verticalHuggingPriority="750" allowsExpansionToolTips="YES" id="qTQ-f4-Rau">
+                            <rect key="frame" x="45" y="51" width="19" height="28"/>
+                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <stepperCell key="cell" continuous="YES" alignment="left" increment="2" minValue="-10" maxValue="10" id="bld-tZ-qsm"/>
+                        </stepper>
+                        <stepper toolTip="字体大小" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="0pu-Fe-3ec">
+                            <rect key="frame" x="-3" y="21" width="19" height="28"/>
+                            <stepperCell key="cell" continuous="YES" alignment="left" increment="2" maxValue="250" doubleValue="45" id="ckz-Eh-HN5"/>
+                        </stepper>
+                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="rrG-s2-dGw">
+                            <rect key="frame" x="-2" y="0.0" width="34" height="16"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="30" id="G7p-so-0sb"/>
+                                <constraint firstAttribute="height" constant="16" id="KHy-cM-RCW"/>
+                            </constraints>
+                            <textFieldCell key="cell" lineBreakMode="charWrapping" alignment="left" title="0" usesSingleLineMode="YES" id="Ux4-Cc-wW5">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" red="0.99215686270000003" green="0.99215686270000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                    </subviews>
+                    <visibilityPriorities>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                    </visibilityPriorities>
+                    <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                    </customSpacing>
+                </stackView>
+            </subviews>
+            <constraints>
+                <constraint firstItem="m9P-UW-yL6" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="Ke7-IT-PXl"/>
+                <constraint firstAttribute="bottom" secondItem="m9P-UW-yL6" secondAttribute="bottom" id="svN-t5-bHX"/>
+                <constraint firstItem="m9P-UW-yL6" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="vec-ET-idw"/>
+            </constraints>
+            <point key="canvasLocation" x="139" y="135"/>
+        </customView>
+    </objects>
+</document>

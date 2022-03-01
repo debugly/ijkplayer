@@ -44,6 +44,7 @@
 #include "ff_fferror.h"
 #include "ff_ffmsg.h"
 #include "ijksdl/apple/ijksdl_vout_overlay_videotoolbox.h"
+#include "../../ff_ffplay_def.h"
 
 #define IJK_VTB_FCC_AVCC   SDL_FOURCC('C', 'c', 'v', 'a')
 
@@ -229,7 +230,8 @@ static bool GetVTBPicture(Ijk_VideoToolBox_Opaque* context, AVFrame* pVTBPicture
     return true;
 }
 
-static void QueuePicture(Ijk_VideoToolBox_Opaque* ctx) {
+static void QueuePicture(Ijk_VideoToolBox_Opaque* ctx)
+{
     AVFrame picture = {0};
     if (true == GetVTBPicture(ctx, &picture)) {
         AVRational tb = ctx->ffp->is->video_st->time_base;
@@ -853,28 +855,42 @@ int videotoolbox_sync_decode_frame(Ijk_VideoToolBox_Opaque* context)
         if (is->abort_request || d->queue->abort_request) {
             return -1;
         }
-
-        if (!d->packet_pending || d->queue->serial != d->pkt_serial) {
-            int old_serial;
-            do {
-                if (d->queue->nb_packets == 0)
-                    SDL_CondSignal(d->empty_queue_cond);
-                ffp_video_statistic_l(ffp);
-                old_serial = d->pkt_serial;
-                if (ffp_packet_queue_get_or_buffering(ffp, d->queue, d->pkt, &d->pkt_serial, &d->finished) < 0)
-                    return -1;
-                if (old_serial != d->pkt_serial) {
-                    avcodec_flush_buffers(d->avctx);
-                    context->refresh_request = true;
-                    context->serial += 1;
-                    d->finished = 0;
-                    ALOGI("flushed last keyframe pts %lld \n",d->pkt->pts);
-                    d->next_pts = d->start_pts;
-                    d->next_pts_tb = d->start_pts_tb;
-                    av_packet_unref(d->pkt);
-                }
-            } while (old_serial != d->pkt_serial || d->queue->serial != d->pkt_serial);
+        
+        if (d->is_switching && d->pkt->flags == AV_PKT_FLAG_KEY && ffp->is_switching_vdec_node) {
+            //just use this pkt.
             d->packet_pending = 1;
+            avcodec_flush_buffers(d->avctx);
+            d->is_switching = 0;
+        } else {
+            if (!d->packet_pending || d->queue->serial != d->pkt_serial) {
+                int old_serial;
+                do {
+                    if (d->queue->nb_packets == 0)
+                        SDL_CondSignal(d->empty_queue_cond);
+                    ffp_video_statistic_l(ffp);
+                    old_serial = d->pkt_serial;
+                    if (ffp_packet_queue_get_or_buffering(ffp, d->queue, d->pkt, &d->pkt_serial, &d->finished) < 0)
+                        return -1;
+                    if (old_serial != d->pkt_serial) {
+                        avcodec_flush_buffers(d->avctx);
+                        context->refresh_request = true;
+                        context->serial += 1;
+                        d->finished = 0;
+                        ALOGI("flushed last keyframe pts %lld \n",d->pkt->pts);
+                        d->next_pts = d->start_pts;
+                        d->next_pts_tb = d->start_pts_tb;
+                        break;
+                    }
+                } while (old_serial != d->pkt_serial || d->queue->serial != d->pkt_serial);
+                
+                //after get a pkt first check if need switch video decoder.
+                if (d->pkt->flags == AV_PKT_FLAG_KEY && ffp->is_switching_vdec_node) {
+                    d->is_switching = 1;
+                    return IJK_EXCHANGE_DECODER_FLAG;
+                }
+                
+                d->packet_pending = 1;
+            }
         }
 
         ret = decode_video(context, d->avctx, d->pkt, &got_frame);
@@ -992,44 +1008,44 @@ static int vtbformat_init(VTBFormatDesc *fmt_desc, AVCodecParameters *codecpar, 
         if (level == 0 && sps_level > 0)
             level = sps_level;
 
-                if (profile == 0 && sps_profile > 0)
-                    profile = sps_profile;
-                if (profile == FF_PROFILE_H264_MAIN && level == 32 && fmt_desc->max_ref_frames > 4) {
-                    ALOGE("%s - Main@L3.2 detected, VTB cannot decode with %d ref frames", __FUNCTION__, fmt_desc->max_ref_frames);
-                    goto fail;
-                }
+        if (profile == 0 && sps_profile > 0)
+            profile = sps_profile;
+        if (profile == FF_PROFILE_H264_MAIN && level == 32 && fmt_desc->max_ref_frames > 4) {
+            ALOGE("%s - Main@L3.2 detected, VTB cannot decode with %d ref frames", __FUNCTION__, fmt_desc->max_ref_frames);
+            goto fail;
+        }
 
-                if (extradata[4] == 0xFE) {
-                    extradata[4] = 0xFF;
-                    fmt_desc->convert_3byteTo4byteNALSize = true;
-                }
+        if (extradata[4] == 0xFE) {
+            extradata[4] = 0xFF;
+            fmt_desc->convert_3byteTo4byteNALSize = true;
+        }
 
         fmt_desc->fmt_desc = CreateFormatDescriptionFromCodecData(format_id, width, height, extradata, extrasize,  IJK_VTB_FCC_AVCC);
         if (fmt_desc->fmt_desc == NULL) {
             goto fail;
         }
 
-                ALOGI("%s - using avcC atom of size(%d), ref_frames(%d)", __FUNCTION__, extrasize, fmt_desc->max_ref_frames);
-            } else {
-                if ((extradata[0] == 0 && extradata[1] == 0 && extradata[2] == 0 && extradata[3] == 1) ||
-                    (extradata[0] == 0 && extradata[1] == 0 && extradata[2] == 1)) {
-                    AVIOContext *pb;
-                    if (avio_open_dyn_buf(&pb) < 0) {
-                        goto fail;
-                    }
+        ALOGI("%s - using avcC atom of size(%d), ref_frames(%d)", __FUNCTION__, extrasize, fmt_desc->max_ref_frames);
+    } else {
+        if ((extradata[0] == 0 && extradata[1] == 0 && extradata[2] == 0 && extradata[3] == 1) ||
+            (extradata[0] == 0 && extradata[1] == 0 && extradata[2] == 1)) {
+            AVIOContext *pb;
+            if (avio_open_dyn_buf(&pb) < 0) {
+                goto fail;
+            }
 
-                    fmt_desc->convert_bytestream = true;
-                #if ! IJK_IO_OFF
-                    ff_isom_write_avcc(pb, extradata, extrasize);
-                #endif
-                    extradata = NULL;
+            fmt_desc->convert_bytestream = true;
+        #if ! IJK_IO_OFF
+            ff_isom_write_avcc(pb, extradata, extrasize);
+        #endif
+            extradata = NULL;
 
-                    extrasize = avio_close_dyn_buf(pb, &extradata);
+            extrasize = avio_close_dyn_buf(pb, &extradata);
 
-                    if (!validate_avcC_spc(extradata, extrasize, &fmt_desc->max_ref_frames, &sps_level, &sps_profile)) {
-                        av_free(extradata);
-                        goto fail;
-                    }
+            if (!validate_avcC_spc(extradata, extrasize, &fmt_desc->max_ref_frames, &sps_level, &sps_profile)) {
+                av_free(extradata);
+                goto fail;
+            }
 
             fmt_desc->fmt_desc = CreateFormatDescriptionFromCodecData(format_id, width, height, extradata, extrasize, IJK_VTB_FCC_AVCC);
             if (fmt_desc->fmt_desc == NULL) {

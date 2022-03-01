@@ -16,28 +16,10 @@
 + (NSArray <NSString *>*)audioType
 {
     return @[
-        @"mp3"
-        ];
-}
-
-+ (NSArray <NSString *>*)videoType
-{
-    return @[
-        @"wmv",
-        @"avi",
-        @"rm",
-        @"rmvb",
-        @"mpg",
-        @"mpeg",
-        @"3gp",
-        @"mov",
-        @"mp4",
-        @"mkv",
-        @"flv",
-        @"ts",
-        @"webm",
-        @"m3u8",
-        @"m3u",
+        @"mp3",
+        @"m4a",
+        @"aac",
+        @"ogg"
         ];
 }
 
@@ -51,6 +33,23 @@
         ];
 }
 
+// mov,qt,mp4,m4v,flv,f4v,webm,3gp2,3gpp,3gp,3g2,rm,rmvb,wmv,avi,asf,mpg,mpeg,mpe,ts,mkv,mod,flc,fli,ram,dirac,cpk,lavf,dat,div,dv,divx,vob
++ (NSArray <NSString *>*)videoType
+{
+    static NSArray *videoTypes;
+    if (!videoTypes) {
+        NSDictionary *dic = [[NSBundle mainBundle] infoDictionary];
+        NSArray *documentTypes = dic[@"CFBundleDocumentTypes"];
+        NSMutableArray *_list = [NSMutableArray array];
+        for (NSDictionary *item in documentTypes) {
+            NSArray *exts = item[@"CFBundleTypeExtensions"];
+            [_list addObjectsFromArray:exts];
+        }
+        videoTypes = [_list copy];
+    }
+    return videoTypes;
+}
+
 + (NSArray <NSString *>*)acceptMediaType
 {
     NSMutableArray *r = [[NSMutableArray alloc] init];
@@ -58,54 +57,6 @@
     [r addObjectsFromArray:[self videoType]];
     [r addObjectsFromArray:[self subtitleType]];
     return r;
-}
-
-+ (NSDictionary *)makeBookmarkWithURL:(NSURL *)url
-{
-    NSData *bookmark = [url bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
-                        | NSURLBookmarkCreationSecurityScopeAllowOnlyReadAccess includingResourceValuesForKeys:nil relativeToURL:nil error:nil];
-    if (bookmark) {
-        NSMutableDictionary *dic = [NSMutableDictionary dictionary];
-        [dic setObject:url forKey:@"url"];
-        [dic setObject:bookmark forKey:@"bookmark"];
-        return [dic copy];
-    }
-    return nil;
-}
-
-+ (NSArray <NSDictionary *>*)scanFolderWithPath:(NSString *)dir filter:(NSArray<NSString *>*)types
-{
-    NSError *error = nil;
-    NSMutableArray *bookmarkArr = [NSMutableArray arrayWithCapacity:3];
-    NSArray<NSString *> *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dir error:&error];
-    if (!error && contents) {
-        for (NSString *c in contents) {
-            NSString*item = [dir stringByAppendingPathComponent:c];
-            NSURL*item_url = [NSURL fileURLWithPath:item];
-            NSString *pathExtension = [[item_url pathExtension] lowercaseString];
-            BOOL add = NO;
-            if ([types count] > 0) {
-                if ([types containsObject:pathExtension]) {
-                    add = YES;
-                }
-            } else {
-                add = YES;
-            }
-            if (add) {
-                NSDictionary *dic = [[self class] makeBookmarkWithURL:item_url];
-                [bookmarkArr addObject:dic];
-            }
-        }
-        //按照文件名排序
-        [bookmarkArr sortUsingComparator:^NSComparisonResult(NSDictionary * obj1, NSDictionary * obj2) {
-            NSURL *url1 = obj1[@"url"];
-            NSURL *url2 = obj2[@"url"];
-            return (NSComparisonResult)[[url1 lastPathComponent] compare:[url2 lastPathComponent] options:NSNumericSearch];
-        }];
-        
-        return [bookmarkArr copy];
-    }
-    return nil;
 }
 
 + (BOOL)saveImageToFile:(CGImageRef)img path:(NSString *)imgPath

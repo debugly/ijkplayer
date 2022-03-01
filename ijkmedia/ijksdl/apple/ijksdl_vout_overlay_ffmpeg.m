@@ -71,22 +71,23 @@ static NSDictionary* prepareCVPixelBufferAttibutes(const int format,const bool f
         pixelFormatType = kCVPixelFormatType_24RGB;
     } else if (format == AV_PIX_FMT_ARGB || format == AV_PIX_FMT_0RGB) {
         pixelFormatType = kCVPixelFormatType_32ARGB;
-    } else if (format == AV_PIX_FMT_NV12 || format == AV_PIX_FMT_NV21) {
+    } else if (format == AV_PIX_FMT_NV12) {
         pixelFormatType = fullRange ? kCVPixelFormatType_420YpCbCr8BiPlanarFullRange : kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
-        #warning FIX AV_PIX_FMT_NV21: later will swap VU. we won't modify the avframe data, because the frame can be dispaly again!
     } else if (format == AV_PIX_FMT_BGRA || format == AV_PIX_FMT_BGR0) {
         pixelFormatType = kCVPixelFormatType_32BGRA;
     } else if (format == AV_PIX_FMT_YUV420P) {
         pixelFormatType = fullRange ? kCVPixelFormatType_420YpCbCr8PlanarFullRange : kCVPixelFormatType_420YpCbCr8Planar;
-    } else if (format == AV_PIX_FMT_NV16) {
-        pixelFormatType = fullRange ? kCVPixelFormatType_422YpCbCr8BiPlanarFullRange : kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange;
-    } else if (format == AV_PIX_FMT_UYVY422) {
+    }else if (format == AV_PIX_FMT_UYVY422) {
         pixelFormatType = fullRange ? kCVPixelFormatType_422YpCbCr8FullRange : kCVPixelFormatType_422YpCbCr8;
-    } else if (format == AV_PIX_FMT_YUV444P10) {
-        pixelFormatType = kCVPixelFormatType_444YpCbCr10;
-    } else if (format == AV_PIX_FMT_YUYV422) {
-        pixelFormatType = kCVPixelFormatType_422YpCbCr8_yuvs;
     }
+//    ffmpeg only;
+//    else if (format == AV_PIX_FMT_YUYV422) {
+//        pixelFormatType = kCVPixelFormatType_422YpCbCr8_yuvs;
+//    } else if (format == AV_PIX_FMT_YUV444P10) {
+//       pixelFormatType = kCVPixelFormatType_444YpCbCr10;
+//    } else if (format == AV_PIX_FMT_NV16) {
+//       pixelFormatType = fullRange ? kCVPixelFormatType_422YpCbCr8BiPlanarFullRange : kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange;
+//    }
     //    kCVReturnInvalidPixelFormat
 //    else if (format == AV_PIX_FMT_BGR24) {
 //        pixelFormatType = kCVPixelFormatType_24BGR;
@@ -631,9 +632,10 @@ SDL_VoutOverlay *SDL_VoutFFmpeg_CreateOverlay(int width, int height, int frame_f
     overlay_fill(overlay, opaque->managed_frame, opaque->planes);
 #endif
     return overlay;
-
+#if ! USE_FF_VTB
 fail:
     func_free_l(overlay);
+#endif
     return NULL;
 }
 #endif//__clang_analyzer__

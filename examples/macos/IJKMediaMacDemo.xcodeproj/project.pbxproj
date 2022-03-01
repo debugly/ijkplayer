@@ -8,6 +8,27 @@
 
 /* Begin PBXBuildFile section */
 		48785FCC6E8D62593A0839B8 /* Pods_IJKMediaMacDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9DCADD1347BDB5B68E4C0CFA /* Pods_IJKMediaMacDemo.framework */; };
+		C955003E27C75A580026AB17 /* Setting.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C955003D27C75A580026AB17 /* Setting.storyboard */; };
+		C955004227C75E740026AB17 /* LeftCategoryController.m in Sources */ = {isa = PBXBuildFile; fileRef = C955004127C75E740026AB17 /* LeftCategoryController.m */; };
+		C955004527C7634F0026AB17 /* SettingSplitViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C955004427C7634F0026AB17 /* SettingSplitViewController.m */; };
+		C955004A27C768DD0026AB17 /* SubtitleSettingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C955004827C768DD0026AB17 /* SubtitleSettingViewController.m */; };
+		C955004B27C768DD0026AB17 /* SubtitleSettingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = C955004927C768DD0026AB17 /* SubtitleSettingViewController.xib */; };
+		C955004F27C769050026AB17 /* GeneralSettingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C955004D27C769050026AB17 /* GeneralSettingViewController.m */; };
+		C955005027C769050026AB17 /* GeneralSettingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = C955004E27C769050026AB17 /* GeneralSettingViewController.xib */; };
+		C955005427C769770026AB17 /* SnapshotSettingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C955005227C769770026AB17 /* SnapshotSettingViewController.m */; };
+		C955005527C769770026AB17 /* SnapshotSettingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = C955005327C769770026AB17 /* SnapshotSettingViewController.xib */; };
+		C955005927C7698F0026AB17 /* DecoderSettingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C955005727C7698F0026AB17 /* DecoderSettingViewController.m */; };
+		C955005A27C7698F0026AB17 /* DecoderSettingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = C955005827C7698F0026AB17 /* DecoderSettingViewController.xib */; };
+		C955005E27C769D30026AB17 /* GraphicSettingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C955005C27C769D30026AB17 /* GraphicSettingViewController.m */; };
+		C955005F27C769D30026AB17 /* GraphicSettingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = C955005D27C769D30026AB17 /* GraphicSettingViewController.xib */; };
+		C969BBAF27BBA4E1008BC2AD /* 5003509-693880-2.webvtt in Resources */ = {isa = PBXBuildFile; fileRef = C969BBAB27BBA4E1008BC2AD /* 5003509-693880-2.webvtt */; };
+		C969BBB027BBA4E1008BC2AD /* 5003509-693880-5.webvtt in Resources */ = {isa = PBXBuildFile; fileRef = C969BBAC27BBA4E1008BC2AD /* 5003509-693880-5.webvtt */; };
+		C969BBB227BBA4E1008BC2AD /* 5003509-693880-3.m3u8 in Resources */ = {isa = PBXBuildFile; fileRef = C969BBAE27BBA4E1008BC2AD /* 5003509-693880-3.m3u8 */; };
+		C969BE4B27BDCD27008BC2AD /* MRGlobalNotification.m in Sources */ = {isa = PBXBuildFile; fileRef = C969BE4927BDCD27008BC2AD /* MRGlobalNotification.m */; };
+		C969BE4E27BDD34E008BC2AD /* MRUtil+SystemPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = C969BE4C27BDD34E008BC2AD /* MRUtil+SystemPanel.m */; };
+		C969BEBA27BDEAD0008BC2AD /* 5003509-693880-1.m3u8 in Resources */ = {isa = PBXBuildFile; fileRef = C969BEB927BDEAD0008BC2AD /* 5003509-693880-1.m3u8 */; };
+		C97DCC0727C867EA0019874F /* MRBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = C97DCC0627C867EA0019874F /* MRBaseView.m */; };
+		C9FFF21527C864C100284B46 /* MRProgressSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = C9FFF21327C864C100284B46 /* MRProgressSlider.m */; };
 		DD050F9D25A43A1300F01E2F /* MRUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = DD050F9625A43A1300F01E2F /* MRUtil.m */; };
 		DD050F9E25A43A1300F01E2F /* MRDragView.m in Sources */ = {isa = PBXBuildFile; fileRef = DD050F9C25A43A1300F01E2F /* MRDragView.m */; };
 		DD1B345722CDD89400022FCA /* 996747-5277368-31.m3u8 in Resources */ = {isa = PBXBuildFile; fileRef = DD1B345622CDD89400022FCA /* 996747-5277368-31.m3u8 */; };
@@ -42,6 +63,39 @@
 /* Begin PBXFileReference section */
 		9409D4EABED075A613A5C430 /* Pods-IJKMediaMacDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-IJKMediaMacDemo.release.xcconfig"; path = "Target Support Files/Pods-IJKMediaMacDemo/Pods-IJKMediaMacDemo.release.xcconfig"; sourceTree = "<group>"; };
 		9DCADD1347BDB5B68E4C0CFA /* Pods_IJKMediaMacDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_IJKMediaMacDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C955003D27C75A580026AB17 /* Setting.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Setting.storyboard; sourceTree = "<group>"; };
+		C955004027C75E740026AB17 /* LeftCategoryController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LeftCategoryController.h; sourceTree = "<group>"; };
+		C955004127C75E740026AB17 /* LeftCategoryController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LeftCategoryController.m; sourceTree = "<group>"; };
+		C955004327C7634F0026AB17 /* SettingSplitViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SettingSplitViewController.h; sourceTree = "<group>"; };
+		C955004427C7634F0026AB17 /* SettingSplitViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SettingSplitViewController.m; sourceTree = "<group>"; };
+		C955004627C765A30026AB17 /* PrefixHeader.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PrefixHeader.pch; sourceTree = "<group>"; };
+		C955004727C768DD0026AB17 /* SubtitleSettingViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SubtitleSettingViewController.h; sourceTree = "<group>"; };
+		C955004827C768DD0026AB17 /* SubtitleSettingViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SubtitleSettingViewController.m; sourceTree = "<group>"; };
+		C955004927C768DD0026AB17 /* SubtitleSettingViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SubtitleSettingViewController.xib; sourceTree = "<group>"; };
+		C955004C27C769050026AB17 /* GeneralSettingViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneralSettingViewController.h; sourceTree = "<group>"; };
+		C955004D27C769050026AB17 /* GeneralSettingViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GeneralSettingViewController.m; sourceTree = "<group>"; };
+		C955004E27C769050026AB17 /* GeneralSettingViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = GeneralSettingViewController.xib; sourceTree = "<group>"; };
+		C955005127C769770026AB17 /* SnapshotSettingViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SnapshotSettingViewController.h; sourceTree = "<group>"; };
+		C955005227C769770026AB17 /* SnapshotSettingViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SnapshotSettingViewController.m; sourceTree = "<group>"; };
+		C955005327C769770026AB17 /* SnapshotSettingViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SnapshotSettingViewController.xib; sourceTree = "<group>"; };
+		C955005627C7698F0026AB17 /* DecoderSettingViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DecoderSettingViewController.h; sourceTree = "<group>"; };
+		C955005727C7698F0026AB17 /* DecoderSettingViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DecoderSettingViewController.m; sourceTree = "<group>"; };
+		C955005827C7698F0026AB17 /* DecoderSettingViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = DecoderSettingViewController.xib; sourceTree = "<group>"; };
+		C955005B27C769D30026AB17 /* GraphicSettingViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GraphicSettingViewController.h; sourceTree = "<group>"; };
+		C955005C27C769D30026AB17 /* GraphicSettingViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GraphicSettingViewController.m; sourceTree = "<group>"; };
+		C955005D27C769D30026AB17 /* GraphicSettingViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = GraphicSettingViewController.xib; sourceTree = "<group>"; };
+		C969BBAB27BBA4E1008BC2AD /* 5003509-693880-2.webvtt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "5003509-693880-2.webvtt"; sourceTree = "<group>"; };
+		C969BBAC27BBA4E1008BC2AD /* 5003509-693880-5.webvtt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "5003509-693880-5.webvtt"; sourceTree = "<group>"; };
+		C969BBAE27BBA4E1008BC2AD /* 5003509-693880-3.m3u8 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "5003509-693880-3.m3u8"; sourceTree = "<group>"; };
+		C969BE4927BDCD27008BC2AD /* MRGlobalNotification.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRGlobalNotification.m; sourceTree = "<group>"; };
+		C969BE4A27BDCD27008BC2AD /* MRGlobalNotification.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRGlobalNotification.h; sourceTree = "<group>"; };
+		C969BE4C27BDD34E008BC2AD /* MRUtil+SystemPanel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "MRUtil+SystemPanel.m"; sourceTree = "<group>"; };
+		C969BE4D27BDD34E008BC2AD /* MRUtil+SystemPanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MRUtil+SystemPanel.h"; sourceTree = "<group>"; };
+		C969BEB927BDEAD0008BC2AD /* 5003509-693880-1.m3u8 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "5003509-693880-1.m3u8"; sourceTree = "<group>"; };
+		C97DCC0527C867EA0019874F /* MRBaseView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MRBaseView.h; sourceTree = "<group>"; };
+		C97DCC0627C867EA0019874F /* MRBaseView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRBaseView.m; sourceTree = "<group>"; };
+		C9FFF21327C864C100284B46 /* MRProgressSlider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MRProgressSlider.m; sourceTree = "<group>"; };
+		C9FFF21427C864C100284B46 /* MRProgressSlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRProgressSlider.h; sourceTree = "<group>"; };
 		DD050F9525A43A1300F01E2F /* MRUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRUtil.h; sourceTree = "<group>"; };
 		DD050F9625A43A1300F01E2F /* MRUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MRUtil.m; sourceTree = "<group>"; };
 		DD050F9B25A43A1300F01E2F /* MRDragView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRDragView.h; sourceTree = "<group>"; };
@@ -113,9 +167,40 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C955003F27C75DFC0026AB17 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				C955003D27C75A580026AB17 /* Setting.storyboard */,
+				C955004327C7634F0026AB17 /* SettingSplitViewController.h */,
+				C955004427C7634F0026AB17 /* SettingSplitViewController.m */,
+				C955004027C75E740026AB17 /* LeftCategoryController.h */,
+				C955004127C75E740026AB17 /* LeftCategoryController.m */,
+				C955004727C768DD0026AB17 /* SubtitleSettingViewController.h */,
+				C955004827C768DD0026AB17 /* SubtitleSettingViewController.m */,
+				C955004927C768DD0026AB17 /* SubtitleSettingViewController.xib */,
+				C955004C27C769050026AB17 /* GeneralSettingViewController.h */,
+				C955004D27C769050026AB17 /* GeneralSettingViewController.m */,
+				C955004E27C769050026AB17 /* GeneralSettingViewController.xib */,
+				C955005127C769770026AB17 /* SnapshotSettingViewController.h */,
+				C955005227C769770026AB17 /* SnapshotSettingViewController.m */,
+				C955005327C769770026AB17 /* SnapshotSettingViewController.xib */,
+				C955005627C7698F0026AB17 /* DecoderSettingViewController.h */,
+				C955005727C7698F0026AB17 /* DecoderSettingViewController.m */,
+				C955005827C7698F0026AB17 /* DecoderSettingViewController.xib */,
+				C955005B27C769D30026AB17 /* GraphicSettingViewController.h */,
+				C955005C27C769D30026AB17 /* GraphicSettingViewController.m */,
+				C955005D27C769D30026AB17 /* GraphicSettingViewController.xib */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
 		DD050F9425A43A1300F01E2F /* MRUtil */ = {
 			isa = PBXGroup;
 			children = (
+				C969BE4D27BDD34E008BC2AD /* MRUtil+SystemPanel.h */,
+				C969BE4C27BDD34E008BC2AD /* MRUtil+SystemPanel.m */,
+				C969BE4A27BDCD27008BC2AD /* MRGlobalNotification.h */,
+				C969BE4927BDCD27008BC2AD /* MRGlobalNotification.m */,
 				DDE9FC6E273BD3CF00481560 /* NSFileManager+Sandbox.h */,
 				DDE9FC6F273BD3CF00481560 /* NSFileManager+Sandbox.m */,
 				DD050F9525A43A1300F01E2F /* MRUtil.h */,
@@ -154,6 +239,7 @@
 		DD9B138A22C23A79002D1D79 /* IJKMediaDemo */ = {
 			isa = PBXGroup;
 			children = (
+				C955003F27C75DFC0026AB17 /* Settings */,
 				DD9B138B22C23A79002D1D79 /* AppDelegate.h */,
 				DD9B138C22C23A79002D1D79 /* AppDelegate.m */,
 				DDB782792757266800382094 /* SHBaseView.h */,
@@ -163,12 +249,21 @@
 				DD4EAF20272FC22D00FBCD3A /* RootViewController.h */,
 				DD4EAF21272FC22D00FBCD3A /* RootViewController.m */,
 				DD4EAF22272FC22D00FBCD3A /* RootViewController.xib */,
+				C97DCC0527C867EA0019874F /* MRBaseView.h */,
+				C97DCC0627C867EA0019874F /* MRBaseView.m */,
+				C9FFF21427C864C100284B46 /* MRProgressSlider.h */,
+				C9FFF21327C864C100284B46 /* MRProgressSlider.m */,
 				DD050F9A25A43A1300F01E2F /* DragView */,
 				DD050F9425A43A1300F01E2F /* MRUtil */,
 				DD9B138E22C23A7A002D1D79 /* Assets.xcassets */,
 				DD9B139022C23A7A002D1D79 /* MainMenu.xib */,
+				C955004627C765A30026AB17 /* PrefixHeader.pch */,
 				DD9B139322C23A7A002D1D79 /* Info.plist */,
+				C969BEB927BDEAD0008BC2AD /* 5003509-693880-1.m3u8 */,
 				DD1B345622CDD89400022FCA /* 996747-5277368-31.m3u8 */,
+				C969BBAB27BBA4E1008BC2AD /* 5003509-693880-2.webvtt */,
+				C969BBAE27BBA4E1008BC2AD /* 5003509-693880-3.m3u8 */,
+				C969BBAC27BBA4E1008BC2AD /* 5003509-693880-5.webvtt */,
 				DD9B139422C23A7A002D1D79 /* main.m */,
 				DD9B139622C23A7A002D1D79 /* IJKMediaDemo.entitlements */,
 			);
@@ -274,8 +369,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				DD9B138F22C23A7A002D1D79 /* Assets.xcassets in Resources */,
+				C969BEBA27BDEAD0008BC2AD /* 5003509-693880-1.m3u8 in Resources */,
+				C955005A27C7698F0026AB17 /* DecoderSettingViewController.xib in Resources */,
 				DD9B139222C23A7A002D1D79 /* MainMenu.xib in Resources */,
 				DD4EAF24272FC22D00FBCD3A /* RootViewController.xib in Resources */,
+				C955005027C769050026AB17 /* GeneralSettingViewController.xib in Resources */,
+				C969BBAF27BBA4E1008BC2AD /* 5003509-693880-2.webvtt in Resources */,
+				C969BBB027BBA4E1008BC2AD /* 5003509-693880-5.webvtt in Resources */,
+				C969BBB227BBA4E1008BC2AD /* 5003509-693880-3.m3u8 in Resources */,
+				C955004B27C768DD0026AB17 /* SubtitleSettingViewController.xib in Resources */,
+				C955003E27C75A580026AB17 /* Setting.storyboard in Resources */,
+				C955005527C769770026AB17 /* SnapshotSettingViewController.xib in Resources */,
+				C955005F27C769D30026AB17 /* GraphicSettingViewController.xib in Resources */,
 				DD1B345722CDD89400022FCA /* 996747-5277368-31.m3u8 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -329,11 +434,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C955004F27C769050026AB17 /* GeneralSettingViewController.m in Sources */,
+				C955004A27C768DD0026AB17 /* SubtitleSettingViewController.m in Sources */,
+				C969BE4B27BDCD27008BC2AD /* MRGlobalNotification.m in Sources */,
+				C955005E27C769D30026AB17 /* GraphicSettingViewController.m in Sources */,
 				DDB7827B2757266900382094 /* SHBaseView.m in Sources */,
 				DD9B139522C23A7A002D1D79 /* main.m in Sources */,
+				C955005427C769770026AB17 /* SnapshotSettingViewController.m in Sources */,
+				C97DCC0727C867EA0019874F /* MRBaseView.m in Sources */,
 				DD4EB00127310F1C00FBCD3A /* WindowController.m in Sources */,
+				C969BE4E27BDD34E008BC2AD /* MRUtil+SystemPanel.m in Sources */,
 				DD9B138D22C23A79002D1D79 /* AppDelegate.m in Sources */,
 				DDE9FC70273BD3CF00481560 /* NSFileManager+Sandbox.m in Sources */,
+				C955004227C75E740026AB17 /* LeftCategoryController.m in Sources */,
+				C955004527C7634F0026AB17 /* SettingSplitViewController.m in Sources */,
+				C955005927C7698F0026AB17 /* DecoderSettingViewController.m in Sources */,
+				C9FFF21527C864C100284B46 /* MRProgressSlider.m in Sources */,
 				DD050F9D25A43A1300F01E2F /* MRUtil.m in Sources */,
 				DD050F9E25A43A1300F01E2F /* MRDragView.m in Sources */,
 				DD4EAF23272FC22D00FBCD3A /* RootViewController.m in Sources */,
@@ -476,6 +592,8 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = IJKMediaDemo/PrefixHeader.pch;
 				INFOPLIST_FILE = IJKMediaDemo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -495,6 +613,8 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = IJKMediaDemo/PrefixHeader.pch;
 				INFOPLIST_FILE = IJKMediaDemo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -853,10 +853,11 @@ int ijkmp_load_external_subtitle(IjkMediaPlayer* mp, const char* file_name)
 {
     assert(file_name);
     MPTRACE("ijkmp_load_external_subtitle(%s)\n", file_name);
-    int retval = ffp_set_external_subtitle(mp->ffplayer, file_name);
+    int retval = ffp_load_external_subtitle(mp->ffplayer, file_name);
     MPTRACE("ijkmp_load_external_subtitle()=%d\n", retval);
     return retval;
 }
+
 
 int ijkmp_set_decoder_name(IjkMediaPlayer *mp, const char* decoder_name)
 {
@@ -869,4 +870,13 @@ int ijkmp_set_decoder_name(IjkMediaPlayer *mp, const char* decoder_name)
 #endif
 
 	return 0;
+}
+
+int ijkmp_exchange_video_decoder(IjkMediaPlayer *mp)
+{
+    assert(mp);
+    MPTRACE("ffp_exchange_video_decoder\n");
+    int retval = ffp_exchange_video_decoder(mp->ffplayer);
+    MPTRACE("ffp_exchange_video_decoder()=%d\n", retval);
+    return retval;
 }

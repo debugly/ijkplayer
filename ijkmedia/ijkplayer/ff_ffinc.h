@@ -53,4 +53,5 @@ typedef int (*ijk_inject_callback)(void *opaque, int type, void *data, size_t da
 #define FFP_OPT_CATEGORY_PLAYER 4
 #define FFP_OPT_CATEGORY_SWR    5
 
+#define FFP_EXCHANGE_DECODER_FLAG -1000
 #endif
