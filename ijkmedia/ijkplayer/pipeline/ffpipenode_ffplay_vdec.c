@@ -55,5 +55,6 @@ IJKFF_Pipenode *ffpipenode_create_video_decoder_from_ffplay(FFPlayer *ffp)
 
     ffp_set_video_codec_info(ffp, AVCODEC_MODULE_NAME, avcodec_get_name(ffp->is->viddec.avctx->codec_id));
     node->vdec_type = FFP_PROPV_DECODER_AVCODEC;
+	node->is_using = 1;
     return node;
 }

@@ -65,7 +65,7 @@ IJK_EGL    *IJK_EGL_create();
 void        IJK_EGL_free(IJK_EGL *egl);
 void        IJK_EGL_freep(IJK_EGL **egl);
 
-EGLBoolean  IJK_EGL_display(IJK_EGL* egl, EGLNativeWindowType window, SDL_VoutOverlay *overlay);
+EGLBoolean  IJK_EGL_display(IJK_EGL* vout, EGLNativeWindowType window, SDL_VoutOverlay *overlay, const char* text);
 void        IJK_EGL_terminate(IJK_EGL* egl);
 
 #endif

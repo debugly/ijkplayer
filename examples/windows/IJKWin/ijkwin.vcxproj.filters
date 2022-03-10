@@ -193,9 +193,6 @@
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_rgb.c">
       <Filter>ijksdl\gles</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_yuv420p.c">
-      <Filter>ijksdl\gles</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_yuv420sp.c">
       <Filter>ijksdl\gles</Filter>
     </ClCompile>
@@ -247,11 +244,17 @@
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\ijksdl_vout.c">
       <Filter>ijksdl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_win.c">
-      <Filter>ijksdl\gles</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ffplay.c">
       <Filter>ijkpalyer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijksdl\windows\win_text_to_bitmap.cpp">
+      <Filter>win\ijksdl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer.c">
+      <Filter>ijksdl\gles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_yuv420p.c">
+      <Filter>ijksdl\gles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -443,6 +446,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\version.h">
       <Filter>ijkpalyer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijksdl\windows\win_text_to_bitmap.h">
+      <Filter>win\ijksdl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

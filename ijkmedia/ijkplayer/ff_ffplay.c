@@ -4797,14 +4797,14 @@ void ffp_set_option_int(FFPlayer *ffp, int opt_category, const char *name, int64
     av_dict_set_int(dict, name, value, 0);
 }
 
-void ffp_set_option_intptr(FFPlayer *ffp, int opt_category, const char *name, uintptr_t value)
-{
-    if (!ffp)
-        return;
-
-    AVDictionary **dict = ffp_get_opt_dict(ffp, opt_category);
-    av_dict_set_intptr(dict, name, value, 0);
-}
+//void ffp_set_option_intptr(FFPlayer *ffp, int opt_category, const char *name, uintptr_t value)
+//{
+//    if (!ffp)
+//        return;
+//
+//    AVDictionary **dict = ffp_get_opt_dict(ffp, opt_category);
+//    av_dict_set_intptr(dict, name, value, 0);
+//}
             
 void ffp_set_overlay_format(FFPlayer *ffp, int chroma_fourcc)
 {

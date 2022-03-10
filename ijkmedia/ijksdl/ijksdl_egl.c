@@ -29,6 +29,8 @@
 #include "ijksdl/ijksdl_log.h"
 #include "ijksdl/ijksdl_vout.h"
 #include "ijksdl/gles2/internal.h"
+#include "ijksdl/ffmpeg/ijksdl_vout_overlay_ffmpeg.h"
+#include "ijksdl/windows/win_text_to_bitmap.h"
 
 #define IJK_EGL_RENDER_BUFFER 0
 
@@ -293,6 +295,8 @@ static EGLBoolean IJK_EGL_prepareRenderer(IJK_EGL* egl, SDL_VoutOverlay *overlay
             IJK_GLES2_Renderer_freeP(&opaque->renderer);
             return EGL_FALSE;
         }
+
+		IJK_GLES2_Renderer_setGravity(opaque->renderer, IJK_GLES2_GRAVITY_RESIZE_ASPECT, overlay->w, overlay->h);
     }
 
     if (!IJK_EGL_setSurfaceSize(egl, overlay->w, overlay->h)) {
@@ -304,15 +308,10 @@ static EGLBoolean IJK_EGL_prepareRenderer(IJK_EGL* egl, SDL_VoutOverlay *overlay
     return EGL_TRUE;
 }
 
-static EGLBoolean IJK_EGL_display_internal(IJK_EGL* egl, EGLNativeWindowType window, SDL_VoutOverlay *overlay)
+static EGLBoolean IJK_EGL_display_internal(IJK_EGL* egl, SDL_VoutOverlay *overlay)
 {
     IJK_EGL_Opaque *opaque = egl->opaque;
-
-    if (!IJK_EGL_prepareRenderer(egl, overlay)) {
-        ALOGE("[EGL] IJK_EGL_prepareRenderer failed\n");
-        return EGL_FALSE;
-    }
-
+	
     if (!IJK_GLES2_Renderer_updateVetex(opaque->renderer, overlay)) {
         ALOGE("[EGL] IJK_GLES2_Renderer_updateVetex failed\n");
         return EGL_FALSE; 
@@ -325,12 +324,28 @@ static EGLBoolean IJK_EGL_display_internal(IJK_EGL* egl, EGLNativeWindowType win
 
 	IJK_GLES2_Renderer_drawArrays();
 
-    eglSwapBuffers(egl->display, egl->surface);
-
     return EGL_TRUE;
 }
 
-EGLBoolean IJK_EGL_display(IJK_EGL* egl, EGLNativeWindowType window, SDL_VoutOverlay *overlay)
+static EGLBoolean IJK_EGL_display_subtitle_internal(IJK_EGL* egl,  const char *text)
+{
+	IJK_EGL_Opaque *opaque = egl->opaque;
+	Subtitle_Overlay* overlay = Create_Bitmap(text);
+
+	IJK_GLES2_Renderer_updateSubtitleVetex(opaque->renderer, overlay->w, overlay->h);
+
+	if (!IJK_GLES2_Renderer_uploadSubtitleTexture(opaque->renderer, overlay)) {
+		ALOGE("[EGL] IJK_GLES2_Renderer_updateVetex failed\n");
+		return EGL_FALSE;
+	}
+
+	IJK_GLES2_Renderer_drawArrays();
+
+	Release_Bitmap(overlay);
+	return EGL_TRUE;
+}
+
+EGLBoolean IJK_EGL_display(IJK_EGL* egl, EGLNativeWindowType window, SDL_VoutOverlay *overlay, const char* text)
 {
     EGLBoolean ret = EGL_FALSE;
     if (!egl)
@@ -343,7 +358,17 @@ EGLBoolean IJK_EGL_display(IJK_EGL* egl, EGLNativeWindowType window, SDL_VoutOve
     if (!IJK_EGL_makeCurrent(egl, window))
         return EGL_FALSE;
 
-    ret = IJK_EGL_display_internal(egl, window, overlay);
+	if (!IJK_EGL_prepareRenderer(egl, overlay)) {
+		ALOGE("[EGL] IJK_EGL_prepareRenderer failed\n");
+		return EGL_FALSE;
+	}
+    ret = IJK_EGL_display_internal(egl, overlay);
+
+	if (text && strlen(text) > 0){
+		ret = IJK_EGL_display_subtitle_internal(egl, text);
+	}
+
+	eglSwapBuffers(egl->display, egl->surface);
     eglMakeCurrent(egl->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     eglReleaseThread(); // FIXME: call at thread exit
     return ret;

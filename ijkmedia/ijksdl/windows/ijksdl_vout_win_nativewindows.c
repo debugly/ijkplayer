@@ -3,6 +3,7 @@
 #include "ijksdl/ijksdl_vout.h"
 #include "ijksdl/ijksdl_vout_internal.h"
 #include "ijksdl/ffmpeg/ijksdl_vout_overlay_ffmpeg.h"
+#include "win_text_to_bitmap.h"
 
 typedef struct SDL_Vout_Opaque {
     HWND   native_window;
@@ -13,6 +14,7 @@ typedef struct SDL_Vout_Opaque {
 	IJK_EGL         *egl;
 
 	int(*decode_video_callback)(void *arg, SDL_VoutOverlay* overlay);
+	char*			subtitle_text;
 } SDL_Vout_Opaque;
 
 static SDL_Class g_nativewindow_class = {
@@ -108,7 +110,7 @@ static int func_display_windows_overlay_l(SDL_Vout *vout, SDL_VoutOverlay *overl
              // printf("SDL_FCC_I444P10LE\n");
         if (opaque->egl){
 			  // printf("SDL_FCC_I444P10LE000\n");
-            return IJK_EGL_display(opaque->egl, native_window, overlay);
+            return IJK_EGL_display(opaque->egl, native_window, overlay, opaque->subtitle_text);
         	}
         break;
     }
@@ -123,7 +125,7 @@ static int func_display_windows_overlay_l(SDL_Vout *vout, SDL_VoutOverlay *overl
 				    printf("SDL_FCC_RV32:%d\n",vout->overlay_format);
 				}
         if (vout->overlay_format == SDL_FCC__GLES2 && opaque->egl)
-            return IJK_EGL_display(opaque->egl, native_window, overlay);
+            return IJK_EGL_display(opaque->egl, native_window, overlay, opaque->subtitle_text);
         break;
     }
     }
@@ -140,6 +142,25 @@ static int func_display_windows_overlay(SDL_Vout *vout, SDL_VoutOverlay *overlay
     int retval = func_display_windows_overlay_l(vout, overlay);
     SDL_UnlockMutex(vout->mutex);
     return retval;
+}
+
+static void func_update_subtitle(SDL_Vout *vout, const char *text)
+{
+	SDL_Vout_Opaque* opaque = vout->opaque;
+
+	if (!opaque) {
+		return;
+	}
+
+	if (opaque->subtitle_text) {
+		av_freep((void*)&opaque->subtitle_text);
+	}
+
+	if (!text || strlen(text) == 0) {
+		return;
+	}
+
+	opaque->subtitle_text = av_strdup(text);
 }
 
 static void SDL_VoutWindows_SetNativeWindow_l(SDL_Vout *vout, HWND native_window)
@@ -206,7 +227,7 @@ SDL_Vout *SDL_VoutWindows_CreateForANativeWindow()
     vout->create_overlay  = func_create_windows_overlay;
     vout->free_l          = func_free_windows_l;
     vout->display_overlay = func_display_windows_overlay;
-
+	vout->update_subtitle = func_update_subtitle;
     return vout;
 fail:
     func_free_l(vout);

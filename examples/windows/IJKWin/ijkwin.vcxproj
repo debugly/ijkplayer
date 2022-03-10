@@ -151,6 +151,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <ProgramDataBaseFileName>$(OutDir)ijkwin.pdb</ProgramDataBaseFileName>
       <UndefinePreprocessorDefinitions>FFP_MERGE</UndefinePreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -191,8 +192,8 @@
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\fsh\yuv420sp.fsh.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\fsh\yuv444p10le.fsh.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\math_util.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_rgb.c" />
-    <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_win.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_yuv420p.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_yuv420sp.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_yuv444p10le.c" />
@@ -214,6 +215,7 @@
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\windows\ijksdl_vout_win_nativewindows.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\windows\ijksdl_vout_win_surface.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\windows\win_directsound.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijksdl\windows\win_text_to_bitmap.cpp" />
     <ClCompile Include="dxva2\ffmpeg_dxva2.c" />
     <ClCompile Include="global\src\application.c" />
     <ClCompile Include="global\src\Counter.c" />
@@ -289,6 +291,7 @@
     <ClInclude Include="..\..\..\ijkmedia\ijksdl\windows\ijksdl_vout_win_nativewindows.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijksdl\windows\ijksdl_vout_win_surface.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijksdl\windows\win_directsound.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijksdl\windows\win_text_to_bitmap.h" />
     <ClInclude Include="dxva2\ffmpeg_dxva2.h" />
     <ClInclude Include="global\src\Counter.h" />
     <ClInclude Include="global\src\CpuInfo.h" />

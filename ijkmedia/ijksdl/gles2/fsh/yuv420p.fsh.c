@@ -30,6 +30,8 @@ static const char g_shader[] = IJK_GLES_STRING(
     uniform   lowp  sampler2D us2_SamplerY;
     uniform   lowp  sampler2D us2_SamplerZ;
 
+	uniform   int   isSubtitle;
+
 	vec3 rgb_adjust(vec3 rgb, vec3 rgbAdjustment) {
 		float B = rgbAdjustment.x;
 		float S = rgbAdjustment.y;
@@ -42,15 +44,20 @@ static const char g_shader[] = IJK_GLES_STRING(
 
     void main()
     {
-        mediump vec3 yuv;
-        lowp    vec3 rgb;
+		if (isSubtitle == 1) {
+			gl_FragColor = texture2D(us2_SamplerX, vv2_Texcoord);
+		}
+		else {
+			mediump vec3 yuv;
+			lowp    vec3 rgb;
 
-        yuv.x = (texture2D(us2_SamplerX, vv2_Texcoord).r - (16.0 / 255.0));
-        yuv.y = (texture2D(us2_SamplerY, vv2_Texcoord).r - 0.5);
-        yuv.z = (texture2D(us2_SamplerZ, vv2_Texcoord).r - 0.5);
-        rgb = um3_ColorConversion * yuv;
-		rgb = rgb_adjust(rgb, um3_rgbAdjustment);
-        gl_FragColor = vec4(rgb, 1);
+			yuv.x = (texture2D(us2_SamplerX, vv2_Texcoord).r - (16.0 / 255.0));
+			yuv.y = (texture2D(us2_SamplerY, vv2_Texcoord).r - 0.5);
+			yuv.z = (texture2D(us2_SamplerZ, vv2_Texcoord).r - 0.5);
+			rgb = um3_ColorConversion * yuv;
+			rgb = rgb_adjust(rgb, um3_rgbAdjustment);
+			gl_FragColor = vec4(rgb, 1);
+		}
     }
 );
 

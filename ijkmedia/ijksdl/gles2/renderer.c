@@ -1,7 +1,4 @@
-/*
- * Copyright (c) 2016 Bilibili
- * copyright (c) 2016 Zhang Rui <bbcallen@gmail.com>
- *
+﻿/*
  * This file is part of ijkPlayer.
  *
  * ijkPlayer is free software; you can redistribute it and/or
@@ -128,14 +125,18 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_base(const char *fragment_shader_s
     GLuint vertex_shader = 0;
     GLuint fragment_shader = 0;
     GLuint program = 0;
-    
+ 
+#ifndef WIN32
     char vsh_buffer[1024] = { '\0' };
     IJK_GLES2_getVertexShader_default(vsh_buffer,openglVer);
     
     ALOGI("vertex shader source:\n%s\n",vsh_buffer);
     ALOGI("fragment shader source:\n%s\n",fragment_shader_source);
     
-    vertex_shader = IJK_GLES2_loadShader(GL_VERTEX_SHADER, vsh_buffer);
+	vertex_shader = IJK_GLES2_loadShader(GL_VERTEX_SHADER, vsh_buffer);
+#else
+	vertex_shader = IJK_GLES2_loadShader(GL_VERTEX_SHADER, IJK_GLES2_getVertexShader_default());
+#endif
     if (!vertex_shader)
         goto fail;
     
@@ -222,10 +223,10 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openg
     if (!overlay)
         return NULL;
 
-    IJK_GLES2_printString("Version", GL_VERSION);
-    IJK_GLES2_printString("Vendor", GL_VENDOR);
-    IJK_GLES2_printString("Renderer", GL_RENDERER);
-    IJK_GLES2_printString("Extensions", GL_EXTENSIONS);
+    //IJK_GLES2_printString("Version", GL_VERSION);
+    //IJK_GLES2_printString("Vendor", GL_VENDOR);
+    //IJK_GLES2_printString("Renderer", GL_RENDERER);
+    //IJK_GLES2_printString("Extensions", GL_EXTENSIONS);
     
     if (openglVer == 0) {
         const char *version_string = (const char *) glGetString(GL_VERSION);
@@ -269,10 +270,6 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openg
             case SDL_FCC_RV16:      renderer = IJK_GLES2_Renderer_create_rgb565(); break;
             case SDL_FCC_RV24:      renderer = IJK_GLES2_Renderer_create_rgb888(); break;
             case SDL_FCC_RV32:      renderer = IJK_GLES2_Renderer_create_rgbx8888(); break;
-    #ifdef __APPLE__
-            case SDL_FCC_NV12:      renderer = IJK_GLES2_Renderer_create_yuv420sp(); break;
-            case SDL_FCC__VTB:      renderer = IJK_GLES2_Renderer_create_yuv420sp_vtb(overlay); break;
-    #endif
             case SDL_FCC_YV12:      renderer = IJK_GLES2_Renderer_create_yuv420p(); break;
             case SDL_FCC_I420:      renderer = IJK_GLES2_Renderer_create_yuv420p(); break;
             case SDL_FCC_I444P10LE: renderer = IJK_GLES2_Renderer_create_yuv444p10le(); break;
@@ -643,9 +640,10 @@ GLboolean IJK_GLES2_Renderer_updateVetex(IJK_GLES2_Renderer *renderer, SDL_VoutO
         return GL_FALSE;
 
     GLsizei visible_width  = renderer->frame_width;
+    GLsizei visible_height = renderer->frame_height;
     if (overlay) {
-        GLsizei visible_height = overlay->h;
-                visible_width  = overlay->w;
+        visible_width  = overlay->w;
+        visible_height = overlay->h;
         if (renderer->frame_width   != visible_width    ||
             renderer->frame_height  != visible_height   ||
             renderer->frame_sar_num != overlay->sar_num ||

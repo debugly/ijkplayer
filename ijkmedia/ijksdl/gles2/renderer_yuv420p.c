@@ -19,6 +19,7 @@
  */
 
 #include "internal.h"
+#include "ijksdl/windows/win_text_to_bitmap.h"
 
 static GLboolean yuv420p_use(IJK_GLES2_Renderer *renderer)
 {
@@ -55,11 +56,12 @@ static GLsizei yuv420p_getBufferWidth(IJK_GLES2_Renderer *renderer, SDL_VoutOver
     return overlay->pitches[0] / 1;
 }
 
-static GLboolean yuv420p_uploadTexture(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay)
+static GLboolean yuv420p_uploadTexture(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *vout_overlay)
 {
-    if (!renderer || !overlay)
+    if (!renderer || !vout_overlay)
         return GL_FALSE;
 
+	SDL_VoutOverlay* overlay = (SDL_VoutOverlay*)vout_overlay;
           int     planes[3]    = { 0, 1, 2 };
     const GLsizei widths[3]    = { overlay->pitches[0], overlay->pitches[1], overlay->pitches[2] };
     const GLsizei heights[3]   = { overlay->h,          overlay->h / 2,      overlay->h / 2 };
@@ -80,6 +82,8 @@ static GLboolean yuv420p_uploadTexture(IJK_GLES2_Renderer *renderer, SDL_VoutOve
     for (int i = 0; i < 3; ++i) {
         int plane = planes[i];
 
+		glUniform1i(renderer->us2_sampler[i], i);
+		glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, renderer->plane_textures[i]);
 
         glTexImage2D(GL_TEXTURE_2D,
@@ -94,6 +98,47 @@ static GLboolean yuv420p_uploadTexture(IJK_GLES2_Renderer *renderer, SDL_VoutOve
     }
 
     return GL_TRUE;
+}
+
+static GLvoid yuv420p_useSubtile(IJK_GLES2_Renderer* renderer, GLboolean subtitle)
+{
+	glUniform1i(renderer->opaque->isSubtitle, (GLint)subtitle); IJK_GLES2_checkError_TRACE("glUniform1i(renderer->opaque->isSubtitle, (GLint)subtitle)");
+}
+
+static GLboolean yuv420p_uploadSubtitle(IJK_GLES2_Renderer* renderer, void* subtitle)
+{
+	if (!subtitle) {
+		return GL_FALSE;
+	}
+
+	int     planes[1] = { 0 };
+	Subtitle_Overlay*   overlay = (Subtitle_Overlay*)subtitle;
+	const GLsizei widths[1] = { overlay->w };
+	const GLsizei heights[3] = { overlay->h };
+	const GLubyte *pixels[3] = { overlay->pixels };
+
+	for (int i = 0; i < 1; ++i) {
+		int plane = planes[i];
+
+		glUniform1i(renderer->us2_sampler[i], i);
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, renderer->plane_textures[i]);
+		IJK_GLES2_checkError_TRACE("glBindTexture(GL_TEXTURE_2D, renderer->plane_textures[i])");
+
+		glTexImage2D(GL_TEXTURE_2D,
+			0,
+			GL_RGBA,
+			widths[plane],
+			heights[plane],
+			0,
+			GL_RGBA,
+			GL_UNSIGNED_BYTE,
+			pixels[plane]);
+
+		IJK_GLES2_checkError_TRACE("glTexImage2D");
+	}
+
+	return GL_TRUE;
 }
 
 IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_yuv420p()
@@ -114,6 +159,17 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_yuv420p()
     renderer->func_use            = yuv420p_use;
     renderer->func_getBufferWidth = yuv420p_getBufferWidth;
     renderer->func_uploadTexture  = yuv420p_uploadTexture;
+	renderer->func_useSubtitle = yuv420p_useSubtile;
+	renderer->func_uploadSubtitle = yuv420p_uploadSubtitle;
+
+	renderer->opaque = calloc(1, sizeof(IJK_GLES2_Renderer_Opaque));
+	if (!renderer->opaque)
+		goto fail;
+	memset(renderer->opaque, sizeof(IJK_GLES2_Renderer_Opaque), 0);
+
+	GLint isSubtitle = glGetUniformLocation(renderer->program, "isSubtitle");
+	assert(isSubtitle >= 0);
+	renderer->opaque->isSubtitle = isSubtitle;
 
     return renderer;
 fail:

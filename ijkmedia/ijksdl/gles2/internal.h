@@ -34,6 +34,13 @@
 #define IJK_GLES_STRINGIZE2(x)  IJK_GLES_STRINGIZE(x)
 #define IJK_GLES_STRING(x)      IJK_GLES_STRINGIZE2(x)
 
+typedef struct IJK_GLES2_Renderer_Opaque
+{
+	GLint                 isSubtitle;
+	GLint                 isFullRange;
+	int samples;
+} IJK_GLES2_Renderer_Opaque;
+
 typedef struct IJK_GLES2_Renderer_Opaque IJK_GLES2_Renderer_Opaque;
 
 #ifdef __APPLE__
@@ -92,11 +99,7 @@ typedef struct IJK_GLES2_Renderer
     
     GLboolean (*func_use)(IJK_GLES2_Renderer *renderer);
     GLsizei   (*func_getBufferWidth)(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay);
-#ifdef WIN32 
-	GLboolean(*func_uploadTexture)(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay);
-#else
 	GLboolean(*func_uploadTexture)(IJK_GLES2_Renderer *renderer, void *texture);
-#endif
     GLvoid    (*func_useSubtitle)(IJK_GLES2_Renderer *renderer,GLboolean subtitle);
     GLboolean (*func_uploadSubtitle)(IJK_GLES2_Renderer *renderer,void* subtitle);
     void*     (*func_getVideoImage)(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay);
