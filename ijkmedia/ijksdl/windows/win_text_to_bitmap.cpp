@@ -3,13 +3,21 @@
 #include <windows.h>
 #include <gdiplus.h>
 
-const wchar_t* char2wcs(const char* str)
+const wchar_t* UTF82WCS(const char* str_utf8)
 {
-	const size_t size = strlen(str) + 1;
-	wchar_t* wcs = new wchar_t[size];
-	mbstowcs(wcs, str, size);
+	//预转换，得到所需空间的大小;
+	int wcsLen = ::MultiByteToWideChar(CP_UTF8, NULL, str_utf8, strlen(str_utf8), NULL, 0);
 
-	return wcs;
+	//分配空间要给'\0'留个空间，MultiByteToWideChar不会给'\0'空间
+	wchar_t* wszString = new wchar_t[wcsLen + 1];
+
+	//转换
+	::MultiByteToWideChar(CP_UTF8, NULL, str_utf8, strlen(str_utf8), wszString, wcsLen);
+
+	//最后加上'\0'
+	wszString[wcsLen] = '\0';
+
+	return wszString;
 }
 
 Subtitle_Overlay* Create_Bitmap(const char* text)
@@ -34,7 +42,7 @@ Subtitle_Overlay* Create_Bitmap(const char* text)
 	Gdiplus::Font font(&fontFamily, 12);
 
 	Gdiplus::SolidBrush brush(Gdiplus::Color::Black);
-	const wchar_t* wcs = char2wcs(text);
+	const wchar_t* wcs = UTF82WCS(text);
 	
 	g->DrawString(wcs, wcslen(wcs), &font, Gdiplus::PointF(0.0f, 0.0f), &brush);
 
