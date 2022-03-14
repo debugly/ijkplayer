@@ -171,6 +171,8 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_yuv420p()
 	assert(isSubtitle >= 0);
 	renderer->opaque->isSubtitle = isSubtitle;
 
+	//todo
+	renderer->subtitle_bottom_margin = 0.7;
     return renderer;
 fail:
     IJK_GLES2_Renderer_free(renderer);

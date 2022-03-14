@@ -23,6 +23,7 @@ const wchar_t* UTF82WCS(const char* str_utf8)
 Subtitle_Overlay* Create_Bitmap(const char* text)
 {
 	static bool init = false;
+	static int dpiX, dpiY;
 	if (false == init) {
 		init = true;
 		Gdiplus::GdiplusStartupInput    gdiplusStartupInput;
@@ -33,49 +34,54 @@ Subtitle_Overlay* Create_Bitmap(const char* text)
 				TEXT("Error!"), MB_ICONERROR);
 			return NULL;
 		}
+
+		HDC screen = GetDC(0);
+		dpiX = GetDeviceCaps(screen, LOGPIXELSX);
+		dpiY = GetDeviceCaps(screen, LOGPIXELSX);
 	}
 
-	Gdiplus::Bitmap* bitmap = new Gdiplus::Bitmap(500, 50, PixelFormat32bppARGB);
-	Gdiplus::Graphics* g = Gdiplus::Graphics::FromImage(bitmap);
-
-	Gdiplus::FontFamily   fontFamily(L"·ÂËÎ");
+	Gdiplus::FontFamily   fontFamily(L"Î¢ÈíÑÅºÚ");
 	Gdiplus::Font font(&fontFamily, 12);
 
-	Gdiplus::SolidBrush brush(Gdiplus::Color::Black);
+	Gdiplus::REAL fontSize = font.GetSize();
+
+	Gdiplus::SolidBrush brush(Gdiplus::Color::White);
 	const wchar_t* wcs = UTF82WCS(text);
+
+	int	len = wcslen(wcs);
+	//assume max num of rows  is 8;
+	int array_lines_len[8] = { 0 };
+	int line_cnt = 0;
+	const wchar_t* begin = wcs;
+	for (const wchar_t* cur = wcs; cur != NULL && line_cnt < 8; line_cnt++) {
+		cur = wcschr(begin, L'\n');
+		if (cur != NULL) {
+			array_lines_len[line_cnt] = cur - begin;
+			cur += 1;
+			begin = cur;
+		} else {
+			array_lines_len[line_cnt] = wcs + len - begin;
+		}
+	}
 	
+	int max_line_len = 0;
+	for (int i = 0; i < line_cnt; i++) {
+		if (max_line_len < array_lines_len[i]) {
+			max_line_len = array_lines_len[i];
+		}
+	}
+
+	int	bmpWidth = max_line_len * 1.4 * fontSize;
+	int bmpHeight = font.GetHeight(dpiY) * (line_cnt +1);
+
+	Gdiplus::Bitmap* bitmap = new Gdiplus::Bitmap(bmpWidth, bmpHeight, PixelFormat32bppARGB);
+	Gdiplus::Graphics* g = Gdiplus::Graphics::FromImage(bitmap);
+
 	g->DrawString(wcs, wcslen(wcs), &font, Gdiplus::PointF(0.0f, 0.0f), &brush);
 
 	Gdiplus::BitmapData*  bmpData = new Gdiplus::BitmapData();
 	Gdiplus::Rect rect(0, 0, bitmap->GetWidth(), bitmap->GetHeight());
 	bitmap->LockBits(&rect, Gdiplus::ImageLockMode::ImageLockModeRead, PixelFormat32bppARGB, bmpData);
-	
-	{
-		CLSID pngClsid;
-		bool foundPngClsid = false;
-
-		// Get png clsid
-		UINT num = 0;
-		UINT size = 0;
-		Gdiplus::ImageCodecInfo* pImageCodecInfo = NULL;
-		Gdiplus::GetImageEncodersSize(&num, &size);
-		pImageCodecInfo = (Gdiplus::ImageCodecInfo*)(malloc(size));
-		Gdiplus::GetImageEncoders(num, size, pImageCodecInfo);
-		for (UINT j = 0; j < num; ++j)
-		{
-			if (wcscmp(pImageCodecInfo[j].MimeType, L"image/png") == 0)
-			{
-				pngClsid = pImageCodecInfo[j].Clsid;
-				foundPngClsid = true;
-				break;
-			}
-		}
-
-		free(pImageCodecInfo);
-
-		if (foundPngClsid)
-			bitmap->Save(L"D:\\1.png", &pngClsid);
-	}
 
 	Subtitle_Overlay* overlay = new Subtitle_Overlay();
 	overlay->w = bmpData->Width;
