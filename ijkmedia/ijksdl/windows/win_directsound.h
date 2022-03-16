@@ -6,6 +6,8 @@
 #include "ijksdl/ijksdl_audio.h"
 #include "ijksdl/ijksdl_aout.h"
 
+#define NUM_OF_CHUNCKS 8
+
 typedef struct SDL_Win_DirectSound{
 	LPDIRECTSOUND sound;
 	LPDIRECTSOUNDBUFFER mixbuf;
@@ -14,6 +16,11 @@ typedef struct SDL_Win_DirectSound{
 	int num_buffers;
 	DWORD lastchunk;
 	Uint8 *locked_buf;
+
+	IDirectSoundNotify8*	buffer_notify;
+	IDirectSoundBuffer8*	snd_buffer8;
+	DSBPOSITIONNOTIFY		ds_position_notify[8];
+	HANDLE					ds_event[8];
 }SDL_Win_DirectSound;
 
 

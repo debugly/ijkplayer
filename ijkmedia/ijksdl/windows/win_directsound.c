@@ -71,10 +71,6 @@ void SDL_Win_DSound_WaitDevice(SDL_Win_DirectSound *dsound, SDL_AudioSpec *sdl_s
 	}
 
 	while ((cursor / sdl_spec->size) == dsound->lastchunk) {
-
-		// FIXME: find out how much time is left and sleep that long
-		SDL_Delay(1);
-
 		// Try to restore a lost sound buffer
 		IDirectSoundBuffer_GetStatus(dsound->mixbuf, &status);
 		if ((status & DSBSTATUS_BUFFERLOST)) {
@@ -91,6 +87,8 @@ void SDL_Win_DSound_WaitDevice(SDL_Win_DirectSound *dsound, SDL_AudioSpec *sdl_s
 			}
 			return;
 		}
+
+		WaitForMultipleObjects(NUM_OF_CHUNCKS, dsound->ds_event, FALSE, INFINITE);
 
 		// Find out where we are playing
 		result = IDirectSoundBuffer_GetCurrentPosition(dsound->mixbuf, &junk, &cursor);
@@ -162,6 +160,13 @@ Uint8 * SDL_Win_DSound_GetDeviceBuf(SDL_Win_DirectSound *dsound, SDL_AudioSpec *
 
 void SDL_Win_DSound_CloseDevice(SDL_Win_DirectSound *dsound)
 {
+	for (int i = 0; i < NUM_OF_CHUNCKS; i++) {
+		ResetEvent(dsound->ds_event[i]);
+	}
+	if (dsound->snd_buffer8 != NULL) {
+		IDirectSoundBuffer_Stop(dsound->snd_buffer8);
+		IDirectSoundBuffer_Release(dsound->snd_buffer8);
+	}
 	if (dsound->mixbuf != NULL) {
 		IDirectSoundBuffer_Stop(dsound->mixbuf);
 		IDirectSoundBuffer_Release(dsound->mixbuf);
@@ -198,12 +203,39 @@ static int create_secondary(SDL_Win_DirectSound *dsound, const DWORD bufsize, WA
 	format.dwFlags = DSBCAPS_GETCURRENTPOSITION2;
 	format.dwFlags |= DSBCAPS_GLOBALFOCUS;
 	format.dwFlags |= DSBCAPS_CTRLVOLUME;
+	format.dwFlags |= DSBCAPS_CTRLPOSITIONNOTIFY;
 	format.dwBufferBytes = bufsize;
 	format.lpwfxFormat = wfmt;
 	result = IDirectSound_CreateSoundBuffer(sndObj, &format, sndbuf, NULL);
 	if (result != DS_OK) {
 		return set_dsound_error("DirectSound CreateSoundBuffer", result);
 	}
+
+	result = IDirectSound_QueryInterface(dsound->mixbuf, &IID_IDirectSoundBuffer8, (LPVOID*)&dsound->snd_buffer8);
+	if (result != DS_OK) {
+		return set_dsound_error("IDirectSound_QueryInterface:IID_IDirectSoundBuffer8", result);
+	}
+
+	result = IDirectSound_QueryInterface(dsound->snd_buffer8, &IID_IDirectSoundNotify8, (LPVOID*)&dsound->buffer_notify);
+	if (result != DS_OK) {
+		return set_dsound_error("IDirectSound_QueryInterface:IID_IDirectSoundNotify8", result);
+	}
+
+	for (int i = 0; i < NUM_OF_CHUNCKS; i++) {
+		dsound->ds_position_notify[i].dwOffset = i * bufsize / NUM_OF_CHUNCKS;
+		dsound->ds_event[i] = CreateEvent(NULL, false, false, NULL);
+		dsound->ds_position_notify[i].hEventNotify = dsound->ds_event[i];
+	}
+	result = IDirectSoundNotify_SetNotificationPositions(dsound->buffer_notify, 8, dsound->ds_position_notify);
+	if (result != DS_OK) {
+		return set_dsound_error("IDirectSoundNotify_SetNotificationPositions", result);
+	}
+	
+	result = IDirectSoundNotify_Release(dsound->buffer_notify);
+	if (result != DS_OK) {
+		return set_dsound_error("IDirectSoundNotify_Release", result);
+	}
+
 	IDirectSoundBuffer_SetFormat(*sndbuf, wfmt);
 
 	// Silence the initial audio buffer
@@ -224,7 +256,7 @@ int SDL_Win_DSound_OpenDevice(SDL_Win_DirectSound *dsound, SDL_AudioSpec *sdl_sp
 {
 	DWORD bufsize;
 	HRESULT result;
-	const DWORD numchunks = 8;
+	const DWORD numchunks = NUM_OF_CHUNCKS;
 
 	// Open the audio device
 	{
