@@ -76,10 +76,9 @@ struct SDL_Vout {
     
     Uint32 overlay_format;
     Uint32 ff_format;//(Read Only)same as SDL_VoutOverlay's ff_format.
+    int z_rotate_degrees;
     //convert image
     void *image_converter;
-    //subtitle image's ratio base on video image;
-    float subtitle_ratio;
 };
 
 void SDL_VoutFree(SDL_Vout *vout);

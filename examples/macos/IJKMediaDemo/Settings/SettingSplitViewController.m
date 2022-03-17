@@ -43,14 +43,13 @@
         }
     ]];
     
-    __weakSelf__
     [lvc onSelectItem:^(NSDictionary * _Nonnull dic) {
         NSString *vcStr = dic[@"vc"];
         if (vcStr.length > 0) {
             Class clazz = NSClassFromString(vcStr);
             if (clazz) {
                 NSViewController *vc = [[clazz alloc] init];
-                [rvc setChildViewControllers:nil];
+                [[rvc childViewControllers] makeObjectsPerformSelector:@selector(removeFromParentViewController)];
                 [[rvc.view subviews]makeObjectsPerformSelector:@selector(removeFromSuperview)];
                 [rvc addChildViewController:vc];
                 vc.view.frame = rvc.view.bounds;

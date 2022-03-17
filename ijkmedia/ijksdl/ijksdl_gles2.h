@@ -81,8 +81,10 @@ GLboolean IJK_GLES2_Renderer_resetVao(IJK_GLES2_Renderer *renderer);
 void IJK_GLES2_Renderer_drawArrays(void);
 
 void* IJK_GLES2_Renderer_getVideoImage(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay);
+void IJK_GLES2_Renderer_beginDrawSubtitle(IJK_GLES2_Renderer *renderer);
 void IJK_GLES2_Renderer_updateSubtitleVetex(IJK_GLES2_Renderer *renderer, float width, float height);
 GLboolean IJK_GLES2_Renderer_uploadSubtitleTexture(IJK_GLES2_Renderer *renderer, void *texture);
+void IJK_GLES2_Renderer_endDrawSubtitle(IJK_GLES2_Renderer *renderer);
 
 #define IJK_GLES2_GRAVITY_MIN                   (0)
 #define IJK_GLES2_GRAVITY_RESIZE                (0) // Stretch to fill layer bounds.
@@ -95,7 +97,7 @@ GLboolean IJK_GLES2_Renderer_setGravity(IJK_GLES2_Renderer *renderer, int gravit
 void      IJK_GLES2_Renderer_updateRotate(IJK_GLES2_Renderer *renderer,int type,int degrees);
 void      IJK_GLES2_Renderer_updateSubtitleBottomMargin(IJK_GLES2_Renderer *renderer,float value);
 void      IJK_GLES2_Renderer_updateAutoZRotate(IJK_GLES2_Renderer *renderer,int degrees);
-void      IJK_GLES2_Renderer_updateUserDefinedDAR(IJK_GLES2_Renderer *renderer,int dar_num, int dar_den);
+void      IJK_GLES2_Renderer_updateUserDefinedDAR(IJK_GLES2_Renderer *renderer,float ratio);
 int       IJK_GLES2_Renderer_isZRotate90oddMultiple(IJK_GLES2_Renderer *renderer);
 
 #endif

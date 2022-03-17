@@ -121,12 +121,12 @@ struct IjkMediaMeta *ffp_get_meta_l(FFPlayer *ffp);
 void      ffp_set_subtitle_extra_delay(FFPlayer *ffp, const float delay);
 float     ffp_get_subtitle_extra_delay(FFPlayer *ffp);
 
-void      subtitle_invalidate_uploaded(FFPlayer *ffp);
 int       ffp_set_external_subtitle(FFPlayer *ffp, const char *file_name);
 /*only load ex-subtitle*/
 int       ffp_load_external_subtitle(FFPlayer *ffp, const char *file_name);
 int       ffp_exchange_video_decoder(FFPlayer *ffp);
 
 int		  ffp_set_decoder_name(FFPlayer *ffp, const char *name);
+int       ffp_get_video_frame_cache_remaining(FFPlayer *ffp);
 
 #endif

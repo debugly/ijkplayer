@@ -38,6 +38,6 @@ struct Ijk_VideoToolBox {
 };
 
 Ijk_VideoToolBox *Ijk_VideoToolbox_Async_Create(FFPlayer* ffp, AVCodecContext* ic);
-Ijk_VideoToolBox *Ijk_VideoToolbox_Sync_Create(FFPlayer* ffp, AVCodecContext* ic);
+Ijk_VideoToolBox *Ijk_VideoToolbox_Sync_Create(FFPlayer* ffp, AVCodecContext* ic); 
 
 #endif

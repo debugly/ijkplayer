@@ -326,7 +326,7 @@
     [NSGraphicsContext saveGraphicsState];
     [NSGraphicsContext setCurrentContext:graphicsContext];
     
-    [self drawBg:(CGSize){width,height}];
+//    [self drawBg:(CGSize){width,height}];
     
     NSRect rect = NSMakeRect(self.edgeInsets.left, self.edgeInsets.top, picSize.width, picSize.height);
     [self drawText:rect];

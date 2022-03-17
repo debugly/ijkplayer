@@ -19,5 +19,5 @@
 # If you really want to compile without asm, configure with --disable-asm.
 
 export LIB_NAME='ffmpeg'
-export LIPO_LIBS="libavcodec libavfilter libavformat libavutil libswscale libswresample libavdevice"
+export LIPO_LIBS="libavcodec libavformat libavutil libswscale libswresample" #libavfilter libavdevice
 export LIB_DEPENDS_BIN="nasm"

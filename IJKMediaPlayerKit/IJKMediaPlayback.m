@@ -34,6 +34,8 @@ NSString *const IJKMPMoviePlayerLoadStateDidChangeNotification = @"IJKMPMoviePla
 NSString *const IJKMPMoviePlayerIsAirPlayVideoActiveDidChangeNotification = @"IJKMPMoviePlayerIsAirPlayVideoActiveDidChangeNotification";
 
 NSString *const IJKMPMovieNaturalSizeAvailableNotification = @"IJKMPMovieNaturalSizeAvailableNotification";
+NSString *const IJKMPMovieZRotateAvailableNotification = @"IJKMPMovieZRotateAvailableNotification";
+NSString *const IJKMPMovieNoCodecFoundNotification = @"IJKMPMovieNoCodecFoundNotification";
 
 NSString *const IJKMPMoviePlayerVideoDecoderOpenNotification = @"IJKMPMoviePlayerVideoDecoderOpenNotification";
 

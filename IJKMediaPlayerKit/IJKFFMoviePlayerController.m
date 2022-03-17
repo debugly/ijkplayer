@@ -65,7 +65,7 @@ static const char *kIJKFFRequiredFFmpegVersion = "ff4.0--ijk0.8.8--20210426--001
     NSInteger _videoHeight;
     NSInteger _sampleAspectRatioNumerator;
     NSInteger _sampleAspectRatioDenominator;
-
+    NSInteger _videoZRotateDegrees;
     BOOL      _seeking;
     NSInteger _bufferingTime;
     NSInteger _bufferingPosition;
@@ -227,26 +227,8 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
     
     // init hud
     _hudCtrl = [IJKSDLHudControl new];
-    
-    [self setHudValue:nil forKey:@"scheme"];
-    [self setHudValue:nil forKey:@"host"];
-    [self setHudValue:nil forKey:@"path"];
-    [self setHudValue:nil forKey:@"ip"];
-    [self setHudValue:nil forKey:@"tcp-info"];
-    [self setHudValue:nil forKey:@"http"];
-    [self setHudValue:nil forKey:@"tcp-spd"];
-    [self setHudValue:nil forKey:@"t-prepared"];
-    [self setHudValue:nil forKey:@"t-render"];
-    [self setHudValue:nil forKey:@"t-preroll"];
-    [self setHudValue:nil forKey:@"t-http-open"];
-    [self setHudValue:nil forKey:@"t-http-seek"];
-    
+
     self.shouldShowHudView = options.showHudView;
-#ifdef DEBUG
-    [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_DEBUG];
-#else
-    [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_SILENT];
-#endif
 
     [options applyTo:_mediaPlayer];
     _pauseInBackground = NO;
@@ -346,7 +328,21 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
         return;
 
     [self setScreenOn:_keepScreenOnWhilePlaying];
-
+    if (![_urlString hasPrefix:@"/"]) {
+        [self setHudValue:nil forKey:@"scheme"];
+        [self setHudValue:nil forKey:@"host"];
+        [self setHudValue:nil forKey:@"path"];
+        [self setHudValue:nil forKey:@"ip"];
+        [self setHudValue:nil forKey:@"tcp-info"];
+        [self setHudValue:nil forKey:@"http"];
+        [self setHudValue:nil forKey:@"tcp-spd"];
+        [self setHudValue:nil forKey:@"t-prepared"];
+        [self setHudValue:nil forKey:@"t-render"];
+        [self setHudValue:nil forKey:@"t-preroll"];
+        [self setHudValue:nil forKey:@"t-http-open"];
+        [self setHudValue:nil forKey:@"t-http-seek"];
+    }
+    
     ijkmp_set_data_source(_mediaPlayer, [_urlString UTF8String]);
     ijkmp_set_option(_mediaPlayer, IJKMP_OPT_CATEGORY_FORMAT, "safe", "0"); // for concat demuxer
 
@@ -410,7 +406,6 @@ void IJKFFIOStatCompleteRegister(void (*cb)(const char *url,
         return;
 
     [self setScreenOn:NO];
-
     [self stopHudTimer];
     ijkmp_stop(_mediaPlayer);
 }
@@ -541,13 +536,14 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
 {
     if (!_mediaPlayer)
         return;
-
-    [self stopHudTimer];
 #if TARGET_OS_IOS
     [self unregisterApplicationObservers];
 #endif
     [self setScreenOn:NO];
-
+    [self stopHudTimer];
+    //release glview in main thread.
+    _view = _glView = nil;
+    ijkmp_ios_set_glview(_mediaPlayer, nil);
     [self performSelectorInBackground:@selector(shutdownWaitStop:) withObject:self];
 }
 
@@ -581,13 +577,6 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
     ijkmp_dec_ref_p(&_mediaPlayer);
 
     [self didShutdown];
-}
-
-- (void)invalidateSubtitleEffect
-{
-    if (_mediaPlayer) {
-        ijkmp_invalidate_subtitle_effect(_mediaPlayer);
-    }
 }
 
 - (void)didShutdown
@@ -702,15 +691,25 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
         self->_naturalSize = CGSizeMake(_videoWidth, _videoHeight);
     }
     [self didChangeValueForKey:@"naturalSize"];
-
     if (self->_naturalSize.width > 0 && self->_naturalSize.height > 0) {
+#if TARGET_OS_IOS
         [[NSNotificationCenter defaultCenter]
          postNotificationName:IJKMPMovieNaturalSizeAvailableNotification
-         object:self];
+         object:self userInfo:@{@"size":NSStringFromCGSize(self->_naturalSize)}];
+#else
+        [[NSNotificationCenter defaultCenter]
+         postNotificationName:IJKMPMovieNaturalSizeAvailableNotification
+         object:self userInfo:@{@"size":NSStringFromSize(self->_naturalSize)}];
+#endif
     }
 }
 
-- (void)setScalingMode: (IJKMPMovieScalingMode) aScalingMode
+- (NSInteger)videoZRotateDegrees
+{
+    return _videoZRotateDegrees;
+}
+
+- (void)setScalingMode:(IJKMPMovieScalingMode) aScalingMode
 {
     IJKMPMovieScalingMode newScalingMode = aScalingMode;
     self.view.scalingMode = aScalingMode;
@@ -733,18 +732,12 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
 
     return nil;
 }
+#endif
 
 - (CGFloat)fpsAtOutput
 {
-    return _glView.fps;
+    return _mediaPlayer ? ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VIDEO_OUTPUT_FRAMES_PER_SECOND, .0f) : .0f;
 }
-#else
-#warning TODO mac fps
-- (CGFloat)fpsAtOutput
-{
-    return 0.0;
-}
-#endif
 
 inline static NSString *formatedDurationMilli(int64_t duration) {
     if (duration >=  1000) {
@@ -792,50 +785,49 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
     }
 }
 
+- (NSString *)coderNameWithVdecType:(int)vdec
+{
+    switch (vdec) {
+        case FFP_PROPV_DECODER_VIDEOTOOLBOX:
+            return @"VideoToolbox";
+        case FFP_PROPV_DECODER_VIDEOTOOLBOX_ASYNC:
+            return @"VideoToolbox-Async";
+        case FFP_PROPV_DECODER_AVCODEC:
+            return [NSString stringWithFormat:@"avcodec %d.%d.%d",
+                                 LIBAVCODEC_VERSION_MAJOR,
+                                 LIBAVCODEC_VERSION_MINOR,
+                                 LIBAVCODEC_VERSION_MICRO];
+        case FFP_PROPV_DECODER_AVCODEC_HW:
+            return [NSString stringWithFormat:@"avcodec-hw %d.%d.%d",
+                                 LIBAVCODEC_VERSION_MAJOR,
+                                 LIBAVCODEC_VERSION_MINOR,
+                                 LIBAVCODEC_VERSION_MICRO];
+        default:
+            return @"N/A";
+    }
+}
+
 - (void)refreshHudView
 {
     if (_mediaPlayer == nil)
         return;
 
-    int64_t vdec = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
+    int64_t vdec  = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
     int64_t vdec2 = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_ANOTHER_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
-    float   vdps = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VIDEO_DECODE_FRAMES_PER_SECOND, .0f);
-    float   vfps = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VIDEO_OUTPUT_FRAMES_PER_SECOND, .0f);
+    _monitor.vdecoder = [self coderNameWithVdecType:(int)vdec];
+    [self setHudValue:_monitor.vdecoder forKey:@"vdec"];
     
-    switch (vdec) {
-        case FFP_PROPV_DECODER_VIDEOTOOLBOX:
-            [self setHudValue:@"VideoToolbox" forKey:@"vdec"];
-            break;
-        case FFP_PROPV_DECODER_AVCODEC:
-            [self setHudValue:[NSString stringWithFormat:@"avcodec %d.%d.%d",
-                                  LIBAVCODEC_VERSION_MAJOR,
-                                  LIBAVCODEC_VERSION_MINOR,
-                                  LIBAVCODEC_VERSION_MICRO]
-                          forKey:@"vdec"];
-            break;
-        default:
-            [self setHudValue:@"N/A" forKey:@"vdec"];
-            break;
-    }
-
-    switch (vdec2) {
-        case FFP_PROPV_DECODER_VIDEOTOOLBOX:
-            [self setHudValue:@"VideoToolbox" forKey:@"vdec-swithing"];
-            break;
-        case FFP_PROPV_DECODER_AVCODEC:
-            [self setHudValue:[NSString stringWithFormat:@"avcodec %d.%d.%d",
-                                  LIBAVCODEC_VERSION_MAJOR,
-                                  LIBAVCODEC_VERSION_MINOR,
-                                  LIBAVCODEC_VERSION_MICRO]
-                          forKey:@"vdec-swithing"];
-            break;
-        default:
-            [self setHudValue:@"N/A" forKey:@"vdec-swithing"];
-            break;
-    }
+    [self setHudValue:[self coderNameWithVdecType:(int)vdec2] forKey:@"vdec-swithing"];
     
-    [self setHudValue:[NSString stringWithFormat:@"%.2f / %.2f", vdps, vfps] forKey:@"fps"];
-
+    [self setHudValue:[NSString stringWithFormat:@"%d / %.2f", [self dropFrameCount], [self dropFrameRate]] forKey:@"drop-frame(c/r)"];
+    
+    float vdps = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VIDEO_DECODE_FRAMES_PER_SECOND, .0f);
+    float vfps = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VIDEO_OUTPUT_FRAMES_PER_SECOND, .0f);
+    
+    [self setHudValue:[NSString stringWithFormat:@"%.2f / %.2f", vdps, vfps] forKey:@"fps(d/o)"];
+    int pic_remaining = ijkmp_get_video_frame_cache_remaining(_mediaPlayer);
+    [self setHudValue:[NSString stringWithFormat:@"%d", pic_remaining] forKey:@"p-cache"];
+    
     int64_t vcacheb = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_CACHED_BYTES, 0);
     int64_t acacheb = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_AUDIO_CACHED_BYTES, 0);
     int64_t vcached = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_CACHED_DURATION, 0);
@@ -854,42 +846,43 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
                   forKey:@"a-cache"];
 
     float avdelay = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_AVDELAY, .0f);
-    float avdiff  = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_AVDIFF, .0f);
-    [self setHudValue:[NSString stringWithFormat:@"%.3f %.3f", avdelay, -avdiff] forKey:@"delay"];
+    float vmdiff  = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VMDIFF, .0f);
+    [self setHudValue:[NSString stringWithFormat:@"%.3f %.3f", avdelay, -vmdiff] forKey:@"delay-avdiff"];
 
+    if (self.monitor.httpUrl) {
 #if ! IJK_IO_OFF
-    int64_t bitRate = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_BIT_RATE, 0);
-    [self setHudValue:[NSString stringWithFormat:@"-%@, %@",
-                         formatedSize(_cacheStat.cache_file_forwards),
-                          formatedDurationBytesAndBitrate(_cacheStat.cache_file_forwards, bitRate)] forKey:@"cache-forwards"];
-    [self setHudValue:formatedSize(_cacheStat.cache_physical_pos) forKey:@"cache-physical-pos"];
-    [self setHudValue:formatedSize(_cacheStat.cache_file_pos) forKey:@"cache-file-pos"];
-    [self setHudValue:formatedSize(_cacheStat.cache_count_bytes) forKey:@"cache-bytes"];
-    [self setHudValue:[NSString stringWithFormat:@"-%@, %@",
-                          formatedSize(_asyncStat.buf_backwards),
-                          formatedDurationBytesAndBitrate(_asyncStat.buf_backwards, bitRate)]
-                  forKey:@"async-backward"];
-    [self setHudValue:[NSString stringWithFormat:@"+%@, %@",
-                          formatedSize(_asyncStat.buf_forwards),
-                          formatedDurationBytesAndBitrate(_asyncStat.buf_forwards, bitRate)]
-                  forKey:@"async-forward"];
+        int64_t bitRate = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_BIT_RATE, 0);
+        [self setHudValue:[NSString stringWithFormat:@"-%@, %@",
+                             formatedSize(_cacheStat.cache_file_forwards),
+                              formatedDurationBytesAndBitrate(_cacheStat.cache_file_forwards, bitRate)] forKey:@"cache-forwards"];
+        [self setHudValue:formatedSize(_cacheStat.cache_physical_pos) forKey:@"cache-physical-pos"];
+        [self setHudValue:formatedSize(_cacheStat.cache_file_pos) forKey:@"cache-file-pos"];
+        [self setHudValue:formatedSize(_cacheStat.cache_count_bytes) forKey:@"cache-bytes"];
+        [self setHudValue:[NSString stringWithFormat:@"-%@, %@",
+                              formatedSize(_asyncStat.buf_backwards),
+                              formatedDurationBytesAndBitrate(_asyncStat.buf_backwards, bitRate)]
+                      forKey:@"async-backward"];
+        [self setHudValue:[NSString stringWithFormat:@"+%@, %@",
+                              formatedSize(_asyncStat.buf_forwards),
+                              formatedDurationBytesAndBitrate(_asyncStat.buf_forwards, bitRate)]
+                      forKey:@"async-forward"];
 #endif
-
-    int64_t tcpSpeed = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_TCP_SPEED, 0);
-    [self setHudValue:[NSString stringWithFormat:@"%@", formatedSpeed(tcpSpeed, 1000)]
-                  forKey:@"tcp-spd"];
-
-    [self setHudValue:formatedDurationMilli(_monitor.prepareDuration) forKey:@"t-prepared"];
-    [self setHudValue:formatedDurationMilli(_monitor.firstVideoFrameLatency) forKey:@"t-render"];
-    [self setHudValue:formatedDurationMilli(_monitor.lastPrerollDuration) forKey:@"t-preroll"];
-    [self setHudValue:[NSString stringWithFormat:@"%@ / %d",
-                          formatedDurationMilli(_monitor.lastHttpOpenDuration),
-                          _monitor.httpOpenCount]
-                  forKey:@"t-http-open"];
-    [self setHudValue:[NSString stringWithFormat:@"%@ / %d",
-                          formatedDurationMilli(_monitor.lastHttpSeekDuration),
-                          _monitor.httpSeekCount]
-                  forKey:@"t-http-seek"];
+        int64_t tcpSpeed = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_TCP_SPEED, 0);
+        [self setHudValue:[NSString stringWithFormat:@"%@", formatedSpeed(tcpSpeed, 1000)]
+                   forKey:@"tcp-spd"];
+        
+        [self setHudValue:formatedDurationMilli(_monitor.prepareDuration) forKey:@"t-prepared"];
+        [self setHudValue:formatedDurationMilli(_monitor.firstVideoFrameLatency) forKey:@"t-render"];
+        [self setHudValue:formatedDurationMilli(_monitor.lastPrerollDuration) forKey:@"t-preroll"];
+        [self setHudValue:[NSString stringWithFormat:@"%@ / %d",
+                           formatedDurationMilli(_monitor.lastHttpOpenDuration),
+                           _monitor.httpOpenCount]
+                   forKey:@"t-http-open"];
+        [self setHudValue:[NSString stringWithFormat:@"%@ / %d",
+                           formatedDurationMilli(_monitor.lastHttpSeekDuration),
+                           _monitor.httpSeekCount]
+                   forKey:@"t-http-seek"];
+    }
 }
 
 - (void)startHudTimer
@@ -1013,6 +1006,13 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
     return ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_DROP_FRAME_RATE, 0.0f);
 }
 
+- (int)dropFrameCount
+{
+    if (!_mediaPlayer)
+        return 0;
+    return (int)ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_FLOAT_DROP_FRAME_COUNT, 0);
+}
+
 inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *rawMeta, const char *name, NSString *defaultValue)
 {
     if (!meta || !rawMeta || !name)
@@ -1127,20 +1127,7 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
 
 - (void)updateMonitor4VideoDecoder:(int64_t)vdec
 {
-    switch (vdec) {
-        case FFP_PROPV_DECODER_VIDEOTOOLBOX:
-            _monitor.vdecoder = @"VideoToolbox";
-            break;
-        case FFP_PROPV_DECODER_AVCODEC:
-            _monitor.vdecoder = [NSString stringWithFormat:@"avcodec %d.%d.%d",
-                                 LIBAVCODEC_VERSION_MAJOR,
-                                 LIBAVCODEC_VERSION_MINOR,
-                                 LIBAVCODEC_VERSION_MICRO];
-            break;
-        default:
-            _monitor.vdecoder = @"Unknown";
-            break;
-    }
+    _monitor.vdecoder = [self coderNameWithVdecType:(int)vdec];
 }
 
 - (void)postEvent: (IJKFFMoviePlayerMessage *)msg
@@ -1217,7 +1204,6 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
                 _videoWidth = avmsg->arg1;
             if (avmsg->arg2 > 0)
                 _videoHeight = avmsg->arg2;
-            NSLog(@"video size:(%ld,%ld)",(long)_videoWidth,(long)_videoHeight);
             [self changeNaturalSize];
             break;
         case FFP_MSG_SAR_CHANGED:
@@ -1281,7 +1267,7 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
             break;
         }
         case FFP_MSG_VIDEO_DECODER_OPEN: {
-            _isVideoToolboxOpen = avmsg->arg1;
+            _isVideoToolboxOpen = avmsg->arg1 > 0;
             int64_t vdec = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
             [self updateMonitor4VideoDecoder:vdec];
             
@@ -1356,6 +1342,19 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
             _isAudioSync = 0;
             break;
         }
+        case FFP_MSG_VIDEO_Z_ROTATE_DEGREE:
+            if (_videoZRotateDegrees != avmsg->arg1) {
+                _videoZRotateDegrees = avmsg->arg1;
+                [[NSNotificationCenter defaultCenter]
+                         postNotificationName:IJKMPMovieZRotateAvailableNotification
+                         object:self userInfo:@{@"degrees":@(_videoZRotateDegrees)}];
+            }
+            break;
+        case FFP_MSG_NO_CODEC_FOUND:
+            [[NSNotificationCenter defaultCenter]
+                     postNotificationName:IJKMPMovieNoCodecFoundNotification
+             object:self userInfo:@{@"codecId":@(avmsg->arg1)}];
+            break;
         default:
             // NSLog(@"unknown FFP_MSG_xxx(%d)\n", avmsg->what);
             break;
@@ -1864,7 +1863,7 @@ static int ijkff_inject_callback(void *opaque, int message, void *data, size_t d
 
 - (int)exchangeVideoDecoder
 {
-    return jkmp_exchange_video_decoder(_mediaPlayer);
+    return ijkmp_exchange_video_decoder(_mediaPlayer);
 }
 
 @end

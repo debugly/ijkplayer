@@ -31,11 +31,16 @@
 #import "ijksdl_vout_overlay_videotoolbox.h"
 #import <AVFoundation/AVFoundation.h>
 #import "renderer_pixfmt.h"
+#import "MRTextureString.h"
+#import "IJKMediaPlayback.h"
 
 @interface IJKSDLGLView()
 
 @property(atomic) CVPixelBufferRef currentVideoPic;
 @property(atomic) CVPixelBufferRef currentSubtitle;
+@property(atomic) NSString *subtitle;
+@property(atomic) CGSize videoNaturalSize;
+@property(atomic) int videoDegrees;
 
 @end
 
@@ -48,7 +53,9 @@
     CGSize _FBOTextureSize;
     GLuint _FBO;
     GLuint _ColorTexture;
-    float _widthRatio;
+    float _videoSar;
+    
+    BOOL _subtitlePreferenceChanged;
 }
 
 @synthesize scalingMode = _scalingMode;
@@ -79,17 +86,20 @@
     if (_renderer) {
         IJK_GLES2_Renderer_freeP(&_renderer);
     }
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
     if (self) {
-        _widthRatio = 1.0;
+        _videoSar = 1.0;
         [self setup];
-        self.subtitlePreference = (IJKSDLSubtitlePreference){25, 0xFFFFFF, 0.1};
-        self.rotatePreference   = (IJKSDLRotatePreference){IJKSDLRotateNone, 0.0};
-        self.colorPreference    = (IJKSDLColorConversionPreference){1.0, 1.0, 1.0};
+        _subtitlePreference = (IJKSDLSubtitlePreference){25, 0xFFFFFF, 0.1};
+        _rotatePreference   = (IJKSDLRotatePreference){IJKSDLRotateNone, 0.0};
+        _colorPreference    = (IJKSDLColorConversionPreference){1.0, 1.0, 1.0};
+        _darPreference      = (IJKSDLDARPreference){0.0};
     }
     return self;
 }
@@ -131,6 +141,28 @@
     [self setPixelFormat:pf];
     [self setOpenGLContext:context];
     [self setWantsBestResolutionOpenGLSurface:YES];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(videoNaturalSizeChanged:)
+                                                 name:IJKMPMovieNaturalSizeAvailableNotification object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(videoZRotateChanged:)
+                                                 name:IJKMPMovieZRotateAvailableNotification object:nil];
+}
+
+- (void)videoNaturalSizeChanged:(NSNotification *)notifi
+{
+    NSString *sizeStr = notifi.userInfo[@"size"];
+    CGSize size = NSSizeFromString(sizeStr);
+    self.videoNaturalSize = size;
+}
+
+- (void)videoZRotateChanged:(NSNotification *)notifi
+{
+    NSNumber *num = notifi.userInfo[@"degrees"];
+    int degrees = [num intValue];
+    self.videoDegrees = degrees;
 }
 
 - (BOOL)setupRenderer:(SDL_VoutOverlay *)overlay
@@ -139,7 +171,7 @@
         return _renderer != nil;
     
     if (overlay->sar_num > 0 && overlay->sar_den > 0) {
-        _widthRatio = 1.0 * overlay->sar_num / overlay->sar_den;
+        _videoSar = 1.0 * overlay->sar_num / overlay->sar_den;
     }
     
     if (!IJK_GLES2_Renderer_isValid(_renderer) ||
@@ -160,9 +192,15 @@
         
         IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, _backingWidth, _backingHeight);
         
-        IJK_GLES2_Renderer_updateRotate(_renderer, self.rotatePreference.type, self.rotatePreference.degrees);
+        IJK_GLES2_Renderer_updateRotate(_renderer, _rotatePreference.type, _rotatePreference.degrees);
         
         IJK_GLES2_Renderer_updateAutoZRotate(_renderer, overlay->auto_z_rotate_degrees);
+        
+        IJK_GLES2_Renderer_updateSubtitleBottomMargin(_renderer, _subtitlePreference.bottomMargin);
+        
+        IJK_GLES2_Renderer_updateColorConversion(_renderer, _colorPreference.brightness, _colorPreference.saturation,_colorPreference.contrast);
+        
+        IJK_GLES2_Renderer_updateUserDefinedDAR(_renderer, _darPreference.ratio);
     }
     
     return YES;
@@ -178,34 +216,6 @@
 {
     [super reshape];
     [self resetViewPort];
-}
-
-- (void)setScalingMode:(IJKMPMovieScalingMode)scalingMode
-{
-    switch (scalingMode) {
-        case IJKMPMovieScalingModeFill:
-            _rendererGravity = IJK_GLES2_GRAVITY_RESIZE;
-            break;
-        case IJKMPMovieScalingModeAspectFit:
-            _rendererGravity = IJK_GLES2_GRAVITY_RESIZE_ASPECT;
-            break;
-        case IJKMPMovieScalingModeAspectFill:
-            _rendererGravity = IJK_GLES2_GRAVITY_RESIZE_ASPECT_FILL;
-            break;
-    }
-    _scalingMode = scalingMode;
-    if (IJK_GLES2_Renderer_isValid(_renderer)) {
-        IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, _backingWidth, _backingHeight);
-    }
-}
-
-- (void)onDARChange:(int)dar_num den:(int)dar_den
-{
-    IJKSDLDARPreference preference;
-    preference.num = dar_num;
-    preference.den = dar_den;
-    
-    self.darPreference = preference;
 }
 
 - (void)resetViewPort
@@ -224,21 +234,113 @@
     [self resetViewPort];
 }
 
-- (void)updateRenderSettings
+- (void)setNeedsRefreshCurrentPic
 {
-    IJK_GLES2_Renderer_updateRotate(_renderer, self.rotatePreference.type, self.rotatePreference.degrees);
-    IJK_GLES2_Renderer_updateSubtitleBottomMargin(_renderer, self.subtitlePreference.bottomMargin);
-
-    IJK_GLES2_Renderer_updateColorConversion(_renderer, self.colorPreference.brightness, self.colorPreference.saturation,self.colorPreference.contrast);
+    [[self openGLContext] makeCurrentContext];
+    CGLLockContext([[self openGLContext] CGLContextObj]);
+    // Bind the FBO to screen.
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, _backingWidth, _backingHeight);
+    glClear(GL_COLOR_BUFFER_BIT);
     
-    IJK_GLES2_Renderer_updateUserDefinedDAR(_renderer, self.darPreference.num, self.darPreference.den);
+    if (_renderer) {
+        //for video
+        if (self.currentVideoPic) {
+            if (!IJK_GLES2_Renderer_updateVetex(_renderer, NULL))
+                ALOGE("[GL] Renderer_updateVetex failed\n");
+            
+            if (!IJK_GLES2_Renderer_uploadTexture(_renderer, (void *)self.currentVideoPic))
+                ALOGE("[GL] Renderer_updateVetex failed\n");
+            
+            IJK_GLES2_Renderer_drawArrays();
+        }
+        
+        //for subtitle
+        if (_subtitlePreferenceChanged) {
+            [self _generateSubtitlePixel:self.subtitle];
+        }
+        
+        if (self.currentSubtitle) {
+            IJK_GLES2_Renderer_beginDrawSubtitle(_renderer);
+            IJK_GLES2_Renderer_updateSubtitleVetex(_renderer, CVPixelBufferGetWidth(self.currentSubtitle), CVPixelBufferGetHeight(self.currentSubtitle));
+            if (!IJK_GLES2_Renderer_uploadSubtitleTexture(_renderer, (void *)self.currentSubtitle))
+                ALOGE("[GL] GLES2 Render Subtitle failed\n");
+            IJK_GLES2_Renderer_drawArrays();
+            IJK_GLES2_Renderer_endDrawSubtitle(_renderer);
+        }
+    } else {
+        ALOGW("IJKSDLGLView: not ready.\n");
+    }
+   
+    CGLFlushDrawable([[self openGLContext] CGLContextObj]);
+    CGLUnlockContext([[self openGLContext] CGLContextObj]);
 }
 
-- (void)display:(SDL_VoutOverlay *)overlay subtitle:(CVPixelBufferRef)subtitle
+- (void)_generateSubtitlePixel:(NSString *)subtitle
+{
+    if (subtitle.length == 0) {
+        return;
+    }
+    
+    IJKSDLSubtitlePreference sp = self.subtitlePreference;
+        
+    int fontSize = sp.fontSize;
+    int32_t bgrValue = sp.color;
+    //以800为标准，定义出字幕字体默认大小为25pt
+    float ratio = 1.0;
+    if (!CGSizeEqualToSize(self.videoNaturalSize, CGSizeZero)) {
+        int degrees = self.videoDegrees;
+        if (degrees / 90 % 2 == 1) {
+            ratio = self.videoNaturalSize.height / 800.0;
+        } else {
+            ratio = self.videoNaturalSize.width / 800.0;
+        }
+    }
+    //字幕默认配置
+    NSMutableDictionary * attributes = [[NSMutableDictionary alloc] init];
+    
+    UIFont *subtitleFont = [UIFont systemFontOfSize:fontSize * ratio];
+    [attributes setObject:subtitleFont forKey:NSFontAttributeName];
+    
+    NSColor *subtitleColor = [NSColor colorWithRed:((float)(bgrValue & 0xFF)) / 255.0 green:((float)((bgrValue & 0xFF00) >> 8)) / 255.0 blue:(float)(((bgrValue & 0xFF0000) >> 16)) / 255.0 alpha:1.0];
+    
+    [attributes setObject:subtitleColor forKey:NSForegroundColorAttributeName];
+    
+    MRTextureString *textureString = [[MRTextureString alloc] initWithString:subtitle withAttributes:attributes withBoxColor:[NSColor colorWithRed:0.5f green:0.5f blue:0.5f alpha:0.5f] withBorderColor:nil];
+    
+    float inset = subtitleFont.pointSize / 2.0;
+    textureString.edgeInsets = NSEdgeInsetsMake(inset, inset, inset, inset);
+    textureString.cRadius = inset / 2.0;
+    
+    if (self.currentSubtitle) {
+        CVPixelBufferRelease(self.currentSubtitle);
+        self.currentSubtitle = NULL;
+    }
+    
+    self.currentSubtitle = [textureString createPixelBuffer];
+    
+    _subtitlePreferenceChanged = NO;
+}
+
+- (void)display:(SDL_VoutOverlay *)overlay subtitle:(const char *)text
 {
     if (!overlay) {
         ALOGW("IJKSDLGLView: overlay is nil\n");
         return;
+    }
+    
+    if (text && strlen(text) > 0) {
+        NSString *subStr = [[NSString alloc] initWithUTF8String:text];
+        if (_subtitlePreferenceChanged || ![subStr isEqualToString:self.subtitle]) {
+            [self _generateSubtitlePixel:subStr];
+            self.subtitle = subStr;
+        }
+    } else {
+        if (self.currentSubtitle) {
+            CVPixelBufferRelease(self.currentSubtitle);
+            self.currentSubtitle = NULL;
+        }
+        self.subtitle = nil;
     }
     
     [[self openGLContext] makeCurrentContext];
@@ -250,7 +352,6 @@
     
     if ([self setupRenderer:overlay] && _renderer) {
         //for video
-
         if (self.currentVideoPic) {
             CVPixelBufferRelease(self.currentVideoPic);
             self.currentVideoPic = NULL;
@@ -259,33 +360,26 @@
         CVPixelBufferRef videoPic = (CVPixelBufferRef)IJK_GLES2_Renderer_getVideoImage(_renderer, overlay);
         if (videoPic) {
             
-            [self updateRenderSettings];
             if (!IJK_GLES2_Renderer_updateVetex(_renderer, overlay))
                 ALOGE("[GL] Renderer_updateVetex failed\n");
-            
-            self.currentVideoPic = CVPixelBufferRetain(videoPic);
             
             if (!IJK_GLES2_Renderer_uploadTexture(_renderer, (void *)videoPic))
                 ALOGE("[GL] Renderer_updateVetex failed\n");
             
             IJK_GLES2_Renderer_drawArrays();
+            
+            self.currentVideoPic = CVPixelBufferRetain(videoPic);
         }
         
         //for subtitle
         if (self.currentSubtitle) {
-            CVPixelBufferRelease(self.currentSubtitle);
-            self.currentSubtitle = NULL;
-        }
-        
-        if (subtitle) {
-            self.currentSubtitle = CVPixelBufferRetain(subtitle);
-            
-            IJK_GLES2_Renderer_updateSubtitleVetex(_renderer, CVPixelBufferGetWidth(subtitle), CVPixelBufferGetHeight(subtitle));
-            if (!IJK_GLES2_Renderer_uploadSubtitleTexture(_renderer, (void *)subtitle))
+            IJK_GLES2_Renderer_beginDrawSubtitle(_renderer);
+            IJK_GLES2_Renderer_updateSubtitleVetex(_renderer, CVPixelBufferGetWidth(self.currentSubtitle), CVPixelBufferGetHeight(self.currentSubtitle));
+            if (!IJK_GLES2_Renderer_uploadSubtitleTexture(_renderer, (void *)self.currentSubtitle))
                 ALOGE("[GL] GLES2 Render Subtitle failed\n");
             IJK_GLES2_Renderer_drawArrays();
+            IJK_GLES2_Renderer_endDrawSubtitle(_renderer);
         }
-        
     } else {
         ALOGW("IJKSDLGLView: not ready.\n");
     }
@@ -382,7 +476,7 @@
     [[self openGLContext] makeCurrentContext];
     CGLLockContext([[self openGLContext] CGLContextObj]);
     if (self.currentVideoPic && _renderer) {
-        CGSize picSize = CGSizeMake(CVPixelBufferGetWidth(self.currentVideoPic) * _widthRatio, CVPixelBufferGetHeight(self.currentVideoPic));
+        CGSize picSize = CGSizeMake(CVPixelBufferGetWidth(self.currentVideoPic) * _videoSar, CVPixelBufferGetHeight(self.currentVideoPic));
         //视频带有旋转 90 度倍数时需要将显示宽高交换后计算
         if (IJK_GLES2_Renderer_isZRotate90oddMultiple(_renderer)) {
             float pic_width = picSize.width;
@@ -390,6 +484,19 @@
             float tmp = pic_width;
             pic_width = pic_height;
             pic_height = tmp;
+            picSize = CGSizeMake(pic_width, pic_height);
+        }
+        
+        //保持用户定义宽高比
+        if (self.darPreference.ratio > 0) {
+            float pic_width = picSize.width;
+            float pic_height = picSize.height;
+           
+            if (pic_width / pic_height > self.darPreference.ratio) {
+                pic_height = pic_width * 1.0 / self.darPreference.ratio;
+            } else {
+                pic_width = pic_height * self.darPreference.ratio;
+            }
             picSize = CGSizeMake(pic_width, pic_height);
         }
         
@@ -412,10 +519,12 @@
             }
             
             if (self.currentSubtitle && containSub) {
+                IJK_GLES2_Renderer_beginDrawSubtitle(_renderer);
                 IJK_GLES2_Renderer_updateSubtitleVetex(_renderer, CVPixelBufferGetWidth(self.currentSubtitle), CVPixelBufferGetHeight(self.currentSubtitle));
                 if (!IJK_GLES2_Renderer_uploadSubtitleTexture(_renderer, (void *)self.currentSubtitle))
                     ALOGE("[GL] GLES2 Render Subtitle failed\n");
                 IJK_GLES2_Renderer_drawArrays();
+                IJK_GLES2_Renderer_endDrawSubtitle(_renderer);
             }
             
             img = [self _snapshotTheContextWithSize:picSize];
@@ -545,6 +654,72 @@ static CGImageRef _FlipCGImage(CGImageRef src)
             return [self _snapshotEffectOriginWithSubtitle:NO];
         case IJKSDLSnapshot_Effect_Subtitle_Origin:
             return [self _snapshotEffectOriginWithSubtitle:YES];
+    }
+}
+
+#pragma mark - override setter methods
+
+- (void)setScalingMode:(IJKMPMovieScalingMode)scalingMode
+{
+    switch (scalingMode) {
+        case IJKMPMovieScalingModeFill:
+            _rendererGravity = IJK_GLES2_GRAVITY_RESIZE;
+            break;
+        case IJKMPMovieScalingModeAspectFit:
+            _rendererGravity = IJK_GLES2_GRAVITY_RESIZE_ASPECT;
+            break;
+        case IJKMPMovieScalingModeAspectFill:
+            _rendererGravity = IJK_GLES2_GRAVITY_RESIZE_ASPECT_FILL;
+            break;
+    }
+    _scalingMode = scalingMode;
+    if (IJK_GLES2_Renderer_isValid(_renderer)) {
+        IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, _backingWidth, _backingHeight);
+    }
+}
+
+- (void)setRotatePreference:(IJKSDLRotatePreference)rotatePreference
+{
+    if (_rotatePreference.type != rotatePreference.type || _rotatePreference.degrees != rotatePreference.degrees) {
+        _rotatePreference = rotatePreference;
+        if (IJK_GLES2_Renderer_isValid(_renderer)) {
+            IJK_GLES2_Renderer_updateRotate(_renderer, _rotatePreference.type, _rotatePreference.degrees);
+        }
+    }
+}
+
+- (void)setColorPreference:(IJKSDLColorConversionPreference)colorPreference
+{
+    if (_colorPreference.brightness != colorPreference.brightness || _colorPreference.saturation != colorPreference.saturation || _colorPreference.contrast != colorPreference.contrast) {
+        _colorPreference = colorPreference;
+        if (IJK_GLES2_Renderer_isValid(_renderer)) {
+            IJK_GLES2_Renderer_updateColorConversion(_renderer, _colorPreference.brightness, _colorPreference.saturation,_colorPreference.contrast);
+        }
+    }
+}
+
+- (void)setDarPreference:(IJKSDLDARPreference)darPreference
+{
+    if (_darPreference.ratio != darPreference.ratio) {
+        _darPreference = darPreference;
+        if (IJK_GLES2_Renderer_isValid(_renderer)) {
+            IJK_GLES2_Renderer_updateUserDefinedDAR(_renderer, _darPreference.ratio);
+        }
+    }
+}
+
+- (void)setSubtitlePreference:(IJKSDLSubtitlePreference)subtitlePreference
+{
+    if (_subtitlePreference.bottomMargin != subtitlePreference.bottomMargin) {
+        _subtitlePreference = subtitlePreference;
+        if (IJK_GLES2_Renderer_isValid(_renderer)) {
+            IJK_GLES2_Renderer_updateSubtitleBottomMargin(_renderer, _subtitlePreference.bottomMargin);
+        }
+    }
+    
+    if (_subtitlePreference.fontSize != subtitlePreference.fontSize || _subtitlePreference.color != subtitlePreference.color) {
+        _subtitlePreference = subtitlePreference;
+        _subtitlePreferenceChanged = YES;
     }
 }
 

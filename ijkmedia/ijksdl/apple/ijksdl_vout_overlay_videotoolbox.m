@@ -88,14 +88,25 @@ static void func_unref(SDL_VoutOverlay *overlay)
 
 static int func_fill_frame(SDL_VoutOverlay *overlay, const AVFrame *frame)
 {
-    assert(frame->format == IJK_AV_PIX_FMT__VIDEO_TOOLBOX);
-
-    CVBufferRef pixel_buffer = CVBufferRetain(frame->opaque);
+    CVPixelBufferRef pixel_buffer = NULL;
+    if (frame->format == IJK_AV_PIX_FMT__VIDEO_TOOLBOX) {
+        pixel_buffer = CVPixelBufferRetain(frame->opaque);
+    } else if (frame->format == AV_PIX_FMT_VIDEOTOOLBOX) {
+        pixel_buffer = (CVPixelBufferRef)frame->data[3];
+    } else {
+        assert(0);
+        return -100;
+    }
+    
+    if (NULL == pixel_buffer) {
+        return -1;
+    }
+    
     SDL_VoutOverlay_Opaque *opaque = overlay->opaque;
     if (opaque->pixel_buffer != NULL) {
-        CVBufferRelease(opaque->pixel_buffer);
+        CVPixelBufferRelease(opaque->pixel_buffer);
     }
-    opaque->pixel_buffer = pixel_buffer;
+    opaque->pixel_buffer = CVPixelBufferRetain(pixel_buffer);
     overlay->format = SDL_FCC__VTB;
     overlay->ff_format = CVPixelBufferGetPixelFormatType(pixel_buffer);
 

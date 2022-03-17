@@ -820,14 +820,6 @@ int ijkmp_get_msg(IjkMediaPlayer *mp, AVMessage *msg, int block)
     return -1;
 }
 
-void ijkmp_invalidate_subtitle_effect(IjkMediaPlayer *mp)
-{
-    assert(mp);
-    pthread_mutex_lock(&mp->mutex);
-    subtitle_invalidate_uploaded(mp->ffplayer);
-    pthread_mutex_unlock(&mp->mutex);
-}
-
 void ijkmp_set_subtitle_extra_delay(IjkMediaPlayer* mp, const float delay)
 {
     assert(mp);
@@ -872,11 +864,19 @@ int ijkmp_set_decoder_name(IjkMediaPlayer *mp, const char* decoder_name)
 	return 0;
 }
 
+
 int ijkmp_exchange_video_decoder(IjkMediaPlayer *mp)
 {
     assert(mp);
     MPTRACE("ffp_exchange_video_decoder\n");
     int retval = ffp_exchange_video_decoder(mp->ffplayer);
     MPTRACE("ffp_exchange_video_decoder()=%d\n", retval);
+    return retval;
+}
+
+int ijkmp_get_video_frame_cache_remaining(IjkMediaPlayer *mp)
+{
+    assert(mp);
+    int retval = ffp_get_video_frame_cache_remaining(mp->ffplayer);
     return retval;
 }

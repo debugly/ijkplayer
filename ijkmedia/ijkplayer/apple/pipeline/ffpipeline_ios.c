@@ -62,19 +62,21 @@ static IJKFF_Pipenode *func_open_another_video_decoder(IJKFF_Pipeline *pipeline,
 static IJKFF_Pipenode *func_open_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
 {
     IJKFF_Pipenode* node = NULL;
-    if (ffp->videotoolbox) {
+    if (ffp->videotoolbox == 1) {
         node = ffpipenode_create_video_decoder_from_ios_videotoolbox(ffp);
-        if (!node)
+        if (!node) {
             ALOGE("vtb fail!!! switch to ffmpeg decode!!!! \n");
+        }
     }
+    
     if (node == NULL) {
         node = ffpipenode_create_video_decoder_from_ffplay(ffp);
-        node->vdec_type = FFP_PROPV_DECODER_AVCODEC;
-    } else {
-        node->vdec_type = FFP_PROPV_DECODER_VIDEOTOOLBOX;
     }
-    ffp_notify_msg2(ffp, FFP_MSG_VIDEO_DECODER_OPEN, node->vdec_type == FFP_PROPV_DECODER_VIDEOTOOLBOX);
-    node->is_using = 1;
+    
+    if (node) {
+        node->is_using = 1;
+        ffp_notify_msg2(ffp, FFP_MSG_VIDEO_DECODER_OPEN, node->vdec_type);
+    }
     return node;
 }
 

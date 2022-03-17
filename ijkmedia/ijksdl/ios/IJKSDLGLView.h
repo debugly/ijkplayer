@@ -23,28 +23,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#import <TargetConditionals.h>
-#if TARGET_OS_OSX
-#import <APPKit/AppKit.h>
-typedef NSOpenGLView UIView;
-typedef NSImage UIImage;
-#else
-#import <UIKit/UIKit.h>
-#endif
-#import <CoreVideo/CVPixelBuffer.h>
 #import "IJKSDLGLViewProtocol.h"
-#include "ijksdl/ijksdl_vout.h"
 
-@interface IJKSDLGLView : UIView <IJKSDLGLViewProtocol>
-
-@property(nonatomic) IJKMPMovieScalingMode scalingMode;
-
-- (id)initWithFrame:(CGRect)frame;
-- (void)display:(SDL_VoutOverlay *)overlay subtitle:(CVPixelBufferRef)subtitle;
-
-#if !TARGET_OS_OSX
-- (UIImage*)snapshot;
-- (void)setShouldLockWhileBeingMovedToWindow:(BOOL)shouldLockWhiteBeingMovedToWindow __attribute__((deprecated("unused")));
-#endif
+@interface IJKSDLGLView : GLView <IJKSDLGLViewProtocol>
 
 @end

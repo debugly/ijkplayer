@@ -112,6 +112,8 @@ typedef struct IJK_GLES2_Renderer
 
     GLfloat vertices[8];
     int     vertices_changed;
+    int     mvp_changed;
+    int     drawingSubtitle;
     /// 顶点对象
     GLuint vbo;
     GLuint vao;
@@ -127,9 +129,8 @@ typedef struct IJK_GLES2_Renderer
     int     frame_sar_num;
     int     frame_sar_den;
     
-    //user defined
-    int     frame_dar_num;
-    int     frame_dar_den;
+    //user defined video ratio
+    float   user_dar_ratio;
 
     GLsizei last_buffer_width;
     

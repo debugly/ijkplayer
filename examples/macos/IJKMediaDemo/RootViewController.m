@@ -43,7 +43,7 @@
 
 @property (weak) IBOutlet NSPopUpButton *subtitlePopUpBtn;
 @property (weak) IBOutlet NSPopUpButton *audioPopUpBtn;
-
+@property (weak) IBOutlet NSPopUpButton *videoPopUpBtn;
 @property (weak) NSTrackingArea *trackingArea;
 
 //for cocoa binding begin
@@ -56,7 +56,7 @@
 @property (assign) float saturation;
 @property (assign) float contrast;
 
-@property (assign) BOOL useVideoToolBox;
+@property (assign) int useVideoToolBox;
 @property (assign) int useAsyncVTB;
 @property (copy) NSString *fcc;
 @property (assign) int snapshot;
@@ -88,8 +88,9 @@
 
     self.subtitleFontSize = 25;
     self.subtitleMargin = 0.7;
-    self.useVideoToolBox = YES;
     self.fcc = @"fcc-_es2";
+    self.useAsyncVTB = 0;
+    self.useVideoToolBox = 2;
     self.snapshot = 3;
     self.volume = 0.4;
     [self onReset:nil];
@@ -123,8 +124,14 @@
     
     [self.playerSlider onDraggedIndicator:^(double progress, MRProgressSlider * _Nonnull indicator, BOOL isEndDrag) {
         __strongSelf__
-        self.player.currentPlaybackTime = progress;
+        [self seekTo:progress];
     }];
+    
+#ifdef DEBUG
+    [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_INFO];
+#else
+    [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_WARN];
+#endif
 }
 
 - (void)prepareRightMenu
@@ -190,6 +197,7 @@
     NSArray *movies = info[@"obj"];
     
     if ([movies count] > 0) {
+        [self.playList removeAllObjects];
         // 开始播放
         [self appendToPlayList:movies];
     }
@@ -393,7 +401,7 @@
 {
     IJKFFOptions *options = [IJKFFOptions optionsByDefault];
     //视频帧处理不过来的时候丢弃一些帧达到同步的效果
-    //    [options setPlayerOptionIntValue:2 forKey:@"framedrop"];
+    [options setPlayerOptionIntValue:1 forKey:@"framedrop"];
     [options setPlayerOptionIntValue:16      forKey:@"video-pictq-size"];
     //    [options setPlayerOptionIntValue:50000      forKey:@"min-frames"];
     //    [options setPlayerOptionIntValue:50*1024*1024      forKey:@"max-buffer-size"];
@@ -411,8 +419,6 @@
     [options setPlayerOptionValue:self.fcc forKey:@"overlay-format"];
     [options setPlayerOptionIntValue:self.useVideoToolBox forKey:@"videotoolbox"];
     [options setPlayerOptionIntValue:self.useAsyncVTB forKey:@"videotoolbox-async"];
-    [options setPlayerOptionIntValue:3840 forKey:@"videotoolbox-max-frame-width"];
-    [options setShowHudView:NO];
     
     [self stopPlay:nil];
     [NSDocumentController.sharedDocumentController noteNewRecentDocumentURL:url];
@@ -433,10 +439,17 @@
     
     [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerPlaybackDidFinishNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerDidFinish:) name:IJKMPMoviePlayerPlaybackDidFinishNotification object:self.player];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMovieNoCodecFoundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerCouldNotFindCodec:) name:IJKMPMovieNoCodecFoundNotification object:self.player];
     
     self.player.scalingMode = IJKMPMovieScalingModeAspectFit;
     self.player.shouldAutoplay = YES;
     [self onVolumeChange:nil];
+}
+
+- (void)ijkPlayerCouldNotFindCodec:(NSNotification *)notifi
+{
+    NSLog(@"找不到解码器，联系开发小帅锅：%@",notifi.userInfo);
 }
 
 - (void)ijkPlayerDidFinish:(NSNotification *)notifi
@@ -468,16 +481,26 @@
         NSString *currentAudio = @"选择音轨";
         [self.audioPopUpBtn addItemWithTitle:currentAudio];
         
+        [self.videoPopUpBtn removeAllItems];
+        NSString *currentVideo = @"选择视轨";
+        [self.videoPopUpBtn addItemWithTitle:currentVideo];
+        
         for (NSDictionary *stream in dic[kk_IJKM_KEY_STREAMS]) {
             NSString *type = stream[k_IJKM_KEY_TYPE];
             int streamIdx = [stream[k_IJKM_KEY_STREAM_IDX] intValue];
             if ([type isEqualToString:k_IJKM_VAL_TYPE__SUBTITLE]) {
-                NSString *title = stream[k_IJKM_KEY_TITLE];
-                if (title.length == 0) {
-                    title = stream[k_IJKM_KEY_LANGUAGE];
-                }
-                if (title.length == 0) {
-                    title = @"未知";
+                NSString *url = stream[k_IJKM_KEY_EX_SUBTITLE_URL];
+                NSString *title = nil;
+                if (url) {
+                    title = [[url lastPathComponent] stringByDeletingPathExtension];
+                } else {
+                    title = stream[k_IJKM_KEY_TITLE];
+                    if (title.length == 0) {
+                        title = stream[k_IJKM_KEY_LANGUAGE];
+                    }
+                    if (title.length == 0) {
+                        title = @"未知";
+                    }
                 }
                 title = [NSString stringWithFormat:@"%@-%d",title,streamIdx];
                 if ([dic[k_IJKM_VAL_TYPE__SUBTITLE] intValue] == streamIdx) {
@@ -497,10 +520,24 @@
                     currentAudio = title;
                 }
                 [self.audioPopUpBtn addItemWithTitle:title];
+            } else if ([type isEqualToString:k_IJKM_VAL_TYPE__VIDEO]) {
+                NSString *title = stream[k_IJKM_KEY_TITLE];
+                if (title.length == 0) {
+                    title = stream[k_IJKM_KEY_LANGUAGE];
+                }
+                if (title.length == 0) {
+                    title = @"未知";
+                }
+                title = [NSString stringWithFormat:@"%@-%d",title,streamIdx];
+                if ([dic[k_IJKM_VAL_TYPE__VIDEO] intValue] == streamIdx) {
+                    currentVideo = title;
+                }
+                [self.videoPopUpBtn addItemWithTitle:title];
             }
         }
         [self.subtitlePopUpBtn selectItemWithTitle:currentTitle];
         [self.audioPopUpBtn selectItemWithTitle:currentAudio];
+        [self.videoPopUpBtn selectItemWithTitle:currentVideo];
     }
 }
 
@@ -586,14 +623,18 @@
         }
     }
     
-    //拖进来新的视频时，清理老的视频列表
     if ([videos count] > 0) {
         [self.playList addObjectsFromArray:videos];
         [self playFirstIfNeed];
     }
     
+    NSURL *lastUrl = [subtitles lastObject];
+    [subtitles removeLastObject];
     for (NSURL *url in subtitles) {
-        [self.player loadThenActiveSubtitleFile:[url path]];
+        [self.player loadSubtitleFileOnly:[url path]];
+    }
+    if (lastUrl) {
+        [self.player loadThenActiveSubtitleFile:[lastUrl path]];
     }
 }
 
@@ -658,10 +699,7 @@
 - (void)playFirstIfNeed
 {
     if (!self.playingUrl) {
-        NSURL *url = [self.playList firstObject];
-        if (url) {
-            [self playURL:url];
-        }
+        [self pauseOrPlay:nil];
     }
 }
 
@@ -669,6 +707,14 @@
 
 - (IBAction)pauseOrPlay:(NSButton *)sender
 {
+    if (!sender) {
+        if (self.playCtrlBtn.state == NSControlStateValueOff) {
+            self.playCtrlBtn.state = NSControlStateValueOn;
+        } else {
+            self.playCtrlBtn.state = NSControlStateValueOff;
+        }
+    }
+    
     if (self.playingUrl) {
         if (self.playCtrlBtn.state == NSControlStateValueOff) {
             [self.player pause];
@@ -694,7 +740,7 @@
 {
     if (self.player) {
         [self.player.view removeFromSuperview];
-        [self.player stop];
+        [self.player pause];
         [self.player shutdown];
         self.player = nil;
     }
@@ -744,24 +790,31 @@
     [self playURL:url];
 }
 
+- (void)seekTo:(float)cp
+{
+    if (cp < 0) {
+        cp = 0;
+    }
+    if (self.player.monitor.duration > 0) {
+        if (cp >= self.player.monitor.duration) {
+            cp = self.player.monitor.duration - 5;
+        }
+        self.player.currentPlaybackTime = cp;
+    }
+}
+
 - (IBAction)fastRewind:(NSButton *)sender
 {
     float cp = self.player.currentPlaybackTime;
     cp -= 50;
-    if (cp < 0) {
-        cp = 0;
-    }
-    self.player.currentPlaybackTime = cp;
+    [self seekTo:cp];
 }
 
 - (IBAction)fastForward:(NSButton *)sender
 {
     float cp = self.player.currentPlaybackTime;
     cp += 50;
-    if (cp < 0) {
-        cp = 0;
-    }
-    self.player.currentPlaybackTime = cp;
+    [self seekTo:cp];
 }
 
 - (IBAction)onVolumeChange:(NSSlider *)sender
@@ -788,7 +841,7 @@
     IJKSDLSubtitlePreference p = self.player.view.subtitlePreference;
     p.color = bgrValue;
     self.player.view.subtitlePreference = p;
-    [self.player invalidateSubtitleEffect];
+    [self.player.view setNeedsRefreshCurrentPic];
 }
 
 - (IBAction)onChangeSubtitleSize:(NSStepper *)sender
@@ -796,7 +849,7 @@
     IJKSDLSubtitlePreference p = self.player.view.subtitlePreference;
     p.fontSize = sender.intValue;
     self.player.view.subtitlePreference = p;
-    [self.player invalidateSubtitleEffect];
+    [self.player.view setNeedsRefreshCurrentPic];
 }
 
 - (IBAction)onSelectSubtitle:(NSPopUpButton*)sender
@@ -823,7 +876,7 @@
     IJKSDLSubtitlePreference p = self.player.view.subtitlePreference;
     p.bottomMargin = sender.floatValue;
     self.player.view.subtitlePreference = p;
-    [self.player invalidateSubtitleEffect];
+    [self.player.view setNeedsRefreshCurrentPic];
 }
 
 #pragma mark 画面设置
@@ -840,6 +893,10 @@
     } else if (item.tag == 3) {
         //aspect fit
         [self.player setScalingMode:IJKMPMovieScalingModeAspectFit];
+    }
+    
+    if (!self.player.isPlaying) {
+        [self.player.view setNeedsRefreshCurrentPic];
     }
 }
 
@@ -870,7 +927,9 @@
     }
     
     self.player.view.rotatePreference = preference;
-    
+    if (!self.player.isPlaying) {
+        [self.player.view setNeedsRefreshCurrentPic];
+    }
     NSLog(@"rotate:%@ %d",@[@"None",@"X",@"Y",@"Z"][preference.type],(int)preference.degrees);
 }
 
@@ -902,20 +961,23 @@
     colorPreference.saturation = self.saturation;//S
     colorPreference.contrast = self.contrast;//C
     self.player.view.colorPreference = colorPreference;
+    if (!self.player.isPlaying) {
+        [self.player.view setNeedsRefreshCurrentPic];
+    }
 }
 
 - (IBAction)onChangeDAR:(NSPopUpButton *)sender
 {
-    int dar_num = 1;
+    int dar_num = 0;
     int dar_den = 1;
-    if ([sender.titleOfSelectedItem isEqual:@"还原"]) {
-        dar_num = dar_den = 0;
-    }
-    else {
+    if (![sender.titleOfSelectedItem isEqual:@"还原"]) {
         const char* str = sender.titleOfSelectedItem.UTF8String;
         sscanf(str, "%d:%d", &dar_num, &dar_den);
     }
-    self.player.view.darPreference = (IJKSDLDARPreference){dar_num,dar_den};
+    self.player.view.darPreference = (IJKSDLDARPreference){1.0 * dar_num/dar_den};
+    if (!self.player.isPlaying) {
+        [self.player.view setNeedsRefreshCurrentPic];
+    }
 }
 
 - (IBAction)onReset:(NSButton *)sender
@@ -939,14 +1001,27 @@
 
 - (IBAction)onSelectAudioTrack:(NSPopUpButton*)sender
 {
-    NSString *title = sender.selectedItem.title;
-    NSArray *items = [title componentsSeparatedByString:@"-"];
-    if ([items count] == 2) {
+    if (sender.indexOfSelectedItem == 0) {
+        [self.player closeCurrentStream:k_IJKM_VAL_TYPE__AUDIO];
+    } else {
+        NSString *title = sender.selectedItem.title;
+        NSArray *items = [title componentsSeparatedByString:@"-"];
         int idx = [[items lastObject] intValue];
         NSLog(@"SelectAudioTrack:%d",idx);
         [self.player exchangeSelectedStream:idx];
+    }
+}
+
+- (IBAction)onSelectVideoTrack:(NSPopUpButton*)sender
+{
+    if (sender.indexOfSelectedItem == 0) {
+        [self.player closeCurrentStream:k_IJKM_VAL_TYPE__VIDEO];
     } else {
-        [self.player closeCurrentStream:k_IJKM_VAL_TYPE__AUDIO];
+        NSString *title = sender.selectedItem.title;
+        NSArray *items = [title componentsSeparatedByString:@"-"];
+        int idx = [[items lastObject] intValue];
+        NSLog(@"SelectVideoTrack:%d",idx);
+        [self.player exchangeSelectedStream:idx];
     }
 }
 

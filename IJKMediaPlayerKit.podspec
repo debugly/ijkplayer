@@ -80,7 +80,8 @@ TODO: Add long description of the pod here.
       'ijkmedia/ijkplayer/android/**/*.*',
       'ijkmedia/ijksdl/android/**/*.*',
       'ijkmedia/ijksdl/ffmpeg/ijksdl_vout_overlay_ffmpeg.{h,c}'
-
+      # need exclude when IJK_IO_OFF is 1.
+      #'ijkmedia/ijkplayer/ijkavformat/*.*'
     ss.osx.exclude_files = 
       'ijkmedia/ijksdl/ijksdl_egl.*',
       'ijkmedia/ijksdl/ios/*.*',

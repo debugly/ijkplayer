@@ -70,7 +70,7 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
 @synthesize isThirdGLView              = _isThirdGLView;
 @synthesize scaleFactor                = _scaleFactor;
-@synthesize fps                        = _fps;
+@synthesize scalingMode                = _scalingMode;
 // subtitle preference
 @synthesize subtitlePreference = _subtitlePreference;
 // rotate preference
@@ -457,18 +457,6 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
 
     glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
     [_context presentRenderbuffer:GL_RENDERBUFFER];
-
-    int64_t current = (int64_t)SDL_GetTickHR();
-    int64_t delta   = (current > _lastFrameTime) ? current - _lastFrameTime : 0;
-    if (delta <= 0) {
-        _lastFrameTime = current;
-    } else if (delta >= 1000) {
-        _fps = ((CGFloat)_frameCount) * 1000 / delta;
-        _frameCount = 0;
-        _lastFrameTime = current;
-    } else {
-        _frameCount++;
-    }
 }
 
 #pragma mark AppDelegate
@@ -611,6 +599,11 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
     return image;
 }
 
+- (void)setNeedsRefreshCurrentPic
+{
+#warning TODO FIX
+}
+
 - (UIImage*)snapshotInternal
 {
     if (isIOS7OrLater()) {
@@ -696,8 +689,4 @@ typedef NS_ENUM(NSInteger, IJKSDLGLViewApplicationState) {
     return image;
 }
 
-- (void)setShouldLockWhileBeingMovedToWindow:(BOOL)shouldLockWhileBeingMovedToWindow
-{
-    _shouldLockWhileBeingMovedToWindow = shouldLockWhileBeingMovedToWindow;
-}
 @end

@@ -79,13 +79,6 @@ if [[ $(uname -m) != "$XC_ARCH" || "$XC_FORCE_CROSS" ]];then
     FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-cross-compile"
 fi
 
-if [[ "$XC_FORCE_CROSS" ]];then
-    #only desktop compile programs
-    FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --disable-ffmpeg --disable-ffprobe"
-else
-    FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-ffmpeg --enable-ffprobe"
-fi
-
 FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --pkg-config-flags=--static"
 
 FFMPEG_LDFLAGS="$FFMPEG_C_FLAGS"
@@ -232,3 +225,5 @@ cp config.* $XC_BUILD_PREFIX
 make install -j8 1>/dev/null
 mkdir -p $XC_BUILD_PREFIX/include/libffmpeg
 cp -f config.h $XC_BUILD_PREFIX/include/libffmpeg/config.h
+# copy private header.
+#cp -f $XC_BUILD_SOURCE/libavformat/avc.h $XC_BUILD_PREFIX/include/libavformat/avc.h

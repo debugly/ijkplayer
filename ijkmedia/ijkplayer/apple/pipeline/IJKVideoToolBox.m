@@ -26,12 +26,12 @@
 #include "IJKVideoToolBoxAsync.h"
 #include "IJKVideoToolBoxSync.h"
 
-inline static Ijk_VideoToolBox *Ijk_VideoToolbox_CreateInternal(int async, FFPlayer* ffp, AVCodecContext* ic)
+inline static Ijk_VideoToolBox *Ijk_VideoToolbox_CreateInternal(int type, FFPlayer* ffp, AVCodecContext* ic)
 {
     Ijk_VideoToolBox *vtb = (Ijk_VideoToolBox*) mallocz(sizeof(Ijk_VideoToolBox));
     if (!vtb)
         return NULL;
-    if (async) {
+    if (type == 1) {
         vtb->opaque = videotoolbox_async_create(ffp, ic);
         vtb->decode_frame = videotoolbox_async_decode_frame;
         vtb->free = videotoolbox_async_free;

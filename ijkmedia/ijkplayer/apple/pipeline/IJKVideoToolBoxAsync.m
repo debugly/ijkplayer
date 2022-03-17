@@ -25,9 +25,7 @@
 #include "ijksdl_vout_overlay_videotoolbox.h"
 #include "ffpipeline_ios.h"
 #include <mach/mach_time.h>
-#if ! IJK_IO_OFF
 #include "libavformat/avc.h"
-#endif
 #include "ijksdl_vout_ios_gles2.h"
 #include "h264_sps_parser.h"
 #include "ijkplayer/ff_ffplay_debug.h"
@@ -643,9 +641,7 @@ static int decode_video_internal(Ijk_VideoToolBox_Opaque* context, AVCodecContex
         if(avio_open_dyn_buf(&pb) < 0) {
             goto failed;
         }
-    #if ! IJK_IO_OFF
         ff_avc_parse_nal_units(pb, pData, iSize);
-    #endif
         demux_size = avio_close_dyn_buf(pb, &demux_buff);
         // ALOGI("demux_size:%d\n", demux_size);
         if (demux_size == 0) {
@@ -680,11 +676,9 @@ static int decode_video_internal(Ijk_VideoToolBox_Opaque* context, AVCodecContex
         ALOGI("%s - CreateSampleBufferFrom failed", __FUNCTION__);
         goto failed;
     }
-#if ! IJK_IO_OFF
     if (avpkt->flags & AV_PKT_FLAG_NEW_SEG) {
         context->new_seg_flag = true;
     }
-#endif
     sample_info = sample_info_peek(context);
     if (!sample_info) {
         ALOGE("%s, failed to peek frame_info\n", __FUNCTION__);
@@ -1137,9 +1131,7 @@ static int vtbformat_init(VTBFormatDesc *fmt_desc, AVCodecParameters *codecpar, 
                     }
 
                     fmt_desc->convert_bytestream = true;
-                #if ! IJK_IO_OFF
                     ff_isom_write_avcc(pb, extradata, extrasize);
-                #endif
                     extradata = NULL;
 
                     extrasize = avio_close_dyn_buf(pb, &extradata);

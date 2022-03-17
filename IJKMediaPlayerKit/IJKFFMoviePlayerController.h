@@ -44,8 +44,6 @@
 #define k_IJKM_KEY_CODEC_LONG_NAME @"codec_long_name"
 #define k_IJKM_KEY_STREAM_IDX      @"stream_idx"
 
-#define k_IJKM_KEY_EX_SUBTITLE_URL @"ex_subtile_url"
-
 // stream: video
 #define k_IJKM_KEY_WIDTH          @"width"
 #define k_IJKM_KEY_HEIGHT         @"height"
@@ -61,7 +59,7 @@
 // stream: subtitle
 #define k_IJKM_KEY_TITLE          @"title"
 #define k_IJKM_KEY_LANGUAGE       @"language"
-
+#define k_IJKM_KEY_EX_SUBTITLE_URL @"ex_subtile_url"
 #define kk_IJKM_KEY_STREAMS       @"streams"
 
 typedef enum IJKLogLevel {
@@ -100,7 +98,7 @@ typedef enum IJKLogLevel {
 - (BOOL)isPlaying;
 - (int64_t)trafficStatistic;
 - (float)dropFrameRate;
-
+- (int)dropFrameCount;
 - (void)setPauseInBackground:(BOOL)pause;
 - (BOOL)isVideoToolboxOpen;
 
@@ -142,8 +140,6 @@ typedef enum IJKLogLevel {
 @property (nonatomic, retain) id<IJKMediaUrlOpenDelegate> liveOpenDelegate;
 
 @property (nonatomic, retain) id<IJKMediaNativeInvokeDelegate> nativeInvokeDelegate;
-
-- (void)invalidateSubtitleEffect;
 
 - (void)didShutdown;
 

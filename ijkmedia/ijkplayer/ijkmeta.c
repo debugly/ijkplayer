@@ -317,7 +317,7 @@ void ijkmeta_set_ex_subtitle_context_l(IjkMediaMeta *meta, struct AVFormatContex
         return;
 
     if (actived) {
-        int stream_idx = (is->ex_sub_index - 1) % MAX_EX_SUBTITLE_NUM + is->ic->nb_streams;
+        int stream_idx = (is->ex_sub_next - 1) % (IJK_EX_SUBTITLE_STREAM_MAX - IJK_EX_SUBTITLE_STREAM_OFFSET) + IJK_EX_SUBTITLE_STREAM_OFFSET;
         ijkmeta_set_int64_l(meta, IJKM_KEY_TIMEDTEXT_STREAM, stream_idx);
     }
     
@@ -351,11 +351,11 @@ void ijkmeta_set_ex_subtitle_context_l(IjkMediaMeta *meta, struct AVFormatContex
             ijkmeta_set_string_l(stream_meta, IJKM_KEY_TITLE, t->value);
         } else {
             char title[64];
-            snprintf(title, 64, "Track%d", is->ex_sub_index);
+            snprintf(title, 64, "Track%d", is->ex_sub_next);
             ijkmeta_set_string_l(stream_meta, IJKM_KEY_TITLE, title);
         }
-       
-        int stream_idx = (is->ex_sub_index - 1) % MAX_EX_SUBTITLE_NUM + is->ic->nb_streams;
+        
+        int stream_idx = (is->ex_sub_next - 1) % (IJK_EX_SUBTITLE_STREAM_MAX - IJK_EX_SUBTITLE_STREAM_OFFSET) + IJK_EX_SUBTITLE_STREAM_OFFSET;
         ijkmeta_set_int64_l(stream_meta, IJKM_KEY_STREAM_IDX, stream_idx);
 
         ijkmeta_append_child_l(meta, stream_meta);

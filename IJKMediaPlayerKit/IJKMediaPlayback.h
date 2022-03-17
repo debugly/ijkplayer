@@ -93,6 +93,8 @@ typedef NS_ENUM(NSInteger, IJKMPMovieTimeOption) {
 @property(nonatomic, readonly) int64_t numberOfBytesTransferred;
 
 @property(nonatomic, readonly) CGSize naturalSize;
+@property(nonatomic, readonly) NSInteger videoZRotateDegrees;
+
 @property(nonatomic) IJKMPMovieScalingMode scalingMode;
 @property(nonatomic) BOOL shouldAutoplay;
 
@@ -149,6 +151,9 @@ IJK_EXTERN NSString* const IJKMPMoviePlayerIsAirPlayVideoActiveDidChangeNotifica
 // These notifications are posted when the associated movie property becomes available.
 IJK_EXTERN NSString* const IJKMPMovieNaturalSizeAvailableNotification;
 
+//video's z rotate degrees
+IJK_EXTERN NSString* const IJKMPMovieZRotateAvailableNotification;
+IJK_EXTERN NSString* const IJKMPMovieNoCodecFoundNotification;
 // -----------------------------------------------------------------------------
 //  Extend Notifications
 

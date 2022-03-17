@@ -47,9 +47,9 @@ struct IjkMediaPlayer;
 
 @interface IJKFFOptions : NSObject
 
-+(IJKFFOptions *)optionsByDefault;
++ (IJKFFOptions *)optionsByDefault;
 
--(void)applyTo:(struct IjkMediaPlayer *)mediaPlayer;
+- (void)applyTo:(struct IjkMediaPlayer *)mediaPlayer;
 
 - (void)setOptionValue:(NSString *)value
                 forKey:(NSString *)key
@@ -60,15 +60,15 @@ struct IjkMediaPlayer;
                ofCategory:(IJKFFOptionCategory)category;
 
 
--(void)setFormatOptionValue:       (NSString *)value forKey:(NSString *)key;
--(void)setCodecOptionValue:        (NSString *)value forKey:(NSString *)key;
--(void)setSwsOptionValue:          (NSString *)value forKey:(NSString *)key;
--(void)setPlayerOptionValue:       (NSString *)value forKey:(NSString *)key;
+- (void)setFormatOptionValue:       (NSString *)value forKey:(NSString *)key;
+- (void)setCodecOptionValue:        (NSString *)value forKey:(NSString *)key;
+- (void)setSwsOptionValue:          (NSString *)value forKey:(NSString *)key;
+- (void)setPlayerOptionValue:       (NSString *)value forKey:(NSString *)key;
 
--(void)setFormatOptionIntValue:    (int64_t)value forKey:(NSString *)key;
--(void)setCodecOptionIntValue:     (int64_t)value forKey:(NSString *)key;
--(void)setSwsOptionIntValue:       (int64_t)value forKey:(NSString *)key;
--(void)setPlayerOptionIntValue:    (int64_t)value forKey:(NSString *)key;
+- (void)setFormatOptionIntValue:    (int64_t)value forKey:(NSString *)key;
+- (void)setCodecOptionIntValue:     (int64_t)value forKey:(NSString *)key;
+- (void)setSwsOptionIntValue:       (int64_t)value forKey:(NSString *)key;
+- (void)setPlayerOptionIntValue:    (int64_t)value forKey:(NSString *)key;
 
 @property(nonatomic) BOOL showHudView;
 
