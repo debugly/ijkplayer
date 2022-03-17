@@ -332,6 +332,8 @@ static EGLBoolean IJK_EGL_display_subtitle_internal(IJK_EGL* egl,  const char *t
 	IJK_EGL_Opaque *opaque = egl->opaque;
 	Subtitle_Overlay* overlay = Create_Bitmap(text);
 
+	IJK_GLES2_Renderer_beginDrawSubtitle(opaque->renderer);
+
 	IJK_GLES2_Renderer_updateSubtitleVetex(opaque->renderer, overlay->w, overlay->h);
 
 	if (!IJK_GLES2_Renderer_uploadSubtitleTexture(opaque->renderer, overlay)) {
@@ -340,6 +342,7 @@ static EGLBoolean IJK_EGL_display_subtitle_internal(IJK_EGL* egl,  const char *t
 	}
 
 	IJK_GLES2_Renderer_drawArrays();
+	IJK_GLES2_Renderer_endDrawSubtitle(opaque->renderer);
 
 	Release_Bitmap(overlay);
 	return EGL_TRUE;
