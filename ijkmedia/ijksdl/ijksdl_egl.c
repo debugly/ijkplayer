@@ -297,6 +297,8 @@ static EGLBoolean IJK_EGL_prepareRenderer(IJK_EGL* egl, SDL_VoutOverlay *overlay
         }
 
 		IJK_GLES2_Renderer_setGravity(opaque->renderer, IJK_GLES2_GRAVITY_RESIZE_ASPECT, overlay->w, overlay->h);
+
+		IJK_GLES2_Renderer_updateColorConversion(opaque->renderer, 1, 1, 1);
     }
 
     if (!IJK_EGL_setSurfaceSize(egl, overlay->w, overlay->h)) {
