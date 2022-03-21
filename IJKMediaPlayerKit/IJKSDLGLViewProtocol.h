@@ -97,11 +97,21 @@ typedef enum : NSUInteger {
     IJKSDLSnapshot_Effect_Subtitle_Origin //keep original video size,with subtitle and video effect
 } IJKSDLSnapshotType;
 
+typedef struct _IJKSDLSubtitlePicture IJKSDLSubtitlePicture;
+struct _IJKSDLSubtitlePicture {
+    int x;
+    int y;
+    int w;
+    int h;
+    int nb_colors;
+    uint32_t *data; // pixels with length w * h, in BGRA pixel format
+};
+
 @protocol IJKSDLGLViewProtocol <NSObject>
 
 @property(nonatomic) IJKMPMovieScalingMode scalingMode;
 #if TARGET_OS_IOS
-@property(nonatomic) CGFloat  scaleFactor;
+@property(nonatomic) CGFloat scaleFactor;
 #endif
 @property(nonatomic) BOOL isThirdGLView;
 /*
@@ -120,7 +130,7 @@ typedef enum : NSUInteger {
 - (void)setNeedsRefreshCurrentPic;
 
 // private method for jik internal.
-- (void)display:(SDL_VoutOverlay *)overlay subtitle:(const char *)subtitle;
+- (void)display:(SDL_VoutOverlay *)overlay subtitle:(const char *)subtitle subPict:(IJKSDLSubtitlePicture *)subPict;
 
 #if !TARGET_OS_OSX
 - (UIImage *)snapshot;
@@ -130,7 +140,10 @@ typedef enum : NSUInteger {
 
 @optional;//when isThirdGLView,will call display_pixels method.
 - (void)display_pixels:(IJKOverlay *)overlay;
-
+//when video size changed will call videoNaturalSizeChanged.
+- (void)videoNaturalSizeChanged:(CGSize)size;
+//when video z rotate degrees changed will call videoZRotateDegrees.
+- (void)videoZRotateDegrees:(NSInteger)degrees;
 @end
 
 #endif /* IJKSDLGLViewProtocol_h */

@@ -540,9 +540,7 @@ fail0:
     return ret;
 }
 
-static AVBufferRef *hw_device_ctx = NULL;
-static enum AVPixelFormat hw_pix_fmt;
-
+//static const AVCodecHWConfig *hw_config;
 
 static int decoder_decode_frame(FFPlayer *ffp, Decoder *d, AVFrame *frame, AVSubtitle *sub) {
     int ret = AVERROR(EAGAIN);
@@ -958,6 +956,17 @@ static void update_subtitle_text(FFPlayer *ffp,const char *str)
     ffp_notify_msg4(ffp, FFP_MSG_TIMED_TEXT, 0, 0, (void *)str, (int)strlen(str) + 1);
 }
 
+static void update_subtitle_pict(FFPlayer *ffp, const AVSubtitleRect *rect)
+{
+    //update subtitle by bitmap, save into vout's opaque
+    if (ffp->vout->update_subtitle_picture) {
+        SDL_LockMutex(ffp->vout->mutex);
+        ffp->vout->update_subtitle_picture(ffp->vout, rect);
+        SDL_UnlockMutex(ffp->vout->mutex);
+    }
+    ffp_notify_msg1(ffp, FFP_MSG_TIMED_TEXT);
+}
+
 static void video_image_display2(FFPlayer *ffp)
 {
     VideoState *is = ffp->is;
@@ -981,6 +990,10 @@ static void video_image_display2(FFPlayer *ffp)
                                     update_subtitle_text(ffp, buffer);
                                     free(buffer);
                                 }
+                            } else if (sp->sub.rects[0]->type == SUBTITLE_BITMAP
+                                       && sp->sub.rects[0]->data[0]
+                                       && sp->sub.rects[0]->linesize[0]) {
+                                update_subtitle_pict(ffp, sp->sub.rects[0]);
                             } else {
                                 assert(0);
                             }
@@ -3091,37 +3104,48 @@ static int audio_open(FFPlayer *opaque, int64_t wanted_channel_layout, int wante
 static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
                                         const enum AVPixelFormat *pix_fmts)
 {
-    const enum AVPixelFormat *p;
-
-    for (p = pix_fmts; *p != -1; p++) {
-        if (*p == hw_pix_fmt)
-            return *p;
+    if (hw_config) {
+        enum AVPixelFormat hw_pix_fmt = hw_config->pix_fmt;
+        for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
+            if (*p == hw_pix_fmt)
+                return *p;
+        }
     }
-    
-    for (p = pix_fmts; *p != -1; p++) {
+
+    for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
         if (*p == AV_PIX_FMT_NV12)
             return *p;
     }
-    
-    for (p = pix_fmts; *p != -1; p++) {
+
+    for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
         if (*p == AV_PIX_FMT_YUV420P)
             return *p;
+    }
+
+    const enum AVPixelFormat supported_fmts[] = {AV_PIX_FMT_UYVY422,AV_PIX_FMT_RGB24,AV_PIX_FMT_ARGB,AV_PIX_FMT_0RGB,AV_PIX_FMT_BGRA,AV_PIX_FMT_BGR0};
+    
+    for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
+        for (int i = 0; i < sizeof(supported_fmts) / sizeof(enum AVPixelFormat); i++) {
+            if (*p == supported_fmts[i])
+                return *p;
+        }
     }
     
     return AV_PIX_FMT_NONE;
 }
 
-static int hw_decoder_init(AVCodecContext * ctx, const enum AVHWDeviceType type) {
+static int hw_decoder_init(AVCodecContext * ctx, const AVCodecHWConfig* config) {
     int err = 0;
-    if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type, NULL, NULL, 0)) < 0) {
-        fprintf(stderr, "Failed to create specified HW device.\n");
+    AVBufferRef *hw_device_ctx = NULL;
+    if ((err = av_hwdevice_ctx_create(&hw_device_ctx, config->device_type, NULL, NULL, 0)) < 0) {
+        ALOGE("create mac HW device failed for type: %d\n", config->device_type);
         return err;
     }
     //将硬件支持的图像格式传给解码器的方法
     ctx->get_format = get_hw_format;
     av_opt_set_int(ctx, "refcounted_frames", 1, 0);
     //创建hw_device_ctx传给解码器上下文，必须在avcodec_open2之前并且之后不能修改
-    ctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+    ctx->hw_device_ctx = hw_device_ctx;
     return err;
 }
 #endif

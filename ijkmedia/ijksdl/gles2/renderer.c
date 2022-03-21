@@ -169,7 +169,7 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_base(const char *fragment_shader_s
     renderer->um4_mvp      = glGetUniformLocation(renderer->program, "um4_ModelViewProjection");    IJK_GLES2_checkError_TRACE("glGetUniformLocation(um4_ModelViewProjection)");
     renderer->um3_color_conversion = -1;
     renderer->um3_rgb_adjustment = -1;
-    renderer->mvp_changed = 1;
+    
     return renderer;
 
 fail:
@@ -488,7 +488,7 @@ void IJK_GLES2_Renderer_updateRotate(IJK_GLES2_Renderer *renderer,int type,int d
         renderer->rotate_degrees = degrees;
         flag = 1;
     }
-    //need update mpv
+    //need update mvp
     if (flag) {
         renderer->mvp_changed = 1;
     }
@@ -642,12 +642,12 @@ GLboolean IJK_GLES2_Renderer_use(IJK_GLES2_Renderer *renderer)
     renderer->rgb_adjustment[0] = 1.0;
     renderer->rgb_adjustment[1] = 1.0;
     renderer->rgb_adjustment[2] = 1.0;
+    renderer->mvp_changed = 1;
+    renderer->rgb_adjust_changed = 1;
     
     IJK_GLES2_Renderer_TexCoords_reset(renderer);
     IJK_GLES2_Renderer_Vertices_reset(renderer);
     IJK_GLES2_Renderer_Upload_Vbo_Data(renderer);
-    
-    renderer->mvp_changed = 1;
     IJK_GLES2_updateMVP_ifNeed(renderer);
     return GL_TRUE;
 }
@@ -663,13 +663,31 @@ void* IJK_GLES2_Renderer_getVideoImage(IJK_GLES2_Renderer *renderer, SDL_VoutOve
 
 void IJK_GLES2_Renderer_updateColorConversion(IJK_GLES2_Renderer *renderer,float brightness,float satutaion,float contrast)
 {
-    renderer->rgb_adjustment[0] = brightness;
-    renderer->rgb_adjustment[1] = satutaion;
-    renderer->rgb_adjustment[2] = contrast;
+    int changed = 0;
+    if (renderer->rgb_adjustment[0] != brightness) {
+        changed = 1;
+        renderer->rgb_adjustment[0] = brightness;
+    }
+    if (renderer->rgb_adjustment[1] != satutaion) {
+        changed = 1;
+        renderer->rgb_adjustment[1] = satutaion;
+    }
+    if (renderer->rgb_adjustment[2] != contrast) {
+        changed = 1;
+        renderer->rgb_adjustment[2] = contrast;
+    }
     
-    if (renderer->um3_rgb_adjustment >= 0) {
+    if (changed) {
+        renderer->rgb_adjust_changed = 1;
+    }
+}
+
+static void IJK_GLES2_updateRGB_adjust_ifNeed(IJK_GLES2_Renderer *renderer)
+{
+    if (renderer->rgb_adjust_changed && renderer->um3_rgb_adjustment >= 0) {
         glUniform3fv(renderer->um3_rgb_adjustment, 1, renderer->rgb_adjustment);
-            IJK_GLES2_checkError_TRACE("glUniform3fv(um3_rgb_adjustment)");
+        IJK_GLES2_checkError_TRACE("glUniform3fv(um3_rgb_adjustment)");
+        renderer->rgb_adjust_changed = 0;
     }
 }
 
@@ -731,7 +749,7 @@ GLboolean IJK_GLES2_Renderer_updateVetex(IJK_GLES2_Renderer *renderer, SDL_VoutO
     }
     
     IJK_GLES2_updateMVP_ifNeed(renderer);
-    
+    IJK_GLES2_updateRGB_adjust_ifNeed(renderer);
     glBindVertexArray(renderer->vao); IJK_GLES2_checkError_TRACE("glBindVertexArray");
 
     return GL_TRUE;

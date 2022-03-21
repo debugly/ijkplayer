@@ -701,6 +701,9 @@ inline static int getPlayerOption(IJKFFOptionCategory category)
          postNotificationName:IJKMPMovieNaturalSizeAvailableNotification
          object:self userInfo:@{@"size":NSStringFromSize(self->_naturalSize)}];
 #endif
+        if ([self.view respondsToSelector:@selector(videoNaturalSizeChanged:)]) {
+            [self.view videoNaturalSizeChanged:self->_naturalSize];
+        }
     }
 }
 
@@ -812,11 +815,8 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
     if (_mediaPlayer == nil)
         return;
 
-    int64_t vdec  = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
-    int64_t vdec2 = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_ANOTHER_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
-    _monitor.vdecoder = [self coderNameWithVdecType:(int)vdec];
     [self setHudValue:_monitor.vdecoder forKey:@"vdec"];
-    
+    int64_t vdec2 = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_ANOTHER_VIDEO_DECODER, FFP_PROPV_DECODER_UNKNOWN);
     [self setHudValue:[self coderNameWithVdecType:(int)vdec2] forKey:@"vdec-swithing"];
     
     [self setHudValue:[NSString stringWithFormat:@"%d / %.2f", [self dropFrameCount], [self dropFrameRate]] forKey:@"drop-frame(c/r)"];
@@ -1345,6 +1345,11 @@ inline static void fillMetaInternal(NSMutableDictionary *meta, IjkMediaMeta *raw
         case FFP_MSG_VIDEO_Z_ROTATE_DEGREE:
             if (_videoZRotateDegrees != avmsg->arg1) {
                 _videoZRotateDegrees = avmsg->arg1;
+                
+                if ([self.view respondsToSelector:@selector(videoZRotateDegrees:)]) {
+                    [self.view videoZRotateDegrees:_videoZRotateDegrees];
+                }
+                
                 [[NSNotificationCenter defaultCenter]
                          postNotificationName:IJKMPMovieZRotateAvailableNotification
                          object:self userInfo:@{@"degrees":@(_videoZRotateDegrees)}];

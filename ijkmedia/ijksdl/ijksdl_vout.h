@@ -73,6 +73,7 @@ struct SDL_Vout {
     void (*free_l)(SDL_Vout *vout);
     int (*display_overlay)(SDL_Vout *vout, SDL_VoutOverlay *overlay);
     void (*update_subtitle)(SDL_Vout *vout, const char *text);
+    void (*update_subtitle_picture)(SDL_Vout *vout, const AVSubtitleRect *rect);
     
     Uint32 overlay_format;
     Uint32 ff_format;//(Read Only)same as SDL_VoutOverlay's ff_format.
