@@ -321,16 +321,25 @@
     /// hadle 8bit color
     if (pict->nb_colors == 256) {
         CVPixelBufferRef pixelBuffer = NULL;
-    
-        NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 [NSNumber numberWithBool:YES], kCVPixelBufferOpenGLCompatibilityKey,
-                                 [NSNumber numberWithBool:YES], kCVPixelBufferCGImageCompatibilityKey,
-                                 [NSNumber numberWithBool:YES], kCVPixelBufferCGBitmapContextCompatibilityKey,
-                                 [NSDictionary dictionary],kCVPixelBufferIOSurfacePropertiesKey,
-                                 nil];
+        NSDictionary *options = @{
+            (__bridge NSString*)kCVPixelBufferOpenGLCompatibilityKey : @YES,
+            (__bridge NSString*)kCVPixelBufferIOSurfacePropertiesKey : [NSDictionary dictionary]
+        };
         
-        CVReturn ret = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, pict->w, pict->h, kCVPixelFormatType_32BGRA, pict->data, pict->w * 4, NULL, NULL, (__bridge CFDictionaryRef)options, &pixelBuffer);
+        CVReturn ret = CVPixelBufferCreate(kCFAllocatorDefault, pict->w, pict->h, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)options, &pixelBuffer);
         
+        NSParameterAssert(ret == kCVReturnSuccess && pixelBuffer != NULL);
+        
+        CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+        
+        uint8_t *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
+        int *dst_linesize = av_mallocz(sizeof(int)*4);
+        dst_linesize[0] = (int)CVPixelBufferGetBytesPerRow(pixelBuffer);
+        
+        av_image_copy(&baseAddress, dst_linesize, (const uint8_t **)pict->data, pict->linesize, AV_PIX_FMT_BGRA, pict->w, pict->h);
+        
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+                
         if (self.currentSubtitle) {
             CVPixelBufferRelease(self.currentSubtitle);
             self.currentSubtitle = NULL;
@@ -370,6 +379,7 @@
             self.currentSubtitle = NULL;
         }
         self.subtitle = nil;
+        self.subtitlePict = NULL;
     }
     
     [[self openGLContext] makeCurrentContext];

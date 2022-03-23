@@ -217,7 +217,9 @@ static void vout_copy_subtitle_picture(IJKSDLSubtitlePicture **dst, const AVSubt
     /// the graphic subtitles' bitmap with pixel format AV_PIX_FMT_PAL8,
     /// https://ffmpeg.org/doxygen/trunk/pixfmt_8h.html#a9a8e335cf3be472042bc9f0cf80cd4c5
     /// need to be converted to BGRA32 before use
-    (*dst)->data = copy_pal8_to_bgra(rect);
+    (*dst)->data[0] = (uint8_t*)copy_pal8_to_bgra(rect);
+    /// PAL8 to BGRA32, bytes per line increased by multiplied 4
+    (*dst)->linesize[0] = rect->linesize[0] * 4;
 }
 
 static void vout_update_subtitle_picture(SDL_Vout *vout, const AVSubtitleRect *rect)
