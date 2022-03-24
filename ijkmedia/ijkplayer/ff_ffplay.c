@@ -540,7 +540,7 @@ fail0:
     return ret;
 }
 
-//static const AVCodecHWConfig *hw_config;
+static const AVCodecHWConfig *hw_config;
 
 static int decoder_decode_frame(FFPlayer *ffp, Decoder *d, AVFrame *frame, AVSubtitle *sub) {
     int ret = AVERROR(EAGAIN);
@@ -569,15 +569,15 @@ static int decoder_decode_frame(FFPlayer *ffp, Decoder *d, AVFrame *frame, AVSub
                                 } else if (!ffp->decoder_reorder_pts) {
                                     frame->pts = frame->pkt_dts;
                                 }
-//                                if (frame->format == hw_pix_fmt) {
-//                                    /* retrieve data from GPU to CPU */
-//                                    AVFrame *sw_frame = av_frame_alloc();
-//                                    if ((ret = av_hwframe_transfer_data(sw_frame, frame, 0)) < 0) {
-//                                        fprintf(stderr, "Error transferring the data to system memory\n");
-//                                    }
-//                                    av_frame_unref(frame);
-//                                    av_frame_move_ref(frame, sw_frame);
-//                                }
+                                //if (frame->format == hw_pix_fmt) {
+                                //    /* retrieve data from GPU to CPU */
+                                //    AVFrame *sw_frame = av_frame_alloc();
+                                //    if ((ret = av_hwframe_transfer_data(sw_frame, frame, 0)) < 0) {
+                                //        fprintf(stderr, "Error transferring the data to system memory\n");
+                                //    }
+                                //    av_frame_unref(frame);
+                                //    av_frame_move_ref(frame, sw_frame);
+                                //}
                             }
                             break;
                         case AVMEDIA_TYPE_AUDIO:
@@ -893,7 +893,7 @@ static void remove_last_n(char *buffer)
 
 static char * remove_ass_line_effect(const char *ass)
 {
-    while (ass && strlen(ass) > 2) {  
+    while (ass && strlen(ass) > 2) {
         if (ass[0] == '{') {
             char* end = strchr(ass, '}');
             if (end) {
@@ -1171,7 +1171,7 @@ static void stream_close(FFPlayer *ffp)
     is->abort_request = 1;
     packet_queue_abort(&is->videoq);
     packet_queue_abort(&is->audioq);
-	av_log(NULL, AV_LOG_INFO, "wait for read_tid\n");
+    av_log(NULL, AV_LOG_DEBUG, "wait for read_tid\n");
     SDL_WaitThread(is->read_tid, NULL);
 
     /* close each stream */
@@ -1844,16 +1844,14 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
 #endif
 
     /* alloc or resize hardware picture buffer */
-    if (!vp->bmp || vp->reallocate || !vp->allocated ||
+    if (!vp->bmp || !vp->allocated ||
         vp->width  != src_frame->width ||
         vp->height != src_frame->height ||
         vp->format != src_frame->format) {
 
         if (vp->width != src_frame->width || vp->height != src_frame->height)
             ffp_notify_msg3(ffp, FFP_MSG_VIDEO_SIZE_CHANGED, src_frame->width, src_frame->height);
-
-        vp->allocated  = 0;
-        vp->reallocate = 0;
+        vp->allocated = 0;
         vp->width = src_frame->width;
         vp->height = src_frame->height;
         vp->format = src_frame->format;
@@ -2922,9 +2920,9 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
 {
     FFPlayer *ffp = opaque;
     VideoState *is = ffp->is;
-	SDL_AudioSpec * spec = NULL;
+	SDL_AudioSpec* spec = NULL;
 	spec = SDL_AoutGetSpec(ffp->aout);
-    int audio_size, len1;
+    int audio_size, rest_len, len_want = len;
     if (!ffp || !is) {
         memset(stream, 0, len);
         return;
@@ -2946,7 +2944,7 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
         ffp->pf_playback_volume_changed = 0;
         SDL_AoutSetPlaybackVolume(ffp->aout, ffp->pf_playback_volume);
     }
-
+    int gotFrame = 0;
     while (len > 0) {
         if (is->audio_buf_index >= is->audio_buf_size) {
            audio_size = audio_decode_frame(ffp);
@@ -2955,6 +2953,7 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
                is->audio_buf = NULL;
                is->audio_buf_size = SDL_AUDIO_MIN_BUFFER_SIZE / is->audio_tgt.frame_size * is->audio_tgt.frame_size;
            } else {
+               gotFrame = 1;
                if (is->show_mode != SHOW_MODE_VIDEO)
                    update_sample_display(is, (int16_t *)is->audio_buf, audio_size);
                is->audio_buf_size = audio_size;
@@ -2967,33 +2966,44 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
             // stream += len;
             // len = 0;
             SDL_AoutFlushAudio(ffp->aout);
+            gotFrame = 0;
             break;
         }
-        len1 = is->audio_buf_size - is->audio_buf_index;
-        if (len1 > len)
-            len1 = len;
+        rest_len = is->audio_buf_size - is->audio_buf_index;
+        if (rest_len > len)
+            rest_len = len;
         if (!is->muted && is->audio_buf && is->audio_volume == SDL_MIX_MAXVOLUME)
-            memcpy(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, len1);
+            memcpy(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, rest_len);
         else {
-            memset(stream, 0, len1);
-			if (!is->muted && is->audio_buf)
-				SDL_MixAudio(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, len1, SDL_MIX_MAXVOLUME, spec);
+            memset(stream, 0, rest_len);
+            if (!is->muted && is->audio_buf)
+                SDL_MixAudio(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, rest_len, is->audio_volume, spec);
         }
-        len -= len1;
-        stream += len1;
-        is->audio_buf_index += len1;
+        len -= rest_len;
+        stream += rest_len;
+        is->audio_buf_index += rest_len;
     }
-    is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
     /* Let's assume the audio driver that is used by SDL has two periods. */
     if (!isnan(is->audio_clock)) {
-        set_clock_at(&is->audclk, is->audio_clock - (double)(is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec - SDL_AoutGetLatencySeconds(ffp->aout), is->audio_clock_serial, ffp->audio_callback_time / 1000000.0);
+        double pts = 0.0;
+        if (!gotFrame && !isnan(is->audclk.pts)) {
+            //none audio frame,already used out. is->audio_clock is the lastest audio frame pts and audio_write_buf_size is audio_buf_size(512 = SDL_AUDIO_MIN_BUFFER_SIZE / is->audio_tgt.frame_size * is->audio_tgt.frame_size).
+            //use last pts and increase by audio callback eated bytes.
+            pts = is->audclk.pts + (double)(len_want) / is->audio_tgt.bytes_per_sec;
+        } else {
+            int audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
+            pts = is->audio_clock - (double)(audio_write_buf_size) / is->audio_tgt.bytes_per_sec - SDL_AoutGetLatencySeconds(ffp->aout);
+        }
+        set_clock_at(&is->audclk, pts, is->audio_clock_serial, ffp->audio_callback_time / 1000000.0);
         sync_clock_to_slave(&is->extclk, &is->audclk);
+        
+        if (gotFrame) {
+            if (!ffp->first_audio_frame_rendered) {
+                ffp->first_audio_frame_rendered = 1;
+                ffp_notify_msg1(ffp, FFP_MSG_AUDIO_RENDERING_START);
+            }
+        }
     }
-    if (!ffp->first_audio_frame_rendered) {
-        ffp->first_audio_frame_rendered = 1;
-        ffp_notify_msg1(ffp, FFP_MSG_AUDIO_RENDERING_START);
-    }
-
     if (is->latest_audio_seek_load_serial == is->audio_clock_serial) {
 #ifdef WIN32
 		int latest_audio_seek_load_serial = InterlockedExchange(&(is->latest_audio_seek_load_serial), -1);
@@ -3204,46 +3214,41 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         stream_lowres = codec->max_lowres;
     }
     avctx->lowres = stream_lowres;
-
-#if FF_API_EMU_EDGE
-    if(stream_lowres) avctx->flags |= CODEC_FLAG_EMU_EDGE;
-#endif
     if (ffp->fast)
         avctx->flags2 |= AV_CODEC_FLAG2_FAST;
-#if FF_API_EMU_EDGE
-    if(codec->capabilities & AV_CODEC_CAP_DR1)
-        avctx->flags |= CODEC_FLAG_EMU_EDGE;
-#endif
-
     opts = filter_codec_opts(ffp->codec_opts, avctx->codec_id, ic, ic->streams[stream_index], (AVCodec *)codec);
     if (!av_dict_get(opts, "threads", NULL, 0))
         av_dict_set(&opts, "threads", "auto", 0);
     if (stream_lowres)
         av_dict_set_int(&opts, "lowres", stream_lowres, 0);
     
-    //if (ffp->videotoolbox == 2 && avctx->codec_type == AVMEDIA_TYPE_VIDEO) {
-    //    enum AVHWDeviceType type = av_hwdevice_find_type_by_name("videotoolbox");;
-    //    for (int i = 0;; i++) {
-    //        const AVCodecHWConfig *config = avcodec_get_hw_config(codec, i);
-    //        if (!config) {
-    //            fprintf(stderr, "Decoder %s does not support device type %s.\n",
-    //                    codec->name, av_hwdevice_get_type_name(type));
-    //            break;
-    //        }
-    //        if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
-    //            config->device_type == type) {
-    //            hw_pix_fmt = config->pix_fmt;
-    //            break;
-    //        }
-    //    }
-    //    
-    //    if (hw_decoder_init(avctx, type) < 0) {
-    //        ALOGW("not use videotoolbox!\n");
-    //    } else {
-    //        ALOGI("using videotoolbox decoder!\n");
-    //    }
-    //}
-    //
+	hw_config = NULL;
+#ifdef __APPLE__
+    if (ffp->videotoolbox == 2 && avctx->codec_type == AVMEDIA_TYPE_VIDEO) {
+        enum AVHWDeviceType type = av_hwdevice_find_type_by_name("videotoolbox");
+        const AVCodecHWConfig *config = NULL;
+        for (int i = 0;; i++) {
+            const AVCodecHWConfig *node = avcodec_get_hw_config(codec, i);
+            if (!node) {
+                ALOGE("avdec %s does not support device type %s.\n",
+                        codec->name, av_hwdevice_get_type_name(type));
+                break;
+            }
+            if (node->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && node->device_type == type) {
+                config = node;
+                break;
+            }
+        }
+        
+        if (config && hw_decoder_init(avctx, config) == 0) {
+            hw_config = config;
+            ALOGI("videotoolbox accel opened!\n");
+        } else {
+            ALOGW("can't use videotoolbox accel!\n");
+        }
+    }
+#endif
+
     if ((ret = avcodec_open2(avctx, codec, &opts)) < 0) {
         goto fail;
     }
@@ -4345,7 +4350,7 @@ static VideoState *stream_open(FFPlayer *ffp, const char *filename, AVInputForma
     init_clock(&is->audclk, &is->audioq.serial);
     init_clock(&is->extclk, &is->extclk.serial);
     is->audio_clock_serial = -1;
-	is->audio_volume = SDL_MIX_MAXVOLUME;
+    is->audio_clock = NAN;
     if (ffp->startup_volume < 0)
         av_log(NULL, AV_LOG_WARNING, "-volume=%d < 0, setting to 0\n", ffp->startup_volume);
     if (ffp->startup_volume > 100)

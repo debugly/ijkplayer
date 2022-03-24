@@ -145,7 +145,7 @@
       <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>../depend/ffmpeg/include/;../../../ijkmedia/ijksdl/;./dxva2/;./global/include/;../../../ijkmedia/ijkplayer/pipeline/;../depend/sdl2/include/;../depend/pthread-win32/include/;../../../ijkmedia/;../depend/EGL/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_MBCS;_CRT_SECURE_NO_WARNINGS;COBJMACROS;HAVE_STRUCT_TIMESPEC;IJK_IO_OFF=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
