@@ -30,6 +30,7 @@ echo "===check env end==="
 
 iOS_ARCHS="x86_64 arm64"
 macOS_ARCHS="x86_64 arm64"
+win_ARCHS="win32 x86_64"
 
 function apply_patches()
 {
@@ -120,6 +121,22 @@ function main() {
             done
         ;;
 
+        Windows| windows)
+            
+            pull_common
+            found=0
+            for arch in $macOS_ARCHS
+            do
+                if [[ "$2" == "$arch" || "x$2" == "x" ]];then
+                    found=1
+                    pull_fork 'macos' $arch
+                fi
+            done
+
+            if [[ found -eq 0 ]];then
+                echo "unknown arch:$2 for $1"
+            fi
+        ;;
         *)
             usage
             exit 1

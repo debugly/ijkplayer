@@ -33,14 +33,14 @@ c_dir="$PWD"
 function usage()
 {
     echo " useage:"
-    echo "  $0 [ios,macos,all] [fdk-aac|ffmpeg|lame|libyuv|openssl|opus|x264]"
+    echo "  $0 [ios,macos,windows] [fdk-aac|ffmpeg|lame|libyuv|openssl|opus|x264]"
 }
 
 if [[ "x$LIBS" == "x" ]]; then
     LIBS=$(ls init-cfgs)
 fi
 
-if [[ "$PLAT" == 'ios' || "$PLAT" == 'macos' || "$PLAT" == 'all' ]]; then
+if [[ "$PLAT" == 'ios' || "$PLAT" == 'macos' || "$PLAT" == 'windows' ]]; then
     for lib in $LIBS
     do
         echo "===[init $lib]===================="
