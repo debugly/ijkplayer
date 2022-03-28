@@ -343,7 +343,7 @@ int main(int argc, char** argv)
 			ijkFfplayDecoder_setDataSource(ijk_ffplay_decoder, path);
 			ijkFfplayDecoder_prepare(ijk_ffplay_decoder);
 
-			screen = SDL_CreateWindow("Simplest ffmpeg player Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1920, 1072, SDL_WINDOW_OPENGL);
+			screen = SDL_CreateWindow("Simplest ffmpeg player Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_OPENGL);
 			if (!screen) {
 				Log::Info("SDL: could not set video mode - exiting:%s\n", SDL_GetError());
 				goto QUIT;

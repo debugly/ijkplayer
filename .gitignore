@@ -73,3 +73,11 @@ OpenSSL_1_1_1.tar.gz
 ios/IJKMediaDemo/Pods
 mac/IJKMediaDemo/Pods
 examples/macos/Pods
+
+# Windows
+/examples/windows/ijkpackage/win32/ijk_ffplay_decoder.h
+/examples/windows/ijkpackage/win32/*.lib
+/examples/windows/Debug/*.lib
+/examples/windows/x64/Release/*.lib
+/examples/windows/ijkpackage/x64/*.lib
+/examples/windows/x64/Release
