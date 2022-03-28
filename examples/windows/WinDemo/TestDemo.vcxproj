@@ -22,7 +22,7 @@
     <ProjectGuid>{9DB3FE11-B278-4CC0-AD46-A60160C42E38}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TestDemo</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -92,7 +92,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;SDL2.lib;SDL2main.lib;ijkwin.lib;pthreadVC2.lib;dsound.lib;ws2_32.lib;winmm.lib;iLog3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;SDL2.lib;SDL2main.lib;ijkwin.lib;pthreadVC2.lib;dsound.lib;ws2_32.lib;winmm.lib;iLog3.lib;libEGL.lib;libGLESv2.lib;gdiplus.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../depend/ffmpeg/lib/;../depend/pthread-win32/lib/;../depend/sdl2/lib/;../Debug/;../depend/iLog3/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
