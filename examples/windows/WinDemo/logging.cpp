@@ -53,7 +53,7 @@ bool Log::Initialise(const std::string& fileName) {
 		log.m_stream.imbue(loc);
 
 		log.m_initialised = true;
-		Info("LOG INITIALISED");
+		Info("======== LOG INITIALISED ========");
 		return true;
 	}
 	return false;

@@ -76,6 +76,7 @@ typedef enum IjkMsgState{
 	IJK_MSG_VIDEO_DECODER_OPEN          = 10001,
 }IjkMsgState;
 
+// echo of IJKMP_OPT_CATEGORY_FORMAT and so on...
 enum IJKMP_OPT_CATEGORY
 {
 	OPT_CATEGORY_FORMAT = 1,
