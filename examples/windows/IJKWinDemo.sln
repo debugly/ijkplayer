@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ijkwin", "IJKWin\ijkwin.vcxproj", "{8BCAFCDF-C461-4CF7-BA3E-1F9D2E04108F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDemo", "WinDemo\TestDemo.vcxproj", "{9DB3FE11-B278-4CC0-AD46-A60160C42E38}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8BCAFCDF-C461-4CF7-BA3E-1F9D2E04108F} = {8BCAFCDF-C461-4CF7-BA3E-1F9D2E04108F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

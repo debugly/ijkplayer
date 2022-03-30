@@ -76,6 +76,15 @@ typedef enum IjkMsgState{
 	IJK_MSG_VIDEO_DECODER_OPEN          = 10001,
 }IjkMsgState;
 
+enum IJKMP_OPT_CATEGORY
+{
+	OPT_CATEGORY_FORMAT = 1,
+	OPT_CATEGORY_CODEC,
+	OPT_CATEGORY_SWS,
+	OPT_CATEGORY_PLAYER,
+	OPT_CATEGORY_SWR
+};
+
 typedef struct IjkFfplayDecoderCallBack {
 	void (*func_get_frame)(void* opaque, IjkVideoFrame *frame_callback);
 	void (*func_state_change)(void* opaque, IjkMsgState ijk_msgint, int arg1, int arg2);

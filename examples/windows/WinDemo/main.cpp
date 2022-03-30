@@ -201,6 +201,7 @@ int main(int argc, char** argv)
 	//create ijkplayer and sdl
 	ijk_ffplay_decoder = ijkFfplayDecoder_create();
 	ijkFfplayDecoder_setDecoderCallBack(ijk_ffplay_decoder, NULL, decoder_callback);
+	ijkFfplayDecoder_setOptionStringValue(ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
 
 	int mode = 0;
 	printf("\nPlease chose your decode mode: \n");
