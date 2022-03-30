@@ -3032,6 +3032,9 @@ static int audio_open(FFPlayer *opaque, int64_t wanted_channel_layout, int wante
     FFPlayer *ffp = opaque;
     VideoState *is = ffp->is;
     SDL_AudioSpec wanted_spec, spec;
+	//fix debug compile spec.size too large
+	static const int buf_size = 100;
+	wanted_spec.size = buf_size;
     const char *env;
     static const int next_nb_channels[] = {0, 0, 1, 6, 2, 6, 4, 6};
 #ifdef FFP_MERGE
