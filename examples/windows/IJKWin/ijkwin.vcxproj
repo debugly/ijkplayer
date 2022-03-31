@@ -113,6 +113,10 @@
       <Command>post_copy_x64_debug.bat
 </Command>
     </PostBuildEvent>
+    <Lib>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../depend/ffmpeg/x64/</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -147,7 +151,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>../depend/ffmpeg/include/;../../../ijkmedia/ijksdl/;./dxva2/;./global/include/;../../../ijkmedia/ijkplayer/pipeline/;../depend/sdl2/include/;../depend/pthread-win32/include/;../../../ijkmedia/;../depend/EGL/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_MBCS;_CRT_SECURE_NO_WARNINGS;COBJMACROS;HAVE_STRUCT_TIMESPEC;IJK_IO_OFF=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_MBCS;_CRT_SECURE_NO_WARNINGS;COBJMACROS;HAVE_STRUCT_TIMESPEC;IJK_IO_OFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <ProgramDataBaseFileName>$(OutDir)ijkwin.pdb</ProgramDataBaseFileName>
       <UndefinePreprocessorDefinitions>FFP_MERGE</UndefinePreprocessorDefinitions>
@@ -159,7 +163,8 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../depend/ffmpeg/x64/</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
       <Command>post_copy_x64_release.bat</Command>
