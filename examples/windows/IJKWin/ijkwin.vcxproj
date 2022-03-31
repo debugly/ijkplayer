@@ -86,7 +86,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_MBCS;WIN32;_CRT_SECURE_NO_WARNINGS;COBJMACROS;HAVE_STRUCT_TIMESPEC;IJK_IO_OFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;WIN32;_CRT_SECURE_NO_WARNINGS;COBJMACROS;HAVE_STRUCT_TIMESPEC;GL_GLEXT_PROTOTYPES;IJK_IO_OFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../depend/ffmpeg/include/;./ijksdl/;./dxva2/;./global/include/;./ijkplayer/pipeline/;../depend/sdl2/include/;../depend/pthread-win32/include/;../../../ijkmedia/;../depend/EGL/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <UndefinePreprocessorDefinitions>FFP_MERGE;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>

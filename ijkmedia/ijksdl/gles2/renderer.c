@@ -25,6 +25,10 @@
 #else
 #import <OpenGLES/ES3/gl.h>
 #endif
+#elif _WIN32
+#define glDeleteVertexArrays glDeleteVertexArraysOES
+#define glGenVertexArrays glGenVertexArraysOES
+#define glBindVertexArray glBindVertexArrayOES
 #endif
 #include "math_util.h"
 
