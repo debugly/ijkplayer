@@ -5,7 +5,7 @@
 #include "../../../ijkmedia/ijkplayer/windows/ijk_ffplay_decoder.h"
 #include "logging.h"
 
-#define WIN32_WINDOW
+#define SDL_WINDOW
 
 IjkFfplayDecoder *ijk_ffplay_decoder;
 

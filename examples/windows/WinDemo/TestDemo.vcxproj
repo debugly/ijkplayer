@@ -92,8 +92,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;SDL2.lib;SDL2main.lib;ijkwin.lib;pthreadVC2.lib;dsound.lib;ws2_32.lib;winmm.lib;iLog3.lib;libEGL.lib;libGLESv2.lib;gdiplus.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../depend/ffmpeg/lib/;../depend/pthread-win32/lib/;../depend/sdl2/lib/;../Debug/;../depend/iLog3/lib/;../depend/EGL/lib/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ijkwin.lib;libEGL.lib;libGLESv2.lib;pthreadVC2.lib;dxguid.lib;dsound.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../Debug/;../depend/sdl2/lib/;../depend/pthread-win32/lib/;../depend/EGL/lib/Release/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -129,8 +129,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;SDL2.lib;SDL2main.lib;ijkwin.lib;pthreadVC2.lib;dsound.lib;ws2_32.lib;winmm.lib;iLog3.lib;libEGL.lib;libGLESv2.lib;gdiplus.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../depend/ffmpeg/lib/;../depend/pthread-win32/lib/;../depend/sdl2/lib/;../Release/;../depend/iLog3/lib/;../depend/EGL/lib/Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ijkwin.lib;libEGL.lib;libGLESv2.lib;pthreadVC2.lib;dxguid.lib;dsound.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../Release/;../depend/sdl2/lib/;../depend/pthread-win32/lib/;../depend/EGL/lib/Release/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
