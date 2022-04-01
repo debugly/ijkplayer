@@ -370,7 +370,7 @@ static int ijkmp_set_data_source_l(IjkMediaPlayer *mp, const char *url)
     MPST_RET_IF_EQ(mp->mp_state, MP_STATE_STARTED);
     MPST_RET_IF_EQ(mp->mp_state, MP_STATE_PAUSED);
     MPST_RET_IF_EQ(mp->mp_state, MP_STATE_COMPLETED);
-    MPST_RET_IF_EQ(mp->mp_state, MP_STATE_STOPPED);
+    //MPST_RET_IF_EQ(mp->mp_state, MP_STATE_STOPPED);
     MPST_RET_IF_EQ(mp->mp_state, MP_STATE_ERROR);
     MPST_RET_IF_EQ(mp->mp_state, MP_STATE_END);
 
