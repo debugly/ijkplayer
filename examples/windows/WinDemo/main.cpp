@@ -5,13 +5,15 @@
 #include "../../../ijkmedia/ijkplayer/windows/ijk_ffplay_decoder.h"
 #include "logging.h"
 
-#define SDL_WINDOW
+#define WIN32_WINDOW
 
 IjkFfplayDecoder *ijk_ffplay_decoder;
 
-static bool  sdl_init_flag = false;
+static bool  view_init_flag = false;
 
 static char* nv12_data = NULL;
+
+HWND hwnd = NULL;
 
 #ifdef SDL_WINDOW
 
@@ -97,6 +99,79 @@ void print_help_info()
 	printf("enter yuor choice now: ");
 }
 
+void play_one(const char* path)
+{
+	ijkFfplayDecoder_setDataSource(ijk_ffplay_decoder, path);
+	ijkFfplayDecoder_prepare(ijk_ffplay_decoder);
+
+	ijkFfplayDecoder_setWindowHwnd(ijk_ffplay_decoder, hwnd);
+
+	int i = 0;
+	while (++i < 10)
+	{
+		Sleep(1000);
+	}
+
+	ijkFfplayDecoder_pause(ijk_ffplay_decoder);
+	ijkFfplayDecoder_stop(ijk_ffplay_decoder);
+
+	Sleep(500);
+
+#ifdef SDL_WINDOW
+	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
+	SDL_RenderClear(sdlRenderer);
+	SDL_RenderPresent(sdlRenderer);
+#endif
+
+}
+
+void test_media_list(const char* listPath)
+{
+	if (strstr(listPath, "http://") || strstr(listPath, "https://"))
+	{
+		printf("don't support for now\n");
+	}
+	// local
+	else
+	{
+		FILE *fp = fopen(listPath, "r");
+		if (NULL == fp)
+		{
+			printf("failed to open list!\n");
+			return;
+		}
+
+		int len = 0;
+		char szPrefix[1024];
+		char szPath[1024] = { 0 };
+
+		while (!feof(fp))
+		{
+			if (len > 0)
+			{
+				char tempPath[256] = { 0 };
+				strcpy(szPath, szPrefix);
+				fgets(tempPath, sizeof(tempPath) - 1, fp);
+				strcat(szPath, tempPath);
+				// \n
+				memset(szPath + strlen(szPath) - 1, 0, sizeof(char));
+				play_one(szPath);
+			}
+			else
+			{
+				memset(szPrefix, 0, sizeof(szPrefix));
+				fgets(szPrefix, sizeof(szPrefix) - 1, fp);
+				// \n
+				memset(szPrefix + strlen(szPrefix) - 1, 0, sizeof(char));
+			}
+
+			++len;
+		}
+
+		fclose(fp);
+	}
+}
+
 static void log_callback(void *, int level, const char * szFmt, va_list varg)
 {
 	char line[1024] = { 0 };
@@ -129,8 +204,8 @@ static void log_callback(void *, int level, const char * szFmt, va_list varg)
 
 void video_callback(void* opaque, IjkVideoFrame *frame_callback)
 {
-	if (!sdl_init_flag) {
-		sdl_init_flag = true;
+	if (!view_init_flag) {
+		view_init_flag = true;
 		int screen_w, screen_h;
 
 		if (frame_callback->format == PIX_FMT_YUV420P) {
@@ -194,6 +269,8 @@ int main(int argc, char** argv)
 {
 	nv12_data = (char*)malloc(32 * 1024 * 1024);
 
+	char listPath[1024] = { 0 };
+
 	std::string url = "./ijkDemo.log";
 	Log::Initialise(url);
 	Log::SetThreshold(Log::LOG_TYPE_DEBUG);
@@ -212,11 +289,25 @@ int main(int argc, char** argv)
 	ijkFfplayDecoder_setDecoderCallBack(ijk_ffplay_decoder, NULL, decoder_callback);
 	ijkFfplayDecoder_setOptionStringValue(ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
 
+	view_init_flag = false;
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+	screen = SDL_CreateWindow("Simplest ffmpeg player Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_OPENGL);
+	if (!screen) {
+		Log::Info("SDL: could not set video mode - exiting:%s\n", SDL_GetError());
+		goto QUIT;
+	}
+
+	SDL_SysWMinfo wmInfo;
+	SDL_VERSION(&wmInfo.version);
+	SDL_GetWindowWMInfo(screen, &wmInfo);
+	hwnd = wmInfo.info.win.window;
+
 	int mode = 0;
 	printf("\nPlease chose your decode mode: \n");
 	printf("1: h264_cuvid for nvida\n");
 	printf("2: h264_qsv for intel\n");
 	printf("3: ffmpeg\n");
+	printf("9: auto test mode\n");
 	printf("decode mode: ");
 	scanf("%d", &mode);
 	switch (mode)
@@ -227,7 +318,13 @@ int main(int argc, char** argv)
 	case 2:
 		ijkFfplayDecoder_setHwDecoderName(ijk_ffplay_decoder, "h264_qsv");
 		break;
+	case 9:
+		printf("\nPlease input test list path:\n");
+		scanf("%s", listPath);
+		goto AUTOTEST;
+		break;
 	}
+
 	//ijkFfplayDecoder_setDropFrameNums(ijk_ffplay_decoder, 5);
 	print_help_info();
 
@@ -331,10 +428,6 @@ int main(int argc, char** argv)
 			ijkFfplayDecoder_pause(ijk_ffplay_decoder);
 			ijkFfplayDecoder_stop(ijk_ffplay_decoder);
 
-			SDL_DestroyTexture(sdlTexture);
-			SDL_DestroyRenderer(sdlRenderer);
-			SDL_DestroyWindow(screen);
-			SDL_Quit();
 		}
 
 		//quit ijkplayer
@@ -350,23 +443,9 @@ int main(int argc, char** argv)
 			printf("\nPlease input file path:\n");
 			scanf("%s", path);
 
-			sdl_init_flag = false;
-			//SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2");
-			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 			ijkFfplayDecoder_setDataSource(ijk_ffplay_decoder, path);
 			ijkFfplayDecoder_prepare(ijk_ffplay_decoder);
-
-			screen = SDL_CreateWindow("Simplest ffmpeg player Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_OPENGL);
-			if (!screen) {
-				Log::Info("SDL: could not set video mode - exiting:%s\n", SDL_GetError());
-				goto QUIT;
-			}
-
-			SDL_SysWMinfo wmInfo;
-			SDL_VERSION(&wmInfo.version);
-			SDL_GetWindowWMInfo(screen, &wmInfo);
-			HWND hwnd = wmInfo.info.win.window;
-
+			
 			ijkFfplayDecoder_setWindowHwnd(ijk_ffplay_decoder, hwnd);
 		}
 
@@ -396,8 +475,16 @@ int main(int argc, char** argv)
 		Sleep(500);
 	}
 
+AUTOTEST:
+	test_media_list(listPath);
 QUIT:
 	ijkFfplayDecoder_uninit();
+
+	SDL_DestroyTexture(sdlTexture);
+	SDL_DestroyRenderer(sdlRenderer);
+	SDL_DestroyWindow(screen);
+	SDL_Quit();
+
 	if (nv12_data) {
 		free(nv12_data);
 	}
@@ -433,7 +520,7 @@ HWND CreateVideoWindow()
 	
 	RegisterClass(&wc);
 
-	HWND hwnd = CreateWindowEx(
+	hwnd = CreateWindowEx(
 		0,                             
 		CLASS_NAME,                    
 		L"Demo",						
@@ -453,6 +540,8 @@ HWND CreateVideoWindow()
 
 int main()
 {
+	char listPath[1024] = { 0 };
+	
 	std::string url = "./ijkDemo.log";
 	Log::Initialise(url);
 	Log::SetThreshold(Log::LOG_TYPE_DEBUG);
@@ -472,10 +561,13 @@ int main()
 	ijkFfplayDecoder_setOptionStringValue(ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
 
 	int mode = 0;
+	hwnd = CreateVideoWindow();
+
 	printf("\nPlease chose your decode mode: \n");
 	printf("1: h264_cuvid for nvida\n");
 	printf("2: h264_qsv for intel\n");
 	printf("3: ffmpeg\n");
+	printf("9: auto test mode\n");
 	printf("decode mode: ");
 	scanf("%d", &mode);
 	switch (mode)
@@ -486,7 +578,12 @@ int main()
 	case 2:
 		ijkFfplayDecoder_setHwDecoderName(ijk_ffplay_decoder, "h264_qsv");
 		break;
+	case 9:
+		printf("\nPlease input test list path:\n");
+		scanf("%s", listPath);
+		goto AUTOTEST;
 	}
+
 	//ijkFfplayDecoder_setDropFrameNums(ijk_ffplay_decoder, 5);
 	print_help_info();
 
@@ -603,12 +700,11 @@ int main()
 			char path[1024] = { 0 };//"rtsp://192.168.31.243/stream12";//{ 0 };
 			printf("\nPlease input file path:\n");
 			scanf("%s", path);
-
+			view_init_flag = false;
+			
 			ijkFfplayDecoder_setDataSource(ijk_ffplay_decoder, path);
 			ijkFfplayDecoder_prepare(ijk_ffplay_decoder);
 
-
-			HWND hwnd = CreateVideoWindow();
 			ijkFfplayDecoder_setWindowHwnd(ijk_ffplay_decoder, hwnd);
 		}
 
@@ -637,7 +733,8 @@ int main()
 
 		Sleep(500);
 	}
-
+AUTOTEST:
+	test_media_list(listPath);
 QUIT:
 	ijkFfplayDecoder_uninit();
 	if (nv12_data) {
