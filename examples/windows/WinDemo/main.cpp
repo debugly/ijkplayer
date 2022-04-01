@@ -8,6 +8,7 @@
 #define WIN32_WINDOW
 
 IjkFfplayDecoder *ijk_ffplay_decoder;
+IjkFfplayDecoderCallBack *decoder_callback;
 
 static bool  view_init_flag = false;
 
@@ -101,6 +102,19 @@ void print_help_info()
 
 void play_one(const char* path)
 {
+	// destroy old
+	ijkFfplayDecoder_pause(ijk_ffplay_decoder);
+	ijkFfplayDecoder_stop(ijk_ffplay_decoder);
+
+	Sleep(500);
+
+	ijkFfplayDecoder_release(ijk_ffplay_decoder);
+	// create new
+	
+	ijk_ffplay_decoder = ijkFfplayDecoder_create();
+	ijkFfplayDecoder_setDecoderCallBack(ijk_ffplay_decoder, NULL, decoder_callback);
+	ijkFfplayDecoder_setOptionStringValue(ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
+		
 	ijkFfplayDecoder_setDataSource(ijk_ffplay_decoder, path);
 	ijkFfplayDecoder_prepare(ijk_ffplay_decoder);
 
@@ -111,18 +125,6 @@ void play_one(const char* path)
 	{
 		Sleep(1000);
 	}
-
-	ijkFfplayDecoder_pause(ijk_ffplay_decoder);
-	ijkFfplayDecoder_stop(ijk_ffplay_decoder);
-
-	Sleep(500);
-
-#ifdef SDL_WINDOW
-	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
-	SDL_RenderClear(sdlRenderer);
-	SDL_RenderPresent(sdlRenderer);
-#endif
-
 }
 
 void test_media_list(const char* listPath)
@@ -144,6 +146,8 @@ void test_media_list(const char* listPath)
 		int len = 0;
 		char szPrefix[1024];
 		char szPath[1024] = { 0 };
+
+		ShowWindow(hwnd, SW_SHOW);
 
 		while (!feof(fp))
 		{
@@ -280,7 +284,7 @@ int main(int argc, char** argv)
 
 	ijkFfplayDecoder_setLogLevel(k_IJK_LOG_DEBUG);
 	ijkFfplayDecoder_setLogCallback(log_callback);
-	IjkFfplayDecoderCallBack *decoder_callback = (IjkFfplayDecoderCallBack *)malloc(sizeof(IjkFfplayDecoderCallBack));
+	decoder_callback = (IjkFfplayDecoderCallBack *)malloc(sizeof(IjkFfplayDecoderCallBack));
 	decoder_callback->func_get_frame = video_callback;
 	decoder_callback->func_state_change = msg_callback;
 
@@ -431,7 +435,7 @@ int main(int argc, char** argv)
 		}
 
 		//quit ijkplayer
-		if (input == 'Q') {
+		if (input == 'Q'|| input == 'q') {
 			ijkFfplayDecoder_release(ijk_ffplay_decoder);
 			printf("quit now.\n");
 			goto QUIT;
@@ -525,14 +529,14 @@ HWND CreateVideoWindow()
 		CLASS_NAME,                    
 		L"Demo",						
 		WS_OVERLAPPEDWINDOW,            
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 
+		CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, 
 		NULL,       
 		NULL,       
 		hInstance,  
 		NULL        
 	);
 
-	ShowWindow(hwnd, SW_SHOW);
+	ShowWindow(hwnd, SW_HIDE);
 	UpdateWindow(hwnd);
 
 	return hwnd;
@@ -551,7 +555,8 @@ int main()
 
 	ijkFfplayDecoder_setLogLevel(k_IJK_LOG_DEBUG);
 	ijkFfplayDecoder_setLogCallback(log_callback);
-	IjkFfplayDecoderCallBack *decoder_callback = (IjkFfplayDecoderCallBack *)malloc(sizeof(IjkFfplayDecoderCallBack));
+	
+	decoder_callback = (IjkFfplayDecoderCallBack *)malloc(sizeof(IjkFfplayDecoderCallBack));
 	decoder_callback->func_get_frame = /*video_callback*/NULL;
 	decoder_callback->func_state_change = msg_callback;
 
@@ -689,7 +694,7 @@ int main()
 		}
 
 		//quit ijkplayer
-		if (input == 'Q') {
+		if (input == 'Q' || input == 'q') {
 			ijkFfplayDecoder_release(ijk_ffplay_decoder);
 			printf("quit now.\n");
 			goto QUIT;
@@ -706,6 +711,8 @@ int main()
 			ijkFfplayDecoder_prepare(ijk_ffplay_decoder);
 
 			ijkFfplayDecoder_setWindowHwnd(ijk_ffplay_decoder, hwnd);
+
+			ShowWindow(hwnd, SW_SHOW);
 		}
 
 		if (input == 'd') {
