@@ -542,6 +542,20 @@ HWND CreateVideoWindow()
 	return hwnd;
 }
 
+DWORD _stdcall CreateThreadWindow(PVOID pArg)
+{
+	hwnd = CreateVideoWindow();
+
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	return 0;
+}
+
 int main()
 {
 	char listPath[1024] = { 0 };
@@ -566,7 +580,9 @@ int main()
 	ijkFfplayDecoder_setOptionStringValue(ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
 
 	int mode = 0;
-	hwnd = CreateVideoWindow();
+
+	HANDLE hThrd = CreateThread(NULL, 0, CreateThreadWindow, NULL, 0, NULL);
+	CloseHandle(hThrd);
 
 	printf("\nPlease chose your decode mode: \n");
 	printf("1: h264_cuvid for nvida\n");
