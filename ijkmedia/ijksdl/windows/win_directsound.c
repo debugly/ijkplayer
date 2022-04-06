@@ -2,11 +2,7 @@
 #include "ijksdl/ijksdl_inc_internal.h"
 #include "ijksdl/ijksdl_timer.h"
 #include <math.h>
-
-#ifndef WAVE_FORMAT_IEEE_FLOAT
-#define WAVE_FORMAT_IEEE_FLOAT 0x0003
-#endif
-
+#include "mmreg.h"
 
 static int set_dsound_error(const char *function, int code)
 {
@@ -188,25 +184,24 @@ void SDL_Win_DSound_CloseDevice(SDL_Win_DirectSound *dsound)
 * number of audio chunks available in the created buffer. This is for
 * playback devices, not capture.
 **/
-static int create_secondary(SDL_Win_DirectSound *dsound, const DWORD bufsize, WAVEFORMATEX *wfmt, Uint8 silence)
+static int create_secondary(SDL_Win_DirectSound *dsound, const DWORD bufsize, LPWAVEFORMATEX lpwfx, Uint8 silence)
 {
 	LPDIRECTSOUND sndObj = dsound->sound;
 	LPDIRECTSOUNDBUFFER *sndbuf = &dsound->mixbuf;
 	HRESULT result = DS_OK;
-	DSBUFFERDESC format;
-	LPVOID pvAudioPtr1, pvAudioPtr2;
-	DWORD dwAudioBytes1, dwAudioBytes2;
 
 	// Try to create the secondary buffer
-	memset(&format, 0, sizeof(DSBUFFERDESC));
-	format.dwSize = sizeof(format);
-	format.dwFlags = DSBCAPS_GETCURRENTPOSITION2;
-	format.dwFlags |= DSBCAPS_GLOBALFOCUS;
-	format.dwFlags |= DSBCAPS_CTRLVOLUME;
-	format.dwFlags |= DSBCAPS_CTRLPOSITIONNOTIFY;
-	format.dwBufferBytes = bufsize;
-	format.lpwfxFormat = wfmt;
-	result = IDirectSound_CreateSoundBuffer(sndObj, &format, sndbuf, NULL);
+	DSBUFFERDESC dsbd;
+	memset(&dsbd, 0, sizeof(DSBUFFERDESC));
+	dsbd.dwFlags = DSBCAPS_CTRLVOLUME | DSBCAPS_GLOBALFOCUS | DSBCAPS_STATIC | DSBCAPS_CTRLPOSITIONNOTIFY | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLPAN;
+	dsbd.dwSize = sizeof(DSBUFFERDESC);
+	dsbd.dwBufferBytes = bufsize;
+	dsbd.lpwfxFormat = lpwfx;
+
+	LPVOID pvAudioPtr1, pvAudioPtr2;
+	DWORD dwAudioBytes1, dwAudioBytes2;
+	
+	result = IDirectSound_CreateSoundBuffer(sndObj, &dsbd, sndbuf, NULL);
 	if (result != DS_OK) {
 		return set_dsound_error("DirectSound CreateSoundBuffer", result);
 	}
@@ -236,10 +231,10 @@ static int create_secondary(SDL_Win_DirectSound *dsound, const DWORD bufsize, WA
 		return set_dsound_error("IDirectSoundNotify_Release", result);
 	}
 
-	IDirectSoundBuffer_SetFormat(*sndbuf, wfmt);
+	IDirectSoundBuffer_SetFormat(*sndbuf, lpwfx);
 
 	// Silence the initial audio buffer
-	result = IDirectSoundBuffer_Lock(*sndbuf, 0, format.dwBufferBytes,
+	result = IDirectSoundBuffer_Lock(*sndbuf, 0, dsbd.dwBufferBytes,
 		(LPVOID *)& pvAudioPtr1, &dwAudioBytes1,
 		(LPVOID *)& pvAudioPtr2, &dwAudioBytes2,
 		DSBLOCK_ENTIREBUFFER);
@@ -282,22 +277,39 @@ int SDL_Win_DSound_OpenDevice(SDL_Win_DirectSound *dsound, SDL_AudioSpec *sdl_sp
 		}
 
 		int rc;
-		WAVEFORMATEX wfmt;
-		memset(&wfmt,0,sizeof(WAVEFORMATEX));
-		if (SDL_AUDIO_ISFLOAT(sdl_spec->format)) {
-			wfmt.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
-		}
-		else {
-			wfmt.wFormatTag = WAVE_FORMAT_PCM;
-		}
 
-		wfmt.wBitsPerSample = SDL_AUDIO_BITSIZE(sdl_spec->format);
-		wfmt.nChannels = sdl_spec->channels;
-		wfmt.nSamplesPerSec = sdl_spec->freq;
-		wfmt.nBlockAlign = wfmt.nChannels * (wfmt.wBitsPerSample / 8);
-		wfmt.nAvgBytesPerSec = wfmt.nSamplesPerSec * wfmt.nBlockAlign;
+		//Formats that support more than two channels or sample sizes of more than 16 bits can be described in a WAVEFORMATEXTENSIBLE structure
+		if (sdl_spec->channels > 2 || SDL_AUDIO_BITSIZE(sdl_spec->format) > 16)
+		{
+			WAVEFORMATEXTENSIBLE wfx;
 
-		rc = create_secondary(dsound, bufsize, &wfmt, sdl_spec->silence);
+			wfx.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+			wfx.Format.nChannels = sdl_spec->channels;
+			wfx.Format.nSamplesPerSec = sdl_spec->freq;
+			wfx.Format.wBitsPerSample = SDL_AUDIO_BITSIZE(sdl_spec->format);
+			wfx.Format.cbSize = 22;
+			wfx.Format.nBlockAlign = wfx.Format.nChannels * (wfx.Format.wBitsPerSample / 8);
+			wfx.Format.nAvgBytesPerSec = wfx.Format.nSamplesPerSec * wfx.Format.nBlockAlign;
+			wfx.Samples.wValidBitsPerSample = wfx.Format.wBitsPerSample;  // Most of the time this value will be equal to wBitsPerSample. If, however, wave data originated from a 20-bit A/D, then wValidBitsPerSample could be set to 20
+			wfx.dwChannelMask = SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | SPEAKER_LOW_FREQUENCY | SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT;
+			wfx.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+
+			rc = create_secondary(dsound, bufsize, (LPWAVEFORMATEX)&wfx, sdl_spec->silence);
+		}
+		else
+		{
+			WAVEFORMATEX wf;
+			
+			wf.wFormatTag = WAVE_FORMAT_PCM;
+			wf.wBitsPerSample = SDL_AUDIO_BITSIZE(sdl_spec->format);
+			wf.nChannels = sdl_spec->channels;
+			wf.nSamplesPerSec = sdl_spec->freq;
+			wf.nBlockAlign = wf.nChannels * (wf.wBitsPerSample / 8);
+			wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
+
+			rc = create_secondary(dsound, bufsize, (LPWAVEFORMATEX)&wf, sdl_spec->silence);
+		}
+		
 		if (rc == 0) {
 			dsound->num_buffers = numchunks;
 		}
