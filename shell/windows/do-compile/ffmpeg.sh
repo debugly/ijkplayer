@@ -30,14 +30,13 @@ env_assert "PRODUCT_ROOT"
 env_assert "BUILD_NAME"
 env_assert "BUILD_SOURCE"
 env_assert "BUILD_PREFIX"
-env_assert "DEPLOYMENT_TARGET"
 echo "ARGV:$*"
 echo "===check env end==="
 
 FF_BUILD_OPT=$1
 
 # ffmpeg build params
-source `pwd`/../ffconfig/module.sh
+source `pwd`/../ffconfig/module-win.sh
 FFMPEG_CFG_FLAGS="$COMMON_FF_CFG_FLAGS"
 
 FFMPEG_CFG_FLAGS="--prefix=$BUILD_PREFIX $FFMPEG_CFG_FLAGS"
@@ -68,8 +67,8 @@ fi
 
 # FFMPEG_C_FLAGS
 FFMPEG_C_FLAGS=
-FFMPEG_C_FLAGS="$FFMPEG_C_FLAGS -fno-stack-check -arch $ARCH"
-FFMPEG_C_FLAGS="$FFMPEG_C_FLAGS $DEPLOYMENT_TARGET $OTHER_CFLAGS"
+FFMPEG_C_FLAGS="$FFMPEG_C_FLAGS -fno-stack-check"
+FFMPEG_C_FLAGS="$FFMPEG_C_FLAGS  $OTHER_CFLAGS"
 
 # for cross compile
 if [[ $(uname -m) != "$ARCH" || "$FORCE_CROSS" ]];then

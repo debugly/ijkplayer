@@ -16,11 +16,11 @@
 #
 # 
 
-PLAT=$1
-CMD=$2
-LIBS=$3
-ARCH=$4
-OPTS=$5
+
+CMD=$1
+LIBS=$2
+ARCH=$3
+OPTS=$4
 
 set -e
 
@@ -30,18 +30,14 @@ SHELL_DIR="$PWD"
 
 function usage() {
     echo " useage:"
-    echo "  $0 [windows] [build|clean] [all|fdk-aac|ffmpeg|lame|libyuv|openssl|opus|x264] [win32|x86_64|all] [opts...]"
+    echo "  $0  [build|clean] [all|fdk-aac|ffmpeg|lame|libyuv|openssl|opus|x264] [x86 |x86_64|all] [opts...]"
 }
 
 
 
-ALL_ARCHS="win32 x64"
+ALL_ARCHS="x86 x86_64"
 
-if [[ "$PLAT" != 'windows' ]]; then
-    echo "plat must be: [windows]"
-    usage
-    exit 1
-fi
+
 
 if [[ -z "$LIBS" || "$LIBS" == "all" ]]; then
     LIBS=$(cat compile-cfgs/list.txt)
@@ -60,20 +56,19 @@ fi
 export SRC_ROOT="${SHELL_DIR}/../build/src/${PLAT}"
 export PRODUCT_ROOT="${SHELL_DIR}/../build/product/${PLAT}"
 
-export PLAT="$PLAT"
+
 export CMD="$CMD"
 export OPTS="$OPTS"
 export TARGET_ARCHS="$ARCH"
 export VENDOR_LIBS="$LIBS"
-export TARGET_OS="mingw32-w64"
+export TARGET_OS="mingw32"
 
 
 echo '------------------------------------------'
-echo "XC_PLAT         : [$PLAT]"
-echo "XC_CMD          : [$CMD]"
-echo "XC_VENDOR_LIBS  : [$VENDOR_LIBS]"
-echo "XC_TARGET_ARCHS : [$ARCH]"
-echo "XC_OPTS         : [$OPTS]"
+echo "CMD          : [$CMD]"
+echo "VENDOR_LIBS  : [$VENDOR_LIBS]"
+echo "TARGET_ARCHS : [$ARCH]"
+echo "OPTS         : [$OPTS]"
 echo '------------------------------------------'
 
 # 循环编译所有的库

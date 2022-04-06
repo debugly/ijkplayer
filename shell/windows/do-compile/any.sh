@@ -29,12 +29,11 @@ echo "ARGV:$*"
 echo "===check env end==="
 
 
-
 do_install_all () {
     local archs="$1"
     rm -rf $UNI_PROD_DIR/$LIB_NAME
     mkdir -p $UNI_PROD_DIR/$LIB_NAME/lib
-    echo "lipo archs: $archs"
+    echo "install archs: $archs"
 
     for arch in $archs
     do
@@ -51,7 +50,7 @@ do_install_all () {
 function export_arch_env() {
     # x86_64
     export ARCH=$1
-    # ffmpeg-x86_6
+    # ffmpeg-x86_64
     export BUILD_NAME="${LIB_NAME}-${ARCH}"
     # ios/ffmpeg-x86_64
     export BUILD_SOURCE="${SRC_ROOT}/${BUILD_NAME}"
@@ -78,9 +77,9 @@ function do_compile() {
 
 function do_clean() {
     export_arch_env $1
-    echo "BUILD_SOURCE:$XC_BUILD_SOURCE"
+    echo "BUILD_SOURCE:$BUILD_SOURCE"
     cd $BUILD_SOURCE && git clean -xdf && cd - >/dev/null
-    rm -rf $BUILD_PREFIX >/dev/null
+    rm -rf $BUILD_PREFIX  >/dev/null
 }
 
 function main() {
@@ -102,14 +101,14 @@ function main() {
             for arch in $archs
             do
                 do_compile $arch "$opt"
-                echo
+                echo "done "
             done
 
             do_install_all "$archs"
         ;;
         *)
             echo "Usage:"
-            echo "    $0 [build|clean] [win32|x64]"
+            echo "    $0 [build|clean] [x86|x86_64]"
             exit 1
         ;;
     esac
