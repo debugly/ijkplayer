@@ -3033,7 +3033,8 @@ static int audio_open(FFPlayer *opaque, int64_t wanted_channel_layout, int wante
     VideoState *is = ffp->is;
     SDL_AudioSpec wanted_spec, spec;
 	//fix debug compile spec.size too large
-	static const int buf_size = 100;
+	//note:a suitable value is between 512 and 8192,default in ffplay is 1024.
+	static const int buf_size = 512;
 	wanted_spec.size = buf_size;
     const char *env;
     static const int next_nb_channels[] = {0, 0, 1, 6, 2, 6, 4, 6};
