@@ -21,9 +21,15 @@
     <ClCompile Include="logging.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="IJKPlayer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="logging.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="IJKPlayer.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
