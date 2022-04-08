@@ -16,7 +16,7 @@
 #
 # 
 
-
+PLAT="windows"
 CMD=$1
 LIBS=$2
 ARCH=$3
