@@ -12,6 +12,7 @@ typedef struct SDL_Vout_Opaque {
     int              next_buffer_id;
 
 	IJK_EGL         *egl;
+	void			*opaque;
 
 	int(*decode_video_callback)(void *arg, SDL_VoutOverlay* overlay);
 	char*			subtitle_text;
@@ -95,39 +96,44 @@ static int func_display_windows_overlay_l(SDL_Vout *vout, SDL_VoutOverlay *overl
         return -1;
     }
 
+	if (opaque->decode_video_callback) {
+		opaque->decode_video_callback(opaque->opaque, overlay);
+	}
+
     switch(overlay->format) {
-    case SDL_FCC__AMC: {
-        // only ANativeWindow support
-        // IJK_EGL_terminate(opaque->egl);
-        // return SDL_VoutOverlayAMediaCodec_releaseFrame_l(overlay, NULL, true);
-              printf("SDL_FCC_I444P10LE\n");
-    }
-    case SDL_FCC_RV24:
-    case SDL_FCC_I420:
-	case SDL_FCC_NV12:
-    case SDL_FCC_I444P10LE: {
-        // only GLES support
-             // printf("SDL_FCC_I444P10LE\n");
-        if (opaque->egl){
-			  // printf("SDL_FCC_I444P10LE000\n");
-            return IJK_EGL_display(opaque->egl, native_window, overlay, opaque->subtitle_text);
-        	}
-        break;
-    }
-    case SDL_FCC_YV12:
-    case SDL_FCC_RV16:
-    case SDL_FCC_RV32: {
-        // both GLES & ANativeWindow support
+		case SDL_FCC__AMC: {
+			// only ANativeWindow support
+			// IJK_EGL_terminate(opaque->egl);
+			// return SDL_VoutOverlayAMediaCodec_releaseFrame_l(overlay, NULL, true);
+			printf("SDL_FCC_I444P10LE\n");
+		}
+		case SDL_FCC_RV24:
+		case SDL_FCC_I420:
+		case SDL_FCC_NV12:
+		case SDL_FCC_I444P10LE: {
+			// only GLES support
+				 // printf("SDL_FCC_I444P10LE\n");
+			if (opaque->egl){
+				  // printf("SDL_FCC_I444P10LE000\n");
+				return IJK_EGL_display(opaque->egl, native_window, overlay, opaque->subtitle_text);
+        		}
+			break;
+		}
+		case SDL_FCC_YV12:
+		case SDL_FCC_RV16:
+		case SDL_FCC_RV32: {
+			// both GLES & ANativeWindow support
    
-		if(vout->overlay_format == SDL_FCC__GLES2){
-			    printf("SDL_FCC_RV32\n");
+			if(vout->overlay_format == SDL_FCC__GLES2){
+				printf("SDL_FCC_RV32\n");
 			}else{
-				    printf("SDL_FCC_RV32:%d\n",vout->overlay_format);
-				}
-        if (vout->overlay_format == SDL_FCC__GLES2 && opaque->egl)
-            return IJK_EGL_display(opaque->egl, native_window, overlay, opaque->subtitle_text);
-        break;
-    }
+				printf("SDL_FCC_RV32:%d\n",vout->overlay_format);
+			}
+
+			if (vout->overlay_format == SDL_FCC__GLES2 && opaque->egl)
+				return IJK_EGL_display(opaque->egl, native_window, overlay, opaque->subtitle_text);
+			break;
+		}
     }
 
     // fallback to ANativeWindow
@@ -238,6 +244,7 @@ void SDL_VoutWinNative_SetVideoDataCallback(void *arg, SDL_Vout *vout, int(*vide
 {
 	SDL_Vout_Opaque *opaque = vout->opaque;
 	SDL_LockMutex(vout->mutex);
+	opaque->opaque = arg;
 	opaque->decode_video_callback = video_callback;
 	SDL_UnlockMutex(vout->mutex);
 }

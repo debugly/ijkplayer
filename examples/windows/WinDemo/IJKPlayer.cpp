@@ -25,7 +25,7 @@ void _msg_callback(void* opaque, IjkMsgState message, int arg1, int arg2)
 	case IJK_MSG_ERROR:
 		break;
 	case IJK_MSG_PREPARED:
-		//ijkFfplayDecoder_start(_ijk_ffplay_decoder);
+		PostMessage(_ijk_vout, UM_PLAY, NULL, NULL);
 		break;
 	case IJK_MSG_COMPLETED:
 		ijkFfplayDecoder_pause(_ijk_ffplay_decoder);
@@ -66,6 +66,11 @@ void _msg_callback(void* opaque, IjkMsgState message, int arg1, int arg2)
 	}
 }
 
+void _video_callback(void* opaque, IjkVideoFrame *frame)
+{
+
+}
+
 void _uninit_decoder()
 {
 	if (_ijk_ffplay_decoder)
@@ -100,7 +105,7 @@ bool IJKPlayer::initialize(const std::vector<std::string>& playerArgs, /*const w
 	assert(_startup_args.size() % 2 == 0);
 
 	_decoder_callback = (IjkFfplayDecoderCallBack *)malloc(sizeof(IjkFfplayDecoderCallBack));
-	_decoder_callback->func_get_frame = NULL;//Todo
+	_decoder_callback->func_get_frame = _video_callback;
 	_decoder_callback->func_state_change = _msg_callback;
 	
 	return true;
@@ -146,12 +151,30 @@ void IJKPlayer::prepare(const std::string & url)
 void IJKPlayer::start()
 {
 	ijkFfplayDecoder_start(_ijk_ffplay_decoder);
-	ijkFfplayDecoder_setWindowHwnd(_ijk_ffplay_decoder, _ijk_vout);
-	ShowWindow(_ijk_vout, SW_SHOW);
 }
 
 void IJKPlayer::play(const std::string & url)
 {
 	prepare(url);
-	start();
+	ijkFfplayDecoder_setWindowHwnd(_ijk_ffplay_decoder, _ijk_vout);
+}
+
+void IJKPlayer::pause()
+{
+	ijkFfplayDecoder_pause(_ijk_ffplay_decoder);
+}
+
+void IJKPlayer::stop()
+{
+	ijkFfplayDecoder_stop(_ijk_ffplay_decoder);
+}
+
+int IJKPlayer::seek(long position)
+{
+	return ijkFfplayDecoder_seekTo(_ijk_ffplay_decoder, position);
+}
+
+long IJKPlayer::getDuration()
+{
+	return ijkFfplayDecoder_getDuration(_ijk_ffplay_decoder);
 }

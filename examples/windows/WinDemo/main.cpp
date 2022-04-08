@@ -108,6 +108,19 @@ void play_one(const char* path)
 	{
 		Sleep(1000);
 	}
+	i = 0;
+
+	Sleep(0);
+
+	long duration = IJKPlayer::getDuration();
+	if (duration > 10 * 1 * 1000)
+	{
+		IJKPlayer::seek(duration - 10 * 1 * 1000);
+		while (++i < 10)
+		{
+			Sleep(1000);
+		}
+	}
 }
 
 void test_media_list(const char* listPath)
@@ -187,34 +200,28 @@ static void log_callback(void *, int level, const char * szFmt, va_list varg)
 
 #ifdef SDL_WINDOW
 
-void video_callback(void* opaque, IjkVideoFrame *frame_callback)
+void video_callback(void* opaque, IjkVideoFrame *frame)
 {
 	if (!view_init_flag) {
 		view_init_flag = true;
 		int screen_w, screen_h;
 
-		if (frame_callback->format == PIX_FMT_YUV420P) {
-			screen_w = frame_callback->w;
-			screen_h = frame_callback->h;
+		if (frame->format == PIX_FMT_YUV420P) {
+			screen_w = frame->w;
+			screen_h = frame->h;
 		}
-		else if (frame_callback->format == PIX_FMT_NV12) {
-			screen_w = frame_callback->linesize[0];
-			screen_h = frame_callback->h;
+		else if (frame->format == PIX_FMT_NV12) {
+			screen_w = frame->linesize[0];
+			screen_h = frame->h;
 		}
 
-		//screen = SDL_CreateWindow("Simplest ffmpeg player Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_w, screen_h, SDL_WINDOW_OPENGL);
-		//if (!screen) {
-		//	Log::Info("SDL: could not set video mode - exiting:%s\n", SDL_GetError());
-		//	return ;
-		//}
-
-		if (frame_callback->format == PIX_FMT_YUV420P) {
+		if (frame->format == PIX_FMT_YUV420P) {
 			sdlRenderer = SDL_CreateRenderer(screen, -1, 0);
 			SDL_RendererInfo renderinfo;
 			SDL_GetRendererInfo(sdlRenderer, &renderinfo);
 			sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, screen_w, screen_h);
 		}
-		else if (frame_callback->format == PIX_FMT_NV12) {
+		else if (frame->format == PIX_FMT_NV12) {
 			SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 			sdlRenderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED);
 			sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_NV12, SDL_TEXTUREACCESS_STREAMING, screen_w, screen_h);
@@ -226,16 +233,16 @@ void video_callback(void* opaque, IjkVideoFrame *frame_callback)
 		sdlRect.h = screen_h;
 	}
 
-	if (frame_callback->format == PIX_FMT_YUV420P) {
+	if (frame->format == PIX_FMT_YUV420P) {
 		SDL_UpdateYUVTexture(sdlTexture, &sdlRect,
-			frame_callback->data[0], frame_callback->linesize[0],
-			frame_callback->data[1], frame_callback->linesize[1],
-			frame_callback->data[2], frame_callback->linesize[2]);
+			frame->data[0], frame->linesize[0],
+			frame->data[1], frame->linesize[1],
+			frame->data[2], frame->linesize[2]);
 	}
-	else if (frame_callback->format == PIX_FMT_NV12) {
-		memcpy(nv12_data, frame_callback->data[0], frame_callback->h*frame_callback->linesize[0]);
-		memcpy(nv12_data + frame_callback->h*frame_callback->linesize[0], frame_callback->data[1], frame_callback->h*frame_callback->linesize[0] / 2);
-		SDL_UpdateTexture(sdlTexture, NULL, nv12_data, frame_callback->linesize[0]);
+	else if (frame->format == PIX_FMT_NV12) {
+		memcpy(nv12_data, frame->data[0], frame->h*frame->linesize[0]);
+		memcpy(nv12_data + frame->h*frame->linesize[0], frame->data[1], frame->h*frame->linesize[0] / 2);
+		SDL_UpdateTexture(sdlTexture, NULL, nv12_data, frame->linesize[0]);
 	}
 
 	//float dec_fps = ijkFfplayDecoder_getPropertyFloat(ijk_ffplay_decoder, FLOAT_VIDEO_DECODE_FRAMES_PER_SECOND, 0);
@@ -285,7 +292,7 @@ int main(int argc, char** argv)
 	SDL_SysWMinfo wmInfo;
 	SDL_VERSION(&wmInfo.version);
 	SDL_GetWindowWMInfo(screen, &wmInfo);
-	hwnd = wmInfo.info.win.window;
+	HWND hwnd = wmInfo.info.win.window;
 
 	int mode = 0;
 	printf("\nPlease chose your decode mode: \n");
@@ -487,6 +494,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
+	case UM_PLAY:
+		IJKPlayer::start();
+		ShowWindow(hwnd, SW_SHOW);
+		break;
 	}
 
 	return DefWindowProc(hwnd, message, wParam, lParam);
@@ -539,38 +550,43 @@ DWORD _stdcall CreateThreadWindow(PVOID pArg)
 
 int main()
 {
-	char listPath[1024] = { 0 };
+	char filePath[1024] = { 0 };
 	
-	std::wstring url = L"./ijkDemo.log";
+	std::wstring wstrUrl = L"./ijkDemo.log";
+	std::string strUrl = "./ijkDemo.log";
 
-	std::vector<std::string> vec = { "protocol_whitelist:concat,file,http,https,tcp,tls,crypto,data" };
+	Log::Initialise(strUrl);
+	Log::SetThreshold(Log::LOG_TYPE_DEBUG);
 
-	IJKPlayer::initialize(vec, url.c_str(), log_callback);
+	std::vector<std::string> args = { "protocol_whitelist:concat,file,http,https,tcp,tls,crypto,data" };
+
+	IJKPlayer::initialize(args, wstrUrl.c_str(), log_callback);
 
 	int mode = 0;
 
 	CreateThread(NULL, 0, CreateThreadWindow, NULL, 0, NULL);
 
 	printf("\nPlease chose your decode mode: \n");
+	printf("1: ffmpeg\n");
 	printf("9: auto test mode\n");
 	printf("decode mode: ");
 	scanf("%d", &mode);
 	switch (mode)
 	{
-	//case 1:
-	//	ijkFfplayDecoder_setHwDecoderName(ijk_ffplay_decoder, "h264_cuvid");
-	//	break;
-	//case 2:
-	//	ijkFfplayDecoder_setHwDecoderName(ijk_ffplay_decoder, "h264_qsv");
-	//	break;
+	case 1:
+		printf("\nPlease input file path:\n");
+		scanf("%s", filePath);
+		break;
 	case 9:
 		printf("\nPlease input test list path:\n");
-		scanf("%s", listPath);
-		test_media_list(listPath);
+		scanf("%s", filePath);
+		test_media_list(filePath);
 		goto QUIT;
 	default:
 		break;
 	}
+
+	play_one(filePath);
 
 	char input = ' ';
 
