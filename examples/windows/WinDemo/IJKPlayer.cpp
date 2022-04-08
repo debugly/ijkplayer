@@ -1,0 +1,157 @@
+#include "IJKPlayer.h"
+#include <assert.h>
+//Todo:TidyUp
+#include "../../../ijkmedia/ijkplayer/windows/ijk_ffplay_decoder.h"
+
+FILE* _ijk_log_stream = NULL;
+
+IjkFfplayDecoder *_ijk_ffplay_decoder = NULL;
+IjkFfplayDecoderCallBack *_decoder_callback = NULL;
+
+std::vector<std::string> _startup_args;
+
+HWND _ijk_vout = NULL;
+
+void _msg_callback(void* opaque, IjkMsgState message, int arg1, int arg2)
+{
+	switch (message)
+	{
+	case IJK_MSG_VIDEO_DECODE_FPS:
+		break;
+	case IJK_MSG_VIDEO_GOP_SIZE:
+		break;
+	case IJK_MSG_FLUSH:
+		break;
+	case IJK_MSG_ERROR:
+		break;
+	case IJK_MSG_PREPARED:
+		//ijkFfplayDecoder_start(_ijk_ffplay_decoder);
+		break;
+	case IJK_MSG_COMPLETED:
+		ijkFfplayDecoder_pause(_ijk_ffplay_decoder);
+		ijkFfplayDecoder_stop(_ijk_ffplay_decoder);
+		break;
+	case IJK_MSG_VIDEO_SIZE_CHANGED:
+		break;
+	case IJK_MSG_SAR_CHANGED:
+		break;
+	case IJK_MSG_VIDEO_RENDERING_START:
+		break;
+	case IJK_MSG_AUDIO_RENDERING_START:
+		break;
+	case IJK_MSG_VIDEO_ROTATION_CHANGED:
+		break;
+	case IJK_MSG_BUFFERING_START:
+		break;
+	case IJK_MSG_BUFFERING_END:
+		break;
+	case IJK_MSG_BUFFERING_UPDATE:
+		break;
+	case IJK_MSG_BUFFERING_BYTES_UPDATE:
+		break;
+	case IJK_MSG_BUFFERING_TIME_UPDATE:
+		break;
+	case IJK_MSG_SEEK_COMPLETE:
+		break;
+	case IJK_MSG_PLAYBACK_STATE_CHANGED:
+		break;
+	case IJK_MSG_TIMED_TEXT:
+		break;
+	case IJK_MSG_ACCURATE_SEEK_COMPLETE:
+		break;
+	case IJK_MSG_VIDEO_DECODER_OPEN:
+		break;
+	default:
+		break;
+	}
+}
+
+void _uninit_decoder()
+{
+	if (_ijk_ffplay_decoder)
+	{
+		ijkFfplayDecoder_pause(_ijk_ffplay_decoder);
+		ijkFfplayDecoder_stop(_ijk_ffplay_decoder);
+
+		ijkFfplayDecoder_release(_ijk_ffplay_decoder);
+	}
+}
+
+bool IJKPlayer::initialize(const std::vector<std::string>& playerArgs, /*const wchar_t* clearCacheBeforeDate,*/ const wchar_t* logPath, /*const wchar_t* preloadDir,*/ PlayerCore::ijk_LogCallback logCallback)
+{
+	ijkFfplayDecoder_init();
+
+	ijkFfplayDecoder_setLogLevel(k_IJK_LOG_DEBUG);
+	ijkFfplayDecoder_setLogCallback(logCallback);
+
+	 _wfopen_s(&_ijk_log_stream, logPath, L"w");
+
+	//arg k:v
+	for (const std::string& arg : playerArgs)
+	{
+		size_t pos = 0;
+		if ((pos = arg.find(':')) != std::string::npos) 
+		{
+			_startup_args.push_back(arg.substr(0, pos));//k
+			_startup_args.push_back(arg.substr(pos + 1, arg.length() - pos - 1));//v
+		}
+	}
+
+	assert(_startup_args.size() % 2 == 0);
+
+	_decoder_callback = (IjkFfplayDecoderCallBack *)malloc(sizeof(IjkFfplayDecoderCallBack));
+	_decoder_callback->func_get_frame = NULL;//Todo
+	_decoder_callback->func_state_change = _msg_callback;
+	
+	return true;
+}
+
+void IJKPlayer::uninitialize()
+{
+	if (_decoder_callback)
+	{
+		free(_decoder_callback);
+		_decoder_callback = NULL;
+	}
+
+	if (_ijk_log_stream)
+	{
+		fclose(_ijk_log_stream);
+		_ijk_log_stream = NULL;
+	}
+
+	_uninit_decoder();
+	_ijk_ffplay_decoder = NULL;
+
+	ijkFfplayDecoder_uninit();
+}
+
+void IJKPlayer::setVout(HWND hwnd)
+{
+	_ijk_vout = hwnd;
+}
+
+void IJKPlayer::prepare(const std::string & url)
+{
+	_uninit_decoder();
+
+	_ijk_ffplay_decoder = ijkFfplayDecoder_create();
+	ijkFfplayDecoder_setDecoderCallBack(_ijk_ffplay_decoder, NULL, _decoder_callback);
+	ijkFfplayDecoder_setOptionStringValue(_ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
+
+	ijkFfplayDecoder_setDataSource(_ijk_ffplay_decoder, url.c_str());
+	ijkFfplayDecoder_prepare(_ijk_ffplay_decoder);
+}
+
+void IJKPlayer::start()
+{
+	ijkFfplayDecoder_start(_ijk_ffplay_decoder);
+	ijkFfplayDecoder_setWindowHwnd(_ijk_ffplay_decoder, _ijk_vout);
+	ShowWindow(_ijk_vout, SW_SHOW);
+}
+
+void IJKPlayer::play(const std::string & url)
+{
+	prepare(url);
+	start();
+}
