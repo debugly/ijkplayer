@@ -82,7 +82,7 @@ void _uninit_decoder()
 	}
 }
 
-bool IJKPlayer::initialize(const std::vector<std::string>& playerArgs, /*const wchar_t* clearCacheBeforeDate,*/ const wchar_t* logPath, /*const wchar_t* preloadDir,*/ PlayerCore::ijk_LogCallback logCallback)
+bool IJKPlayer::initialize(const std::vector<std::string>& playerArgs, /*const wchar_t* clearCacheBeforeDate,*/ const wchar_t* logPath, /*const wchar_t* preloadDir,*/ /*PlayerCore::*/ijk_LogCallback logCallback)
 {
 	ijkFfplayDecoder_init();
 
@@ -142,7 +142,11 @@ void IJKPlayer::prepare(const std::string & url)
 
 	_ijk_ffplay_decoder = ijkFfplayDecoder_create();
 	ijkFfplayDecoder_setDecoderCallBack(_ijk_ffplay_decoder, NULL, _decoder_callback);
-	ijkFfplayDecoder_setOptionStringValue(_ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
+
+	for (size_t i = 0; i < _startup_args.size(); i += 2)
+	{
+		ijkFfplayDecoder_setOptionStringValue(_ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, _startup_args[i].c_str(), _startup_args[i + 1].c_str());
+	}
 
 	ijkFfplayDecoder_setDataSource(_ijk_ffplay_decoder, url.c_str());
 	ijkFfplayDecoder_prepare(_ijk_ffplay_decoder);
