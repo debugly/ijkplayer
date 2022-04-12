@@ -25,5 +25,6 @@ namespace IJKPlayer
 
 	int seek(long position);
 
+	long getCurrent();
 	long getDuration();
 }

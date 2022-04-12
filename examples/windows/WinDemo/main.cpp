@@ -598,6 +598,11 @@ int main()
 			printf("quit now.\n");
 			break;
 		}
+		else if (input == 's' || input == 'S')
+		{
+			printf("forward 15s.\n");
+			IJKPlayer::seek(IJKPlayer::getCurrent() + 15000);
+		}
 		
 		Sleep(500);
 	}
