@@ -72,7 +72,7 @@ FFMPEG_C_FLAGS="$FFMPEG_C_FLAGS  $OTHER_CFLAGS"
 
 # for cross compile
 if [[ $(uname -m) != "$ARCH" || "$FORCE_CROSS" ]];then
-    echo "[*] cross compile, on $(uname -m) compile $XC_PLAT $XC_ARCH."
+    echo "[*] cross compile, on $(uname -m) compile $PLAT $ARCH."
     # https://www.gnu.org/software/automake/manual/html_node/Cross_002dCompilation.html
     FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-cross-compile"
 fi
@@ -111,7 +111,7 @@ if [[ -f "${PRODUCT_ROOT}/x264-$ARCH/lib/pkgconfig/x264.pc" ]]; then
     # libx264 is gpl and --enable-gpl is not specified.
     FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-gpl --enable-libx264"
     
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${XC_PRODUCT_ROOT}/x264-$XC_ARCH/lib/pkgconfig"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${PRODUCT_ROOT}/x264-$ARCH/lib/pkgconfig"
 
     echo "[*] --enable-libx264"
 else
@@ -128,7 +128,7 @@ if [[ -f "${PRODUCT_ROOT}/fdk-aac-$ARCH/lib/pkgconfig/fdk-aac.pc" ]]; then
 
     FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-nonfree --enable-libfdk-aac"
     
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${XC_PRODUCT_ROOT}/fdk-aac-$XC_ARCH/lib/pkgconfig"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${PRODUCT_ROOT}/fdk-aac-$ARCH/lib/pkgconfig"
 
     echo "[*] --enable-libfdk-aac"
 else
