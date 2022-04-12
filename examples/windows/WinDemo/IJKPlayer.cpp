@@ -124,6 +124,8 @@ void _video_callback(void* opaque, IjkVideoFrame *frame)
 
 		buffer = NULL;
 		rgb_buffer[0] = NULL;
+
+		sws_freeContext(swsContext);
 	}
 }
 
