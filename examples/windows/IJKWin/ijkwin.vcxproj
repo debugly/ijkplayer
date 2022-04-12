@@ -97,7 +97,7 @@
       <Command>post_copy_Win32_debug.bat</Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../depend/ffmpeg/lib/</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
@@ -108,7 +108,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_MBCS;WIN32;_CRT_SECURE_NO_WARNINGS;COBJMACROS;HAVE_STRUCT_TIMESPEC;IJK_IO_OFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../depend/ffmpeg/include/;./ijksdl/;./dxva2/;./global/include/;./ijkplayer/pipeline/;../depend/sdl2/include/;../depend/pthread-win32/include/;../../../ijkmedia/;../depend/EGL/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <UndefinePreprocessorDefinitions>FFP_MERGE</UndefinePreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>FFP_MERGE;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -118,7 +118,7 @@
 </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../depend/ffmpeg/x64/</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
@@ -141,7 +141,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../depend/ffmpeg/lib/</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
@@ -168,7 +168,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../depend/ffmpeg/x64/</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
