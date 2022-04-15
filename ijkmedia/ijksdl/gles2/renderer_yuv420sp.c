@@ -40,8 +40,8 @@ static GLboolean yuv420sp_use(IJK_GLES2_Renderer *renderer)
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         glUniform1i(renderer->us2_sampler[i], i);
     }
@@ -114,8 +114,8 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_yuv420sp()
 
     renderer->um3_color_conversion = glGetUniformLocation(renderer->program, "um3_ColorConversion"); IJK_GLES2_checkError_TRACE("glGetUniformLocation(um3_ColorConversionMatrix)");
 	renderer->um3_rgb_adjustment = glGetUniformLocation(renderer->program, "um3_rgbAdjustment"); IJK_GLES2_checkError_TRACE("glGetUniformLocation(um3_rgbAdjustment)");
-
-    renderer->func_use            = yuv420sp_use;
+    
+	renderer->func_use            = yuv420sp_use;
     renderer->func_getBufferWidth = yuv420sp_getBufferWidth;
     renderer->func_uploadTexture  = yuv420sp_uploadTexture;
 
