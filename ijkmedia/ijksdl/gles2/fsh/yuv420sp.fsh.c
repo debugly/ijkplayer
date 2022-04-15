@@ -52,8 +52,8 @@ static const char g_shader[] = IJK_GLES_STRING(
 			mediump vec3 yuv;
 			lowp    vec3 rgb;
 
-			yuv.x = (texture2D(us2_SamplerX, vv2_Texcoord).r - (16.0 / 255.0));
-			yuv.yz = (texture2D(us2_SamplerY, vv2_Texcoord).r - vec2(0.5, 0.5));
+			yuv.x = texture2D(us2_SamplerX, vv2_Texcoord).r;
+			yuv.yz = texture2D(us2_SamplerY, vv2_Texcoord).rg - vec2(0.5, 0.5);
 
 			if (isFullRange == 1) {
 				yuv.x = yuv.x - 16.0 / 255.0;
