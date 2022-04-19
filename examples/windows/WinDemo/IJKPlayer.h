@@ -22,9 +22,10 @@ namespace IJKPlayer
 	void play(const std::string& url);
 	void pause();
 	void stop();
-
 	int seek(long position);
 
 	long getCurrent();
 	long getDuration();
+	int setVolume(float volume);
+	float getVolume();
 }

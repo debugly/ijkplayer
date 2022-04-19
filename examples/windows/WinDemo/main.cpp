@@ -603,6 +603,16 @@ int main()
 			printf("forward 15s.\n");
 			IJKPlayer::seek(IJKPlayer::getCurrent() + 15000);
 		}
+		else if (input == '+')
+		{
+			printf("volume add 10.\n");
+			IJKPlayer::setVolume(IJKPlayer::getVolume() + 10.0f);
+		}
+		else if (input == '-')
+		{
+			printf("volume minus 10.\n");
+			IJKPlayer::setVolume(IJKPlayer::getVolume() - 10.0f);
+		}
 		
 		Sleep(500);
 	}

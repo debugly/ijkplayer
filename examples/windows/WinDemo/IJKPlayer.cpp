@@ -72,13 +72,27 @@ void _msg_callback(void* opaque, IjkMsgState message, int arg1, int arg2)
 }
 
 void _video_callback(void* opaque, IjkVideoFrame *frame)
-{
+{	
 	static int count = 24;
 	if (--count == 0)
 	{
-		assert(frame->format == AV_PIX_FMT_YUV420P);
+		AVPixelFormat format = AV_PIX_FMT_NONE;
 
-		SwsContext* swsContext = sws_getContext(frame->w, frame->h, AV_PIX_FMT_YUV420P, frame->w, frame->h, AV_PIX_FMT_BGR24, NULL, NULL, NULL, NULL);
+		switch (frame->format)
+		{
+		case PIX_FMT_YUV420P:
+			format = AV_PIX_FMT_YUV420P;
+			break;
+		case PIX_FMT_NV12:
+			format = AV_PIX_FMT_NV12;
+			break;
+		default:
+			break;
+		}
+
+		if (format == AV_PIX_FMT_NONE) return;
+
+		SwsContext* swsContext = sws_getContext(frame->w, frame->h, format, frame->w, frame->h, AV_PIX_FMT_BGR24, NULL, NULL, NULL, NULL);
 		int channel = 3;
 		int linesize[8] = { frame->linesize[0] * channel };
 		int num_bytes = frame->w * frame->h * 1 * channel;
@@ -206,6 +220,8 @@ void IJKPlayer::prepare(const std::string & url)
 		ijkFfplayDecoder_setOptionStringValue(_ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, _startup_args[i].c_str(), _startup_args[i + 1].c_str());
 	}
 
+	ijkFfplayDecoder_setHwDecoderName(_ijk_ffplay_decoder, "h264_qsv");
+
 	ijkFfplayDecoder_setDataSource(_ijk_ffplay_decoder, url.c_str());
 	ijkFfplayDecoder_prepare(_ijk_ffplay_decoder);
 }
@@ -244,4 +260,14 @@ long IJKPlayer::getCurrent()
 long IJKPlayer::getDuration()
 {
 	return ijkFfplayDecoder_getDuration(_ijk_ffplay_decoder);
+}
+
+int IJKPlayer::setVolume(float volume)
+{
+	return ijkFfplayDecoder_setVolume(_ijk_ffplay_decoder, volume);
+}
+
+float IJKPlayer::getVolume()
+{
+	return ijkFfplayDecoder_getVolume(_ijk_ffplay_decoder);
 }
