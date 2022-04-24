@@ -494,7 +494,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	case UM_PLAY:
+	case UM_PLAYER_READY:
 		IJKPlayer::start();
 		ShowWindow(hwnd, SW_SHOW);
 		break;
@@ -560,7 +560,7 @@ int main()
 
 	std::vector<std::string> args = { "protocol_whitelist:concat,file,http,https,tcp,tls,crypto,data" };
 
-	IJKPlayer::initialize(args, wstrUrl.c_str(), log_callback);
+	IJKPlayer::initialize(args, wstrUrl.c_str());
 
 	int mode = 0;
 
