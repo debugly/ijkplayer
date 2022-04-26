@@ -3849,6 +3849,7 @@ static int read_thread(void *arg)
     ret = -1;
     if (st_index[AVMEDIA_TYPE_AUDIO] >= 0) {
         ret = stream_component_open(ffp, st_index[AVMEDIA_TYPE_AUDIO]);
+		av_log(NULL, AV_LOG_WARNING, "open stream AVMEDIA_TYPE_AUDIO,ret:%d\n", ret);
     }
     
     //when open audio stream failed or no audio stream use video as av sync master.
@@ -3858,16 +3859,19 @@ static int read_thread(void *arg)
         is->av_sync_type  = ffp->av_sync_type;
     }
 
-    ret = -1;
-    if (st_index[AVMEDIA_TYPE_VIDEO] >= 0) {
-        ret = stream_component_open(ffp, st_index[AVMEDIA_TYPE_VIDEO]);
-    }
-    if (is->show_mode == SHOW_MODE_NONE)
-        is->show_mode = ret >= 0 ? SHOW_MODE_VIDEO : SHOW_MODE_RDFT;
+	ret = -1;
+	if (st_index[AVMEDIA_TYPE_VIDEO] >= 0) {
+		ret = stream_component_open(ffp, st_index[AVMEDIA_TYPE_VIDEO]);
+		av_log(NULL, AV_LOG_WARNING, "open stream AVMEDIA_TYPE_VIDEO,ret:%d\n", ret);
+	}
+	if (is->show_mode == SHOW_MODE_NONE)
+		is->show_mode = ret >= 0 ? SHOW_MODE_VIDEO : SHOW_MODE_RDFT;
 
-    if (st_index[AVMEDIA_TYPE_SUBTITLE] >= 0) {
-        stream_component_open(ffp, st_index[AVMEDIA_TYPE_SUBTITLE]);
-    }
+	ret = -1;
+	if (st_index[AVMEDIA_TYPE_SUBTITLE] >= 0) {
+		ret = stream_component_open(ffp, st_index[AVMEDIA_TYPE_SUBTITLE]);
+		av_log(NULL, AV_LOG_WARNING, "open stream AVMEDIA_TYPE_SUBTITLE,ret:%d\n", ret);
+	}
     ffp_notify_msg1(ffp, FFP_MSG_COMPONENT_OPEN);
 
     if (!ffp->ijkmeta_delay_init) {
