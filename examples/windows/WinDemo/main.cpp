@@ -6,6 +6,8 @@
 #include "logging.h"
 #include "IJKPlayer.h"
 
+#pragma comment(lib,"DXGI.lib")
+
 #define WIN32_WINDOW
 
 IjkFfplayDecoder *ijk_ffplay_decoder;
@@ -27,10 +29,6 @@ static SDL_Window   *screen;
 static SDL_Renderer *sdlRenderer;
 static SDL_Texture  *sdlTexture;
 static SDL_Rect     sdlRect;
-
-#else
-
-#pragma comment(lib,"DXGI.lib")
 
 #endif
 
