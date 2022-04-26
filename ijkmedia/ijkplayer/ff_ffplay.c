@@ -3366,7 +3366,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
                     is->is_video_high_fps = 1;
                     av_log(ffp, AV_LOG_WARNING, "fps: %lf (too high)\n", fps);
                 } else {
-                    av_log(ffp, AV_LOG_WARNING, "fps: %lf (normal)\n", fps);
+                    av_log(ffp, AV_LOG_INFO, "fps: %lf (normal)\n", fps);
                 }
             }
             if(is->video_st->r_frame_rate.den && is->video_st->r_frame_rate.num) {
@@ -3375,7 +3375,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
                     is->is_video_high_fps = 1;
                     av_log(ffp, AV_LOG_WARNING, "fps: %lf (too high)\n", tbr);
                 } else {
-                    av_log(ffp, AV_LOG_WARNING, "fps: %lf (normal)\n", tbr);
+                    av_log(ffp, AV_LOG_INFO, "fps: %lf (normal)\n", tbr);
                 }
             }
         }

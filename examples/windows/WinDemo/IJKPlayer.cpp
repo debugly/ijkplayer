@@ -1,8 +1,9 @@
 #include "IJKPlayer.h"
-#include <assert.h>
 //Todo:TidyUp
 #include "../../../ijkmedia/ijkplayer/windows/ijk_ffplay_decoder.h"
 #include "logging.h"
+#include <assert.h>
+#include <DXGI.h>
 
 extern "C"
 {
@@ -189,6 +190,117 @@ void _uninit_decoder()
 		ijkFfplayDecoder_release(_ijk_ffplay_decoder);
 	}
 }
+// use h264 for now
+std::string _get_hwcodec_name(int venderID)
+{
+	std::string strRes;
+	switch (venderID)
+	{
+	// Nvdia Corporation
+	case 4318:
+		strRes = "h264_cuvid";
+		break;
+	// Intel Integrate Graphics
+	case 32902:
+		strRes = "h264_qsv";
+		break;
+	default:
+		break;
+	}
+
+	return strRes;
+}
+// tidy this into Util class
+std::vector<int> util_getGPUInfo()
+{
+	std::vector<int> vecRes;
+	
+	IDXGIFactory * pFactory;
+	IDXGIAdapter * pAdapter;
+	std::vector <IDXGIAdapter*> vAdapters;
+
+	int iAdapterNum = 0;
+
+	HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&pFactory));
+
+	if (FAILED(hr))
+		return vecRes;
+
+	while (pFactory->EnumAdapters(iAdapterNum, &pAdapter) != DXGI_ERROR_NOT_FOUND)
+	{
+		vAdapters.push_back(pAdapter);
+		++iAdapterNum;
+	}
+
+	for (size_t i = 0; i < vAdapters.size(); i++)
+	{
+		DXGI_ADAPTER_DESC adapterDesc;
+		vAdapters[i]->GetDesc(&adapterDesc);
+		std::wstring wstr(adapterDesc.Description);
+
+		std::string str(wstr.length(), ' ');
+		std::copy(wstr.begin(), wstr.end(), str.begin());
+
+		//cout << "系统视频内存:" << adapterDesc.DedicatedSystemMemory / 1024 / 1024 << "M" << endl;
+		//cout << "专用视频内存:" << adapterDesc.DedicatedVideoMemory / 1024 / 1024 << "M" << endl;
+		//cout << "共享系统内存:" << adapterDesc.SharedSystemMemory / 1024 / 1024 << "M" << endl;
+		//cout << "设备描述:" << str.c_str() << endl;
+		//cout << "设备ID:" << adapterDesc.DeviceId << endl;
+		//cout << "PCI ID修正版本:" << adapterDesc.Revision << endl;
+		//cout << "子系统PIC ID:" << adapterDesc.SubSysId << endl;
+		//cout << "厂商编号:" << adapterDesc.VendorId << endl;
+
+		vecRes.push_back(adapterDesc.VendorId);
+			
+		//IDXGIOutput* pOutput;
+		//std::vector<IDXGIOutput*> vOutputs;
+
+		//int iOutputNum = 0;
+		//while (vAdapters[i]->EnumOutputs(iOutputNum, &pOutput) != DXGI_ERROR_NOT_FOUND)
+		//{
+		//	vOutputs.push_back(pOutput);
+		//	iOutputNum++;
+		//}
+
+		//if (iOutputNum > 0)
+		//{
+		//	cout << "激活的显示器所使用的厂商编号:" << adapterDesc.VendorId << endl;
+		//}
+
+		//cout << "-----------------------------------------" << endl;
+		//cout << "获取到" << iOutputNum << "个显示设备:" << endl;
+		//cout << endl;
+
+		//for (size_t n = 0; n < vOutputs.size(); n++)
+		//{
+		//	DXGI_OUTPUT_DESC outputDesc;
+		//	vOutputs[n]->GetDesc(&outputDesc);
+
+		//	UINT uModeNum = 0;
+		//	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		//	UINT flags = DXGI_ENUM_MODES_INTERLACED;
+
+		//	vOutputs[n]->GetDisplayModeList(format, flags, &uModeNum, 0);
+		//	DXGI_MODE_DESC * pModeDescs = new DXGI_MODE_DESC[uModeNum];
+		//	vOutputs[n]->GetDisplayModeList(format, flags, &uModeNum, pModeDescs);
+
+		//	cout << "显示设备名称:" << outputDesc.DeviceName << endl;
+		//	cout << "显示设备当前分辨率:" << outputDesc.DesktopCoordinates.right - outputDesc.DesktopCoordinates.left << "*" << outputDesc.DesktopCoordinates.bottom - outputDesc.DesktopCoordinates.top << endl;
+		//	cout << endl;
+
+		//	// 所支持的分辨率信息  
+		//	cout << "分辨率信息:" << endl;
+		//	for (UINT m = 0; m < uModeNum; m++)
+		//	{
+		//		cout << "== 分辨率:" << pModeDescs[m].Width << "*" << pModeDescs[m].Height << "     刷新率" << (pModeDescs[m].RefreshRate.Numerator) / (pModeDescs[m].RefreshRate.Denominator) << endl;
+		//	}
+		//}
+		//vOutputs.clear();
+
+	}
+	vAdapters.clear();
+	return vecRes;
+}
 
 bool IJKPlayer::initialize(const std::vector<std::string>& playerArgs, /*const wchar_t* clearCacheBeforeDate,*/ const wchar_t* logPath /*const wchar_t* preloadDir,*/)
 {
@@ -247,7 +359,16 @@ void IJKPlayer::prepare(const std::string & url)
 
 	ijkFfplayDecoder_setOptionStringValue(_ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
 
-	//ijkFfplayDecoder_setHwDecoderName(_ijk_ffplay_decoder, "h264_qsv");
+	std::string codec;
+	for each (auto var in util_getGPUInfo())
+	{
+		codec = _get_hwcodec_name(var);
+		// Is it neccessary to find second?
+		if (!codec.empty())
+			break;
+	}
+	
+	codec.empty() ? OutputDebugString(L"find no hwcodec!\n") : ijkFfplayDecoder_setHwDecoderName(_ijk_ffplay_decoder, codec.c_str());
 
 	ijkFfplayDecoder_setDataSource(_ijk_ffplay_decoder, url.c_str());
 	ijkFfplayDecoder_prepare(_ijk_ffplay_decoder);

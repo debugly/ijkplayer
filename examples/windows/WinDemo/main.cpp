@@ -28,6 +28,10 @@ static SDL_Renderer *sdlRenderer;
 static SDL_Texture  *sdlTexture;
 static SDL_Rect     sdlRect;
 
+#else
+
+#pragma comment(lib,"DXGI.lib")
+
 #endif
 
 void msg_callback(void* opaque, IjkMsgState ijk_msgint, int arg1, int arg2)
@@ -567,7 +571,7 @@ int main()
 	CreateThread(NULL, 0, CreateThreadWindow, NULL, 0, NULL);
 
 	printf("\nPlease chose your decode mode: \n");
-	printf("1: ffmpeg\n");
+	printf("1: normal mode\n");
 	printf("9: auto test mode\n");
 	printf("decode mode: ");
 	scanf("%d", &mode);
