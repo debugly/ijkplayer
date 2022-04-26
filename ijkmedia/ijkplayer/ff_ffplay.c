@@ -648,12 +648,23 @@ static int decoder_decode_frame(FFPlayer *ffp, Decoder *d, AVFrame *frame, AVSub
             }
             av_packet_unref(d->pkt);
         } else {
-            if (avcodec_send_packet(d->avctx, d->pkt) == AVERROR(EAGAIN)) {
-                av_log(d->avctx, AV_LOG_ERROR, "Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n");
-                d->packet_pending = 1;
-            } else {
-                av_packet_unref(d->pkt);
-            }
+
+			int res = avcodec_send_packet(d->avctx, d->pkt);
+
+			switch (res)
+			{
+			case 0:
+				av_packet_unref(d->pkt);
+				break;
+			case AVERROR(EAGAIN):
+				av_log(d->avctx, AV_LOG_ERROR, "Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n");
+				d->packet_pending = 1;
+				break;
+			default:
+				av_log(d->avctx, AV_LOG_ERROR, "avcodec_send_packet failed check errcode:%d\n", res);
+				av_packet_unref(d->pkt);
+				break;
+			}
         }
     }
 }
