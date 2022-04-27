@@ -74,7 +74,7 @@ struct SDL_Vout {
     int (*display_overlay)(SDL_Vout *vout, SDL_VoutOverlay *overlay);
     void (*update_subtitle)(SDL_Vout *vout, const char *text);
     void (*update_subtitle_picture)(SDL_Vout *vout, const AVSubtitleRect *rect);
-    
+	void (*snapshot)(SDL_Vout *vout, SDL_VoutOverlay *overlay, bool with_subtitle);
     Uint32 overlay_format;
     Uint32 ff_format;//(Read Only)same as SDL_VoutOverlay's ff_format.
     int z_rotate_degrees;
