@@ -363,6 +363,10 @@ EGLBoolean IJK_EGL_display(IJK_EGL* egl, EGLNativeWindowType window, SDL_VoutOve
     if (!IJK_EGL_makeCurrent(egl, window))
         return EGL_FALSE;
 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, egl->width, egl->height);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	if (!IJK_EGL_prepareRenderer(egl, overlay)) {
 		ALOGE("[EGL] IJK_EGL_prepareRenderer failed\n");
 		return EGL_FALSE;
@@ -426,5 +430,124 @@ IJK_EGL *IJK_EGL_create()
 
     return egl;
 }
+
+static void IJK_EGL_destroy_FBO(IJK_EGL *egl)
+{
+	glDeleteFramebuffers(1, &egl->FBO);
+	glDeleteFramebuffers(1, &egl->colorTexture);
+}
+
+static bool IJK_EGL_prepare_FBO_if_need(IJK_EGL *egl)
+{
+	glGenTextures(1, &egl->colorTexture);        
+	IJK_GLES2_checkError_TRACE("IJK_EGL_prepare_FBO_if_need:glGenTextures");
+
+	glBindTexture(GL_TEXTURE_2D, egl->colorTexture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	IJK_GLES2_checkError_TRACE("IJK_EGL_prepare_FBO_if_need:glTexParameteri");
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, egl->width, egl->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	
+	glGenFramebuffers(1, &egl->FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, egl->FBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, egl->colorTexture, 0);
+
+	IJK_GLES2_checkError_TRACE("IJK_EGL_prepare_FBO_if_need:glBindFramebuffer");
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
+		return true;
+	} else {
+		IJK_GLES2_checkError_TRACE("IJK_EGL_prepare_FBO_if_need:glBindFramebuffer");
+
+		glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		return false;
+	}
+}
+
+void* IJK_EGL_snapshot_from_FBO(IJK_EGL* egl)
+{
+	GLint bytes_per_row = egl->width * 4;
+	const GLint bits_per_pixel = 32;
+	void* pixels_data = malloc(egl->width * egl->height * 4);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, bytes_per_row);
+	IJK_GLES2_checkError_TRACE("glPixelStorei");
+
+	glReadPixels(0, 0, egl->width, egl->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels_data);
+	IJK_GLES2_checkError_TRACE("glReadPixels");
+
+	//FILE* rFp = fopen("D:\\test_r.y", "wb+");
+	//FILE* gFp = fopen("D:\\test_g.y", "wb+");
+	//FILE* bFp = fopen("D:\\test_b.y", "wb+");
+
+	//int size = egl->width * egl->height;
+	//unsigned char * rbuf = (unsigned char*)malloc(size);
+	//unsigned char * gbuf = (unsigned char*)malloc(size);
+	//unsigned char * bbuf = (unsigned char*)malloc(size);
+	//int ridx, gidx, bidx;
+	//ridx = gidx = bidx = 0;
+	//unsigned char*  pixels = (unsigned char*)pixels_data;
+	//for (int rgbidx = 0; rgbidx < size * 3; rgbidx = rgbidx + 4)
+	//{
+	//	rbuf[ridx++] = pixels[rgbidx];
+	//	gbuf[gidx++] = pixels[rgbidx + 1];
+	//	bbuf[bidx++] = pixels[rgbidx + 2];
+	//}
+	//fwrite(rbuf, 1, size, rFp);
+	//fwrite(gbuf, 1, size, gFp);
+	//fwrite(bbuf, 1, size, bFp);
+
+	//free(rbuf);
+	//free(gbuf);
+	//free(bbuf);
+	//fclose(rFp);
+	//fclose(gFp);
+	//fclose(bFp);
+
+	free(pixels_data);
+}
+
+void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, SDL_VoutOverlay* overlay, EGLBoolean with_subtitle)
+{
+	if (egl->display && egl->surface && egl->context) {
+		if (!eglMakeCurrent(egl->display, egl->surface, egl->surface, egl->context)) {
+			ALOGE("[EGL] elgMakeCurrent() failed (cached)\n");
+			return EGL_FALSE;
+		}
+	}
+
+	EGLBoolean ret = false;
+	if (IJK_EGL_prepare_FBO_if_need(egl)) {
+		glBindFramebuffer(GL_FRAMEBUFFER, egl->FBO);
+		glViewport(0, 0, egl->width, egl->height);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glBindTexture(GL_TEXTURE_2D, egl->colorTexture);
+
+		IJK_EGL_Opaque *opaque = egl->opaque;
+
+		if (!IJK_GLES2_Renderer_resetVao(opaque->renderer)) {
+			ALOGE("[EGL] snapshot IJK_GLES2_Renderer_resetVao failed\n");
+		}
+
+		if (!IJK_GLES2_Renderer_uploadTexture(opaque->renderer, overlay)) {
+			ALOGE("[EGL] snapshot IJK_GLES2_Renderer_updateVetex failed\n");
+			return EGL_FALSE;
+		}
+
+		IJK_GLES2_Renderer_drawArrays();
+
+		IJK_EGL_snapshot_from_FBO(egl);
+	}
+
+	eglSwapBuffers(egl->display, egl->surface);
+	eglMakeCurrent(egl->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+	eglReleaseThread(); // FIXME: call at thread exit
+}
+
 
 #endif

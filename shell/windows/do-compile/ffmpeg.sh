@@ -66,7 +66,6 @@ else
 fi
 
 # FFMPEG_C_FLAGS
-FFMPEG_C_FLAGS=
 FFMPEG_C_FLAGS="$FFMPEG_C_FLAGS -fno-stack-check"
 FFMPEG_C_FLAGS="$FFMPEG_C_FLAGS  $OTHER_CFLAGS"
 
@@ -79,7 +78,7 @@ fi
 
 FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --pkg-config-flags=--static"
 
-FFMPEG_LDFLAGS="$FFMPEG_C_FLAGS"
+FFMPEG_LDFLAGS=" -static-libstdc++"
 FFMPEG_DEP_LIBS=
 
 echo "----------------------"
@@ -170,6 +169,24 @@ if [[ -f "${PRODUCT_ROOT}/opus-$ARCH/lib/pkgconfig/opus.pc" ]]; then
     echo "[*] --enable-libopus --enable-decoder=opus"
 else
     echo "[*] --disable-libopus"
+fi
+echo "------------------------"
+
+
+echo "----------------------"
+echo "[*] check libmfx"
+
+#----------------------
+# with opus
+if [[ -f "/usr/local/lib/pkgconfig/libmfx.pc" ]]; then
+    
+    FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-libmfx --enable-decoder=h264_qsv"
+    
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig"
+
+    echo "[*] --enable-libmfx --enable-decoder=h264_qsv"
+else
+    echo "[*] --disable-h264_qsv"
 fi
 echo "------------------------"
 

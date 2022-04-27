@@ -169,6 +169,14 @@ static void func_update_subtitle(SDL_Vout *vout, const char *text)
 	opaque->subtitle_text = av_strdup(text);
 }
 
+static void func_snapshot(SDL_Vout *vout, SDL_VoutOverlay *overlay, EGLBoolean with_subtile)
+{
+	SDL_Vout_Opaque *opaque = vout->opaque;
+	SDL_LockMutex(vout->mutex);
+	IJK_EGL_snapshot_effect_origin_with_subtitle(opaque->egl, overlay, with_subtile);
+	SDL_LockMutex(vout->mutex);
+}
+
 static void SDL_VoutWindows_SetNativeWindow_l(SDL_Vout *vout, HWND native_window)
 {
    // AMCTRACE("%s(%p, %p)\n", __func__, vout, native_window);
@@ -234,6 +242,7 @@ SDL_Vout *SDL_VoutWindows_CreateForANativeWindow()
     vout->free_l          = func_free_windows_l;
     vout->display_overlay = func_display_windows_overlay;
 	vout->update_subtitle = func_update_subtitle;
+	vout->snapshot        = func_snapshot;
     return vout;
 fail:
     func_free_l(vout);
