@@ -6,6 +6,8 @@
 #include "logging.h"
 #include "IJKPlayer.h"
 
+#pragma comment(lib,"DXGI.lib")
+
 #define WIN32_WINDOW
 
 IjkFfplayDecoder *ijk_ffplay_decoder;
@@ -494,7 +496,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	case UM_PLAY:
+	case UM_PLAYER_READY:
 		IJKPlayer::start();
 		ShowWindow(hwnd, SW_SHOW);
 		break;
@@ -560,14 +562,14 @@ int main()
 
 	std::vector<std::string> args = { "protocol_whitelist:concat,file,http,https,tcp,tls,crypto,data" };
 
-	IJKPlayer::initialize(args, wstrUrl.c_str(), log_callback);
+	IJKPlayer::initialize(args, wstrUrl.c_str());
 
 	int mode = 0;
 
 	CreateThread(NULL, 0, CreateThreadWindow, NULL, 0, NULL);
 
 	printf("\nPlease chose your decode mode: \n");
-	printf("1: ffmpeg\n");
+	printf("1: normal mode\n");
 	printf("9: auto test mode\n");
 	printf("decode mode: ");
 	scanf("%d", &mode);
@@ -602,6 +604,16 @@ int main()
 		{
 			printf("forward 15s.\n");
 			IJKPlayer::seek(IJKPlayer::getCurrent() + 15000);
+		}
+		else if (input == '+')
+		{
+			printf("volume add 10.\n");
+			IJKPlayer::setVolume(IJKPlayer::getVolume() + 10.0f);
+		}
+		else if (input == '-')
+		{
+			printf("volume minus 10.\n");
+			IJKPlayer::setVolume(IJKPlayer::getVolume() - 10.0f);
 		}
 		
 		Sleep(500);
