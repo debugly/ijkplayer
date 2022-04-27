@@ -147,6 +147,17 @@ float ijkFfplayDecoder_getPropertyFloat(IjkFfplayDecoder* decoder, int id, float
 
 int ijkFfplayDecoder_getMediaMeta(IjkFfplayDecoder* decoder, IjkMetadata* metadata);
 
+int ijkFfplayDecoder_setPlaybackRate(IjkFfplayDecoder *decoder, float rate);
+
+int ijkFfplayDecoder_setSubtitleExtraDelay(IjkFfplayDecoder* decoder, float delay);
+
+float ijkFfplayDecoder_getSubtitleExtraDelay(IjkFfplayDecoder* decoder);
+
+int ijkFfplayDecoder_setExternalSubtitle(IjkFfplayDecoder* decoder, const char* file_name);
+
+/*only load ex-subtitle, not apply*/
+int ijkFfplayDecoder_loadExternalSubtitle(IjkFfplayDecoder* decoder, const char* file_name);
+
 //decoder_name: h264_cuvid, h264_qsv
 int ijkFfplayDecoder_setHwDecoderName(IjkFfplayDecoder* decoder, const char* decoder_name);
 
