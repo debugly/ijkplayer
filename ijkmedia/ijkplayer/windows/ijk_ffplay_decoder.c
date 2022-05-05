@@ -778,3 +778,46 @@ void ijkFfplayDecoder_setWindowHwnd(IjkFfplayDecoder* decoder, HWND window)
 {
 	SDL_VoutWindows_SetWindowsSurface(decoder->ijk_media_player->ffplayer->vout, window);
 }
+
+float ijkFfplayDecoder_getSubtitleFontSize(IjkFfplayDecoder* decoder)
+{
+	if (!decoder || !decoder->ijk_media_player) {
+		ALOGE("IjkMediaPlayer is NULL.\n");
+		return -1;
+	}
+
+	return SDL_GetSubtileFontSize(decoder->ijk_media_player->ffplayer->vout);
+}
+
+int ijkFfplayDecoder_setSubtitleFontSize(IjkFfplayDecoder* decoder, float size)
+{
+	if (!decoder || !decoder->ijk_media_player) {
+		ALOGE("IjkMediaPlayer is NULL.\n");
+		return -1;
+	}
+
+	SDL_SetSubtitleFontSize(decoder->ijk_media_player->ffplayer->vout, size);
+
+	return 0;
+}
+
+char* ijkFfplayDecoder_getSubtitleFontName(IjkFfplayDecoder* decoder)
+{
+	if (!decoder || !decoder->ijk_media_player) {
+		ALOGE("IjkMediaPlayer is NULL.\n");
+		return NULL;
+	}
+
+	return SDL_GetSubtitleFontName(decoder->ijk_media_player->ffplayer->vout);
+}
+
+int ijkFfplayDecoder_setSubtitleFontName(IjkFfplayDecoder* decoder, const char* font_name)
+{
+	if (!decoder || !decoder->ijk_media_player) {
+		ALOGE("IjkMediaPlayer is NULL.\n");
+		return -1;
+	}
+
+	SDL_SetSubtitleFontName(decoder->ijk_media_player->ffplayer->vout, font_name);
+	return 0;
+}

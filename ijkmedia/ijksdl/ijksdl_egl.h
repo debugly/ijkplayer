@@ -73,4 +73,10 @@ void        IJK_EGL_terminate(IJK_EGL* egl);
 
 void*		IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, SDL_VoutOverlay* overlay, EGLBoolean with_subtitle);
 
+float		IJK_EGL_get_font_size(IJK_EGL* egl);
+void		IJK_EGL_set_font_size(IJK_EGL* egl, float size);
+
+char*		IJK_EGL_get_font_name(IJK_EGL* egl);
+void		IJK_EGL_set_font_name(IJK_EGL* egl, const char* font_name);
+
 #endif

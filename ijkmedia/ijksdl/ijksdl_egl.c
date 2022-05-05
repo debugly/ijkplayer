@@ -36,6 +36,7 @@
 
 typedef struct IJK_EGL_Opaque {
     IJK_GLES2_Renderer *renderer;
+	Subtitle_Overlay*	sub_overlay;
 } IJK_EGL_Opaque;
 
 static EGLBoolean IJK_EGL_isValid(IJK_EGL* egl)
@@ -56,8 +57,14 @@ void IJK_EGL_terminate(IJK_EGL* egl)
     if (!IJK_EGL_isValid(egl))
         return;
 
-    if (egl->opaque)
-        IJK_GLES2_Renderer_freeP(&egl->opaque->renderer);
+	if (egl->opaque) {
+		IJK_GLES2_Renderer_freeP(&egl->opaque->renderer);
+
+		if (egl->opaque->sub_overlay) {
+			free(egl->opaque->sub_overlay->font_name);
+			free(egl->opaque->sub_overlay);
+		}
+	}
 
     if (egl->display) {
         eglMakeCurrent(egl->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -296,6 +303,7 @@ static EGLBoolean IJK_EGL_prepareRenderer(IJK_EGL* egl, SDL_VoutOverlay *overlay
             return EGL_FALSE;
         }
 
+		opaque->sub_overlay = (Subtitle_Overlay*)calloc(1, sizeof(Subtitle_Overlay));
 		IJK_GLES2_Renderer_setGravity(opaque->renderer, IJK_GLES2_GRAVITY_RESIZE_ASPECT, overlay->w, overlay->h);
 
 		IJK_GLES2_Renderer_updateColorConversion(opaque->renderer, 1, 1, 1);
@@ -332,7 +340,8 @@ static EGLBoolean IJK_EGL_display_internal(IJK_EGL* egl, SDL_VoutOverlay *overla
 static EGLBoolean IJK_EGL_display_subtitle_internal(IJK_EGL* egl,  const char *text)
 {
 	IJK_EGL_Opaque *opaque = egl->opaque;
-	Subtitle_Overlay* overlay = Create_Bitmap(text);
+	Subtitle_Overlay* overlay = opaque->sub_overlay;
+	Create_Bitmap(text, &overlay);
 
 	IJK_GLES2_Renderer_beginDrawSubtitle(opaque->renderer);
 
@@ -549,5 +558,29 @@ void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, SDL_VoutOverlay
 	eglReleaseThread(); // FIXME: call at thread exit
 }
 
+
+float IJK_EGL_get_font_size(IJK_EGL* egl)
+{
+	return egl->opaque->sub_overlay->font_size;
+}
+
+void IJK_EGL_set_font_size(IJK_EGL* egl, float size)
+{
+	egl->opaque->sub_overlay->font_size = size;
+}
+
+char* IJK_EGL_get_font_name(IJK_EGL* egl)
+{
+	return egl->opaque->sub_overlay->font_name;
+}
+
+void IJK_EGL_set_font_name(IJK_EGL* egl, const char* font_name)
+{
+	assert(egl->opaque->sub_overlay);
+	if (egl->opaque->sub_overlay->font_name) {
+		free(egl->opaque->sub_overlay->font_name);
+	}
+	egl->opaque->sub_overlay->font_name = strdup(font_name);
+}
 
 #endif

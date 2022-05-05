@@ -163,6 +163,14 @@ int ijkFfplayDecoder_setHwDecoderName(IjkFfplayDecoder* decoder, const char* dec
 
 void ijkFfplayDecoder_setWindowHwnd(IjkFfplayDecoder* decoder, HWND window);
 
+float ijkFfplayDecoder_getSubtitleFontSize(IjkFfplayDecoder* decoder);
+
+int ijkFfplayDecoder_setSubtitleFontSize(IjkFfplayDecoder* decoder, float size);
+
+char* ijkFfplayDecoder_getSubtitleFontName(IjkFfplayDecoder* decoder);
+
+int ijkFfplayDecoder_setSubtitleFontName(IjkFfplayDecoder* decoder, const char* font_name);
+
 #ifdef  __cplusplus  
 }
 #endif

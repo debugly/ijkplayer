@@ -257,3 +257,23 @@ void SDL_VoutWinNative_SetVideoDataCallback(void *arg, SDL_Vout *vout, int(*vide
 	opaque->decode_video_callback = video_callback;
 	SDL_UnlockMutex(vout->mutex);
 }
+
+float SDL_GetSubtileFontSize(SDL_Vout* vout)
+{
+	return IJK_EGL_get_font_size(vout->opaque->egl);
+}
+
+void SDL_SetSubtitleFontSize(SDL_Vout* vout, float size)
+{
+	IJK_EGL_set_font_size(vout->opaque->egl, size);
+}
+
+char* SDL_GetSubtitleFontName(SDL_Vout* vout)
+{
+	return IJK_EGL_get_font_name(vout->opaque->egl);
+}
+
+void SDL_SetSubtitleFontName(SDL_Vout* vout, const char* font_name)
+{
+	IJK_EGL_set_font_name(vout->opaque->egl, font_name);
+}

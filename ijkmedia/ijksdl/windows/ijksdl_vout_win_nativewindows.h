@@ -12,5 +12,12 @@ void  SDL_VoutWindows_SetNativeWindow(SDL_Vout *vout,  HWND native_window);
 
 void SDL_VoutWinNative_SetVideoDataCallback(void *arg, SDL_Vout *vout, int(*video_callback)(void *arg, SDL_VoutOverlay* overlay));
 
+float SDL_GetSubtileFontSize(SDL_Vout* vout);
+
+void SDL_SetSubtitleFontSize(SDL_Vout* vout, float size);
+
+char* SDL_GetSubtitleFontName(SDL_Vout* vout);
+
+void SDL_SetSubtitleFontName(SDL_Vout* vout, const char* font_name);
 
 #endif
