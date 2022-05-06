@@ -61,6 +61,7 @@ void IJK_EGL_terminate(IJK_EGL* egl)
 		IJK_GLES2_Renderer_freeP(&egl->opaque->renderer);
 
 		if (egl->opaque->sub_overlay) {
+			free(egl->opaque->sub_overlay->font_name);
 			free(egl->opaque->sub_overlay);
 		}
 	}
@@ -575,9 +576,11 @@ char* IJK_EGL_get_font_name(IJK_EGL* egl)
 
 void IJK_EGL_set_font_name(IJK_EGL* egl, const char* font_name)
 {
-	assert(egl->opaque->sub_overlay);
+	if (egl->opaque->sub_overlay->font_name) {
+		free(egl->opaque->sub_overlay->font_name);
+	}
 
-	egl->opaque->sub_overlay->font_name = font_name;
+	egl->opaque->sub_overlay->font_name = strdup(font_name);
 }
 
 #endif

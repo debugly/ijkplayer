@@ -25,8 +25,13 @@ Subtitle_Overlay* Create_Subitle_Overlay()
 {
 	Subtitle_Overlay* overlay = (Subtitle_Overlay*)calloc(1, sizeof(Subtitle_Overlay));
 
+	const char* default_font = "ËÎÌו";
+	int len = strlen(default_font);
+
 	overlay->font_size = 18;
-	overlay->font_name = "ËÎÌו";
+	overlay->font_name = (char*)malloc(len + 1);
+	ZeroMemory(overlay->font_name, len + 1);
+	strcpy(overlay->font_name, default_font);
 
 	return overlay;
 }
@@ -41,8 +46,6 @@ Subtitle_Overlay* Create_Bitmap(const char* text, Subtitle_Overlay** ptr_overlay
 		ULONG_PTR                       gdiplusToken;
 		if (GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL) != Gdiplus::Ok)
 		{
-			MessageBox(NULL, TEXT("GDI+ failed to start up!"),
-				TEXT("Error!"), MB_ICONERROR);
 			return NULL;
 		}
 
