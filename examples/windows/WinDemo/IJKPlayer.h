@@ -33,4 +33,10 @@ namespace IJKPlayer
 	int setVolume(float volume);
 	float getVolume();
 	bool isPlaying();
+	int setPlaybackRate(float rate);
+	int setSubtitleDelay(float delay);
+	float getSubtitleExtraDelay();
+	/*only load ex-subtitle, not apply*/
+	int loadSubtitle(const char* file_name);
+	int setSubtitle(const char* file_name);
 }

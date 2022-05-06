@@ -359,6 +359,8 @@ void IJKPlayer::prepare(const std::string & url)
 
 	ijkFfplayDecoder_setOptionStringValue(_ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "protocol_whitelist", "concat,file,http,https,tcp,tls,crypto,data");
 
+	ijkFfplayDecoder_setOptionStringValue(_ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "user_agent", "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.51 Safari/537.36 ifox/7.0.0.152");
+
 	std::string codec;
 	for each (auto var in util_getGPUInfo())
 	{
@@ -424,4 +426,29 @@ float IJKPlayer::getVolume()
 bool IJKPlayer::isPlaying()
 {
 	return ijkFfplayDecoder_isPlaying(_ijk_ffplay_decoder);
+}
+
+int IJKPlayer::setPlaybackRate(float rate)
+{
+	return ijkFfplayDecoder_setPlaybackRate(_ijk_ffplay_decoder, rate);
+}
+
+int IJKPlayer::setSubtitleDelay(float delay)
+{
+	return ijkFfplayDecoder_setSubtitleExtraDelay(_ijk_ffplay_decoder, delay);
+}
+
+float IJKPlayer::getSubtitleExtraDelay()
+{
+	return ijkFfplayDecoder_getSubtitleExtraDelay(_ijk_ffplay_decoder);
+}
+
+int IJKPlayer::loadSubtitle(const char* file_name)
+{
+	return ijkFfplayDecoder_loadExternalSubtitle(_ijk_ffplay_decoder, file_name);
+}
+
+int IJKPlayer::setSubtitle(const char* file_name)
+{
+	return ijkFfplayDecoder_setExternalSubtitle(_ijk_ffplay_decoder, file_name);
 }
