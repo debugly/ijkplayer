@@ -21,6 +21,9 @@ typedef struct SDL_Win_DirectSound{
 	IDirectSoundBuffer8*	snd_buffer8;
 	DSBPOSITIONNOTIFY		ds_position_notify[8];
 	HANDLE					ds_event[8];
+
+	//for speed up freq
+	float	orgin_freq;
 }SDL_Win_DirectSound;
 
 
@@ -31,4 +34,5 @@ void SDL_Win_DSound_PlayDevice(SDL_Win_DirectSound *dsound, SDL_AudioSpec *sdl_s
 void SDL_Win_DSound_WaitDevice(SDL_Win_DirectSound *dsound, SDL_AudioSpec *sdl_spec);
 void SDL_Win_DSound_SetVolume(SDL_Win_DirectSound *dsound, float left_volume, float right_volume);
 
+void SDL_Win_DSound_SetFrequency(SDL_Win_DirectSound* dsound, float rate);
 #endif

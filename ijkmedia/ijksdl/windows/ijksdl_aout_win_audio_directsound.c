@@ -63,7 +63,7 @@ static int aout_thread_n(SDL_Aout *aout)
 		if (stream == NULL){
 			stream = buffer;
 		}
-		SDL_LockMutex(opaque->wakeup_mutex);
+
 		if (!opaque->abort_request) {
 			if (opaque->pause_on){
 				memset(stream, 0, stream_len);
@@ -75,7 +75,11 @@ static int aout_thread_n(SDL_Aout *aout)
 			opaque->need_set_volume = 0;
 			SDL_Win_DSound_SetVolume(atrack, opaque->left_volume, opaque->right_volume);
 		}
-		SDL_UnlockMutex(opaque->wakeup_mutex);
+
+		if (opaque->speed_changed) {
+			opaque->speed_changed = 0;
+			SDL_Win_DSound_SetFrequency(atrack, opaque->speed);
+		}
 
 		if (stream == buffer){
 			SDL_Delay(delay);

@@ -105,8 +105,19 @@ void SDL_Win_DSound_SetVolume(SDL_Win_DirectSound *dsound, float left_volume, fl
 	}
 	result = IDirectSoundBuffer_SetVolume(dsound->mixbuf, ds_volume);
 	if (result != DS_OK) {
-		ALOGE("directsound set volume failed");
+		set_dsound_error("IDirectSoundBuffer_SetVolume", result);
 	}
+	return;
+}
+
+void SDL_Win_DSound_SetFrequency(SDL_Win_DirectSound* dsound, float rate)
+{
+	HRESULT result = DS_OK;
+	result = IDirectSoundBuffer_SetFrequency(dsound->mixbuf, rate * dsound->orgin_freq);
+	if (result != DS_OK) {
+		set_dsound_error("IDirectSoundBuffer_SetFrequency", result);
+	}
+
 	return;
 }
 
@@ -193,7 +204,7 @@ static int create_secondary(SDL_Win_DirectSound *dsound, const DWORD bufsize, LP
 	// Try to create the secondary buffer
 	DSBUFFERDESC dsbd;
 	memset(&dsbd, 0, sizeof(DSBUFFERDESC));
-	dsbd.dwFlags = DSBCAPS_CTRLVOLUME | DSBCAPS_GLOBALFOCUS | DSBCAPS_STATIC | DSBCAPS_CTRLPOSITIONNOTIFY | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLPAN;
+	dsbd.dwFlags = DSBCAPS_CTRLVOLUME | DSBCAPS_GLOBALFOCUS | DSBCAPS_STATIC | DSBCAPS_CTRLPOSITIONNOTIFY | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY;
 	dsbd.dwSize = sizeof(DSBUFFERDESC);
 	dsbd.dwBufferBytes = bufsize;
 	dsbd.lpwfxFormat = lpwfx;
@@ -243,6 +254,7 @@ static int create_secondary(SDL_Win_DirectSound *dsound, const DWORD bufsize, LP
 		IDirectSoundBuffer_Unlock(*sndbuf,(LPVOID)pvAudioPtr1, dwAudioBytes1,(LPVOID)pvAudioPtr2, dwAudioBytes2);
 	}
 
+	dsound->orgin_freq = lpwfx->nSamplesPerSec;
 	// We're ready to go
 	return 0;
 }
