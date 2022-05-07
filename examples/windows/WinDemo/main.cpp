@@ -536,7 +536,7 @@ HWND CreateVideoWindow()
 	return hwnd;
 }
 
-DWORD _stdcall CreateThreadWindow(PVOID pArg)
+DWORD WINAPI CreateThreadWindow(PVOID pArg)
 {
 	IJKPlayer::setVout(CreateVideoWindow());
 

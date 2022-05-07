@@ -73,7 +73,18 @@ void _msg_callback(void* opaque, IjkMsgState message, int arg1, int arg2)
 		OutputDebugString(L"hint IJK_MSG_SAR_CHANGED\n");
 		break;
 	case IJK_MSG_VIDEO_RENDERING_START:
-		PostMessage(_ijk_vout, UM_PLAYER_PLAYBEGIN, NULL, NULL);
+		{
+		    PostMessage(_ijk_vout, UM_PLAYER_PLAYBEGIN, NULL, NULL);
+		    IJKPlayer::setSubtitleFontName("¿¬Ìå");
+		    std::string font_name = IJKPlayer::getSubtitleFontName();
+		    IJKPlayer::setSubtitleFontSize(24.0f);
+		    float font_size = IJKPlayer::getSubtitleFontSize();
+		    IJKPlayer::loadSubtitle("D:\\VideoTest\\Witcher.srt");
+		    IJKPlayer::setSubtitle("D:\\VideoTest\\Witcher.ass");
+		    IJKPlayer::setSubtitleDelay(5.0f);
+		    float subtitle_dalay = IJKPlayer::getSubtitleExtraDelay();
+			IJKPlayer::setPlaybackRate(1.0f);
+		}
 		break;
 	case IJK_MSG_AUDIO_RENDERING_START:
 		PostMessage(_ijk_vout, UM_PLAYER_PLAYBEGIN, NULL, NULL);
@@ -336,16 +347,6 @@ void IJKPlayer::setVout(HWND hwnd)
 	_ijk_vout = hwnd;
 }
 
-void IJKPlayer::openCodecHW()
-{
-	// need UI thread 
-}
-
-void IJKPlayer::closeCodecHW()
-{
-	// need UI thread 
-}
-
 void IJKPlayer::prepare(const std::string & url)
 {
 	_uninit_decoder();
@@ -433,6 +434,16 @@ int IJKPlayer::setPlaybackRate(float rate)
 	return ijkFfplayDecoder_setPlaybackRate(_ijk_ffplay_decoder, rate);
 }
 
+int IJKPlayer::setSubtitleFontName(const std::string& name)
+{
+	return ijkFfplayDecoder_setSubtitleFontName(_ijk_ffplay_decoder, name.c_str());
+}
+
+std::string IJKPlayer::getSubtitleFontName()
+{
+	return ijkFfplayDecoder_getSubtitleFontName(_ijk_ffplay_decoder);
+}
+
 int IJKPlayer::setSubtitleDelay(float delay)
 {
 	return ijkFfplayDecoder_setSubtitleExtraDelay(_ijk_ffplay_decoder, delay);
@@ -443,12 +454,22 @@ float IJKPlayer::getSubtitleExtraDelay()
 	return ijkFfplayDecoder_getSubtitleExtraDelay(_ijk_ffplay_decoder);
 }
 
-int IJKPlayer::loadSubtitle(const char* file_name)
+int IJKPlayer::loadSubtitle(const std::string& file_name)
 {
-	return ijkFfplayDecoder_loadExternalSubtitle(_ijk_ffplay_decoder, file_name);
+	return ijkFfplayDecoder_loadExternalSubtitle(_ijk_ffplay_decoder, file_name.c_str());
 }
 
-int IJKPlayer::setSubtitle(const char* file_name)
+int IJKPlayer::setSubtitleFontSize(float size)
 {
-	return ijkFfplayDecoder_setExternalSubtitle(_ijk_ffplay_decoder, file_name);
+	return ijkFfplayDecoder_setSubtitleFontSize(_ijk_ffplay_decoder, size);
+}
+
+float IJKPlayer::getSubtitleFontSize()
+{
+	return ijkFfplayDecoder_getSubtitleFontSize(_ijk_ffplay_decoder);
+}
+
+int IJKPlayer::setSubtitle(const std::string& file_name)
+{
+	return ijkFfplayDecoder_setExternalSubtitle(_ijk_ffplay_decoder, file_name.c_str());
 }
