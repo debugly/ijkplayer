@@ -4,16 +4,16 @@
 #include <windows.h>
 #include <gdiplus.h>
 
-const wchar_t* UTF82WCS(const char* str_utf8)
+wchar_t* UTF82WCS(int codepage, const char* str_utf8)
 {
 	//预转换，得到所需空间的大小;
-	int wcsLen = ::MultiByteToWideChar(CP_OEMCP, NULL, str_utf8, strlen(str_utf8), NULL, 0);
+	int wcsLen = ::MultiByteToWideChar(codepage, NULL, str_utf8, strlen(str_utf8), NULL, 0);
 
 	//分配空间要给'\0'留个空间，MultiByteToWideChar不会给'\0'空间
 	wchar_t* wszString = new wchar_t[wcsLen + 1];
 
 	//转换
-	::MultiByteToWideChar(CP_OEMCP, NULL, str_utf8, strlen(str_utf8), wszString, wcsLen);
+	::MultiByteToWideChar(codepage, NULL, str_utf8, strlen(str_utf8), wszString, wcsLen);
 
 	//最后加上'\0'
 	wszString[wcsLen] = '\0';
@@ -53,7 +53,7 @@ Subtitle_Overlay* Create_Bitmap(const char* text, Subtitle_Overlay** ptr_overlay
 
 	Subtitle_Overlay*  overlay = *ptr_overlay;
 
-	const wchar_t* name = UTF82WCS(overlay->font_name);
+	const wchar_t* name = UTF82WCS(CP_ACP, overlay->font_name);
 	Gdiplus::FontFamily   fontFamily(name);
 
 	Gdiplus::Font font(&fontFamily, overlay->font_size);
@@ -61,7 +61,7 @@ Subtitle_Overlay* Create_Bitmap(const char* text, Subtitle_Overlay** ptr_overlay
 	Gdiplus::REAL fontSize = font.GetSize();
 
 	Gdiplus::SolidBrush brush(Gdiplus::Color::White);
-	const wchar_t* wcs = UTF82WCS(text);
+	const wchar_t* wcs = UTF82WCS(CP_UTF8, text);
 
 	int	len = wcslen(wcs);
 	//assume max num of rows  is 8;
