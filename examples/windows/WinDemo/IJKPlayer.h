@@ -18,9 +18,6 @@ namespace IJKPlayer
 
 	void setVout(HWND hwnd);
 	
-	void openCodecHW();
-	void closeCodecHW();
-
 	void prepare(const std::string& url);
 	void start();
 	void play(const std::string& url);
@@ -34,9 +31,14 @@ namespace IJKPlayer
 	float getVolume();
 	bool isPlaying();
 	int setPlaybackRate(float rate);
+	// subtitle
+	int setSubtitleFontName(const std::string& name);
+	std::string getSubtitleFontName();
+	int setSubtitle(const std::string& file_name);
+	/*only load ex-subtitle, not apply*/
+	int loadSubtitle(const std::string& file_name);
+	int setSubtitleFontSize(float size);
+	float getSubtitleFontSize();
 	int setSubtitleDelay(float delay);
 	float getSubtitleExtraDelay();
-	/*only load ex-subtitle, not apply*/
-	int loadSubtitle(const char* file_name);
-	int setSubtitle(const char* file_name);
 }
