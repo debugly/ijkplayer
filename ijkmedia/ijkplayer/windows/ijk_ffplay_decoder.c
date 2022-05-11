@@ -482,6 +482,18 @@ float ijkFfplayDecoder_getVolume(IjkFfplayDecoder* decoder)
 	return volume;
 }
 
+int ijkFfplayDecoder_setStreamSelected(IjkFfplayDecoder* decoder, int stream, int selected)
+{
+	if (!decoder || !decoder->ijk_media_player) {
+		ALOGE("IjkMediaPlayer is NULL.\n");
+		return -1;
+	}
+
+	ijkmp_set_stream_selected(decoder->ijk_media_player, stream, selected);
+
+	return 0;
+}
+
 int ijkFfplayDecoder_setOptionLongValue(IjkFfplayDecoder* decoder, int opt_category, const char* key, long value)
 {
 	if (!decoder || !decoder->ijk_media_player) {
@@ -648,29 +660,35 @@ int ijkFfplayDecoder_getMediaMeta(IjkFfplayDecoder* decoder, IjkMetadata* metada
 		metadata->duration_ms = atol(media_info) / 1000;
 	}
 
-	media_info = fillMetaInternal(meta, IJK_COMMENT, NULL);
+	media_info = fillMetaInternal(meta, IJKM_KEY_FORMAT, NULL);
 	if (media_info){
-		memcpy(metadata->comment, media_info, strlen(media_info));
+		memcpy(metadata->format, media_info, strlen(media_info));
 	}
 
-	media_info = fillMetaInternal(meta, IJK_ORIGINAL_FORMAT, NULL);
+	media_info = fillMetaInternal(meta, IJKM_KEY_START_US, NULL);
 	if (media_info){
-		memcpy(metadata->original_format, media_info, strlen(media_info));
+		metadata->start_us = atol(media_info) / 1000;
 	}
 
-	media_info = fillMetaInternal(meta, IJK_LENS_PARAM, NULL);
+	media_info = fillMetaInternal(meta, IJKM_KEY_BITRATE, NULL);
 	if (media_info){
-		memcpy(metadata->lens_param, media_info, strlen(media_info));
+		metadata->bitrate = atoi(media_info);
 	}
 
-	media_info = fillMetaInternal(meta, IJK_DEVICE_SN, NULL);
-	if (media_info){
-		memcpy(metadata->device_sn, media_info, strlen(media_info));
+	int video_stream, audio_stream, subtitle_stream;
+	media_info = fillMetaInternal(meta, IJKM_KEY_VIDEO_STREAM, NULL);
+	if (media_info) {
+		video_stream = atoi(media_info);
 	}
 
-	media_info = fillMetaInternal(meta, IJK_CDN_IP, NULL);
-	if (media_info){
-		memcpy(metadata->cdn_ip, media_info, strlen(media_info));
+	media_info = fillMetaInternal(meta, IJKM_KEY_AUDIO_STREAM, NULL);
+	if (media_info) {
+		audio_stream = atoi(media_info);
+	}
+
+	media_info = fillMetaInternal(meta, IJKM_KEY_TIMEDTEXT_STREAM, NULL);
+	if (media_info) {
+		subtitle_stream = atoi(media_info);
 	}
 
 	size_t count = ijkmeta_get_children_count_l(meta);
@@ -680,74 +698,179 @@ int ijkFfplayDecoder_getMediaMeta(IjkFfplayDecoder* decoder, IjkMetadata* metada
 			const char *type = ijkmeta_get_string_l(streamRawMeta, IJKM_KEY_TYPE);
 			if (type) {
 				if (0 == strcmp(type, IJKM_VAL_TYPE__VIDEO)) {
+					struct IjkVideoMetadata* video_meta = (struct IjkVideoMetadata*)calloc(1, sizeof(struct IjkVideoMetadata));
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_CODEC_NAME, NULL);
 					if (media_info){
-						memcpy(metadata->video_code_name, media_info, strlen(media_info));
+						memcpy(video_meta->stream_meta.codec_name, media_info, strlen(media_info));
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_CODEC_LONG_NAME, NULL);
 					if (media_info){
-						memcpy(metadata->video_code_long_name, media_info, strlen(media_info));
+						memcpy(video_meta->stream_meta.codec_long_name, media_info, strlen(media_info));
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_BITRATE, NULL);
 					if (media_info){
-						metadata->video_bitrate = atoi(media_info);
+						video_meta->stream_meta.stream_bitrate = atoi(media_info);
+					}
+
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_STREAM_IDX, NULL);
+					if (media_info) {
+						video_meta->stream_meta.stream_bitrate = atoi(media_info);
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_WIDTH, NULL);
 					if (media_info){
-						metadata->width = atoi(media_info);
+						video_meta->width = atoi(media_info);
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_HEIGHT, NULL);
 					if (media_info){
-						metadata->height = atoi(media_info);
+						video_meta->height = atoi(media_info);
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_FPS_NUM, NULL);
 					if (media_info){
-						metadata->video_fps_num = atoi(media_info);
+						video_meta->video_fps_num = atoi(media_info);
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_FPS_DEN, NULL);
 					if (media_info){
-						metadata->video_fps_den = atoi(media_info);
+						video_meta->video_fps_den = atoi(media_info);
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_TBR_NUM, NULL);
 					if (media_info){
-						metadata->video_tbr_num = atoi(media_info);
+						video_meta->video_tbr_num = atoi(media_info);
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_TBR_DEN, NULL);
 					if (media_info){
-						metadata->video_tbr_den = atoi(media_info);
+						video_meta->video_tbr_den = atoi(media_info);
 					}
-				} else if (0 == strcmp(type, IJKM_VAL_TYPE__AUDIO)) {
+
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_SAR_DEN, NULL);
+					if (media_info) {
+						video_meta->video_sar_den = atoi(media_info);
+					}
+
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_SAR_NUM, NULL);
+					if (media_info) {
+						video_meta->video_sar_num = atoi(media_info);
+					}
+
+					struct IjkVideoMetadata* tail = metadata->video_stream_list;
+					if (!tail) {
+						metadata->video_stream_list = video_meta;
+					} else {
+						struct IjkVideoMetadata* next = tail->next;
+						while (next) {
+							tail = next;
+							next = next->next;
+						}
+						tail->next = video_meta;
+					}
+
+					if (video_stream == i) {
+						metadata->video_stream = i;
+					}
+				}
+				else if (0 == strcmp(type, IJKM_VAL_TYPE__AUDIO)) {
+					struct IjkAudioMetadata* audio_meta = (struct IjkAudioMetadata*)calloc(1, sizeof(struct IjkAudioMetadata));
+
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_CODEC_NAME, NULL);
 					if (media_info){
-						memcpy(metadata->audio_code_name, media_info, strlen(media_info));
+						memcpy(audio_meta->stream_meta.codec_name, media_info, strlen(media_info));
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_CODEC_LONG_NAME, NULL);
 					if (media_info){
-						memcpy(metadata->audio_code_long_name, media_info, strlen(media_info));
+						memcpy(audio_meta->stream_meta.codec_long_name, media_info, strlen(media_info));
+					}
+
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_CODEC_PROFILE, NULL);
+					if (media_info) {
+						memcpy(audio_meta->stream_meta.codec_profile, media_info, strlen(media_info));
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_BITRATE, NULL);
 					if (media_info){
-						metadata->audio_bitrate = atoi(media_info);
+						audio_meta->stream_meta.stream_bitrate = atoi(media_info);
+					}
+
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_STREAM_IDX, NULL);
+					if (media_info) {
+						audio_meta->stream_meta.stream_index = atoi(media_info);
 					}
 
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_SAMPLE_RATE, NULL);
 					if (media_info){
-						metadata->audio_samples_per_sec = atoi(media_info);
+						audio_meta->audio_samples_per_sec = atoi(media_info);
 					}
 
-					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_CHANNELS, NULL);
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_CHANNEL_LAYOUT, NULL);
 					if (media_info){
-						metadata->audio_channel_layout = atoi(media_info);
+						audio_meta->audio_channel_layout = atoi(media_info);
+					}
+
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_LANGUAGE, NULL);
+					if (media_info) {
+						memcpy_s(audio_meta->language, 32, media_info, strlen(media_info));
+					}
+
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_TITLE, NULL);
+					if (media_info) {
+						memcpy_s(audio_meta->title, 128, media_info, strlen(media_info));
+					}
+
+					struct IjkAudioMetadata* tail = metadata->audio_stream_list;
+					if (!tail) {
+						metadata->audio_stream_list = audio_meta;
+					}
+					else {
+						struct IjkAudioMetadata* next = tail->next;
+						while (next) {
+							tail = next;
+							next = next->next;
+						}
+						tail->next = audio_meta;
+					}
+
+					if (audio_stream == i) {
+						metadata->audio_stream = i;
+					}
+				} 
+				else if (0 == strcmp(type, IJKM_VAL_TYPE__TIMEDTEXT)) {
+					struct IjkSubtitleMetadata* sub_meta = (struct IjkSubtitleMetadata*)calloc(1, sizeof(struct IjkSubtitleMetadata));
+
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_LANGUAGE, NULL);
+					if (media_info) {
+						memcpy_s(sub_meta->timed_text_languge, 128, media_info, strlen(media_info));
+					}
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_TITLE, NULL);
+					if (media_info) {
+						memcpy_s(sub_meta->title, 128, media_info, strlen(media_info));
+					}
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_EX_SUBTITLE_URL, NULL);
+					if (media_info) {
+						memcpy_s(sub_meta->ex_subtitle_url, 1024, media_info, strlen(media_info));
+					}
+
+					struct IjkSubtitleMetadata* tail = metadata->subtitle_stream_list;
+					if (!tail) {
+						metadata->subtitle_stream_list = sub_meta;
+					}
+					else {
+						struct IjkSubtitleMetadata* next = tail->next;
+						while (next) {
+							tail = next;
+							next = next->next;
+						}
+						tail->next = sub_meta;
+					}
+
+					if (subtitle_stream == i) {
+						metadata->subtitle_stream = i;
 					}
 				}
 			}
@@ -757,6 +880,42 @@ int ijkFfplayDecoder_getMediaMeta(IjkFfplayDecoder* decoder, IjkMetadata* metada
 	if (is_locked && meta){
 		ijkmeta_unlock(meta);
 	}
+
+	return 0;
+}
+
+void release_metadata(IjkMetadata* metadata)
+{
+	struct IjkVideoMetadata* video_tail = metadata->video_stream_list;
+	while (video_tail) {
+		struct IjkVideoMetadata* next = video_tail->next;
+		free(video_tail);
+		video_tail = next;
+	}
+
+	struct IjkAudioMetadata* audio_tail = metadata->audio_stream_list;
+	while (audio_tail) {
+		struct IjkAudioMetadata* next = audio_tail->next;
+		free(audio_tail);
+		audio_tail = next;
+	}
+
+	struct IjkSubtitleMetadata* sub_tail = metadata->subtitle_stream_list;
+	while (sub_tail) {
+		struct IjkSubtitleMetadata* next = sub_tail->next;
+		free(sub_tail);
+		sub_tail = next;
+	}
+}
+
+int ijkFfplayDecoder_releaseMetadata(IjkFfplayDecoder* decoder, IjkMetadata* metadata)
+{
+	if (!decoder || !decoder->ijk_media_player) {
+		ALOGE("IjkMediaPlayer is NULL.\n");
+		return -1;
+	}
+	
+	release_metadata(metadata);
 
 	return 0;
 }

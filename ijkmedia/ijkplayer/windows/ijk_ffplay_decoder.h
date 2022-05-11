@@ -133,6 +133,8 @@ int ijkFfplayDecoder_setVolume(IjkFfplayDecoder* decoder, float volume);
 
 float ijkFfplayDecoder_getVolume(IjkFfplayDecoder* decoder);
 
+int ijkFfplayDecoder_setStreamSelected(IjkFfplayDecoder* decoder, int stream, int selected);
+
 int ijkFfplayDecoder_setOptionLongValue(IjkFfplayDecoder* decoder, int opt_category, const char* key, long value);
 
 int ijkFfplayDecoder_setOptionStringValue(IjkFfplayDecoder* decoder, int opt_category, const char* key, const char* value);
@@ -146,6 +148,8 @@ long ijkFfplayDecoder_getPropertyLong(IjkFfplayDecoder* decoder, int id, long de
 float ijkFfplayDecoder_getPropertyFloat(IjkFfplayDecoder* decoder, int id, float default_value);
 
 int ijkFfplayDecoder_getMediaMeta(IjkFfplayDecoder* decoder, IjkMetadata* metadata);
+
+int ijkFfplayDecoder_releaseMetadata(IjkFfplayDecoder* decoder, IjkMetadata* metadata);
 
 int ijkFfplayDecoder_setPlaybackRate(IjkFfplayDecoder *decoder, float rate);
 
