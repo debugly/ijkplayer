@@ -406,7 +406,7 @@ int main(int argc, char** argv)
 			IjkMetadata metadata;
 			memset(&metadata, 0, sizeof(IjkMetadata));
 			ijkFfplayDecoder_getMediaMeta(ijk_ffplay_decoder, &metadata);
-			printf("width:%d, height:%d", metadata.width, metadata.height);
+			//printf("width:%d, height:%d", metadata.width, metadata.height);
 		}
 
 		//seek, default seek to 15s position
