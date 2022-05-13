@@ -843,6 +843,11 @@ int ijkFfplayDecoder_getMediaMeta(IjkFfplayDecoder* decoder, IjkMetadata* metada
 				else if (0 == strcmp(type, IJKM_VAL_TYPE__TIMEDTEXT)) {
 					struct IjkSubtitleMetadata* sub_meta = (struct IjkSubtitleMetadata*)calloc(1, sizeof(struct IjkSubtitleMetadata));
 
+					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_STREAM_IDX, NULL);
+					if (media_info) {
+						sub_meta->stream_meta.stream_index = atoi(media_info);
+					}
+
 					media_info = fillMetaInternal(streamRawMeta, IJKM_KEY_LANGUAGE, NULL);
 					if (media_info) {
 						memcpy_s(sub_meta->timed_text_languge, 128, media_info, strlen(media_info));

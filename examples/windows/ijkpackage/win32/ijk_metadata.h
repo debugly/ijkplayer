@@ -72,7 +72,7 @@ struct IjkAudioMetadata {
 	int				audio_samples_per_sec;
 	int				audio_channel_layout;
 	char			language[32];
-	wchar_t			title[128];
+	char			title[128];
 
 	struct IjkAudioMetadata*	next;
 };
@@ -81,8 +81,8 @@ struct IjkSubtitleMetadata {
 	struct IjkStreamMetadata	stream_meta;
 
 	char			timed_text_languge[128];
-	wchar_t			title[128];
-	wchar_t			ex_subtitle_url[1024];
+	char			title[128];
+	char			ex_subtitle_url[1024];
 
 	struct IjkSubtitleMetadata* next;
 };
