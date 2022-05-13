@@ -4,6 +4,7 @@
 #include "logging.h"
 #include <assert.h>
 #include <DXGI.h>
+#include <list>
 
 extern "C"
 {
@@ -84,6 +85,8 @@ void _msg_callback(void* opaque, IjkMsgState message, int arg1, int arg2)
 		    IJKPlayer::setSubtitleDelay(5.0f);
 		    float subtitle_dalay = IJKPlayer::getSubtitleExtraDelay();
 			IJKPlayer::setPlaybackRate(1.0f);
+			IJKPlayer::setSubtitleStream(1);
+			//IJKPlayer::getSubtitleStreams();
 		}
 		break;
 	case IJK_MSG_AUDIO_RENDERING_START:
@@ -432,6 +435,78 @@ bool IJKPlayer::isPlaying()
 int IJKPlayer::setPlaybackRate(float rate)
 {
 	return ijkFfplayDecoder_setPlaybackRate(_ijk_ffplay_decoder, rate);
+}
+
+class CIJKMetaDataInfo
+{
+public:
+	CIJKMetaDataInfo(IjkFfplayDecoder* decoder)
+		: _decoder(decoder)
+	{
+		memset(&_metadata, 0, sizeof(IjkMetadata));
+		ijkFfplayDecoder_getMediaMeta(_decoder, &_metadata);
+	}
+	~CIJKMetaDataInfo()
+	{
+		ijkFfplayDecoder_releaseMetadata(_decoder, &_metadata);
+	}
+
+	IjkMetadata GetMetaData()
+	{
+		return _metadata;
+	}
+private:
+	IjkFfplayDecoder* _decoder;
+	//own
+	IjkMetadata _metadata;
+};
+
+void IJKPlayer::getSubtitleStreams()
+{
+	std::list<int> lstSubtitleIndex;
+	CIJKMetaDataInfo info(_ijk_ffplay_decoder);
+
+	auto curPtr = info.GetMetaData().subtitle_stream_list;
+
+	while (curPtr)
+	{
+		lstSubtitleIndex.push_back(curPtr->stream_meta.stream_index);
+		curPtr = curPtr->next;
+	}
+}
+
+//void IJKPlayer::getVideoStreams()
+//{
+//	std::list<int> lstSubtitleIndex;
+//	CIJKMetaDataInfo info(_ijk_ffplay_decoder);
+//
+//	auto curPtr = info.GetMetaData().video_stream_list;
+//
+//	while (curPtr)
+//	{
+//		lstSubtitleIndex.push_back(curPtr->stream_meta.stream_index);
+//		curPtr = curPtr->next;
+//	}
+//}
+
+//void IJKPlayer::getAudioStreams()
+//{
+//	std::list<int> lstSubtitleIndex;
+//	CIJKMetaDataInfo info(_ijk_ffplay_decoder);
+//
+//	auto curPtr = info.GetMetaData().audio_stream_list;
+//
+//	while (curPtr)
+//	{
+//		lstSubtitleIndex.push_back(curPtr->stream_meta.stream_index);
+//		curPtr = curPtr->next;
+//	}
+//}
+
+int IJKPlayer::setSubtitleStream(int index)
+{
+	//@param:selected 1 select or 0 un-select
+	return ijkFfplayDecoder_setStreamSelected(_ijk_ffplay_decoder, index, 1);
 }
 
 int IJKPlayer::setSubtitleFontName(const std::string& name)
