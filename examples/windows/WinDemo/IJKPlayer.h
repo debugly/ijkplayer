@@ -31,7 +31,11 @@ namespace IJKPlayer
 	float getVolume();
 	bool isPlaying();
 	int setPlaybackRate(float rate);
-	// subtitle
+	// stream
+	void getSubtitleStreams();
+
+	int setSubtitleStream(int index);
+	// subtitle func
 	int setSubtitleFontName(const std::string& name);
 	std::string getSubtitleFontName();
 	int setSubtitle(const std::string& file_name);
