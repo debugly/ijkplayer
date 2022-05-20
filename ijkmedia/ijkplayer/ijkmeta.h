@@ -45,6 +45,9 @@
 #define IJKM_KEY_LANGUAGE           "language"
 #define IJKM_KEY_TITLE              "title"
 #define IJKM_KEY_STREAM_IDX         "stream_idx"
+#define IJKM_KEY_ARTIST             "artist"
+#define IJKM_KEY_ALBUM              "album"
+#define IJKM_KEY_TYER               "TYER"
 
 #define IJKM_KEY_CODEC_NAME         "codec_name"
 #define IJKM_KEY_CODEC_PROFILE      "codec_profile"

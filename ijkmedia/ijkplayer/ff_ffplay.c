@@ -347,7 +347,7 @@ static int decoder_init(Decoder *d, AVCodecContext *avctx, PacketQueue *queue, S
     d->pkt_serial = 1;
     d->first_frame_decoded_time = SDL_GetTickHR();
     d->first_frame_decoded = 0;
-
+    d->after_seek_frame = 0;
     SDL_ProfilerReset(&d->decode_profiler, -1);
     return 0;
 }
@@ -540,7 +540,9 @@ fail0:
     return ret;
 }
 
+#ifdef __APPLE__
 static const AVCodecHWConfig *hw_config;
+#endif
 
 static int decoder_decode_frame(FFPlayer *ffp, Decoder *d, AVFrame *frame, AVSubtitle *sub) {
     int ret = AVERROR(EAGAIN);
@@ -670,7 +672,7 @@ static int decoder_decode_frame(FFPlayer *ffp, Decoder *d, AVFrame *frame, AVSub
 }
 
 static void decoder_destroy(Decoder *d) {
-    av_packet_unref(d->pkt);
+    av_packet_free(&d->pkt);
     avcodec_free_context(&d->avctx);
 }
 
@@ -1378,6 +1380,7 @@ static void stream_seek(VideoState *is, int64_t pos, int64_t rel, int seek_by_by
         if (seek_by_bytes)
             is->seek_flags |= AVSEEK_FLAG_BYTE;
         is->seek_req = 1;
+        is->viddec.start_seek_time = SDL_GetTickHR();
         SDL_CondSignal(is->continue_read_thread);
     }
 }
@@ -1942,6 +1945,10 @@ static int queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double d
             ffp_notify_msg1(ffp, FFP_MSG_VIDEO_DECODED_START);
             is->viddec.first_frame_decoded_time = SDL_GetTickHR();
             is->viddec.first_frame_decoded = 1;
+        } else if (is->viddec.after_seek_frame) {
+            int du = (int)(SDL_GetTickHR() - is->viddec.start_seek_time);
+            is->viddec.after_seek_frame = 0;
+            ffp_notify_msg2(ffp, FFP_MSG_AFTER_SEEK_FIRST_FRAME, du);
         }
     }
     return 0;
@@ -3016,6 +3023,7 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
             }
         }
     }
+
     if (is->latest_audio_seek_load_serial == is->audio_clock_serial) {
 #ifdef WIN32
 		int latest_audio_seek_load_serial = InterlockedExchange(&(is->latest_audio_seek_load_serial), -1);
@@ -3049,10 +3057,7 @@ static int audio_open(FFPlayer *opaque, int64_t wanted_channel_layout, int wante
 	wanted_spec.size = buf_size;
     const char *env;
     static const int next_nb_channels[] = {0, 0, 1, 6, 2, 6, 4, 6};
-#ifdef FFP_MERGE
     static const int next_sample_rates[] = {0, 44100, 48000, 96000, 192000};
-#endif
-    static const int next_sample_rates[] = {0, 44100, 48000};
     int next_sample_rate_idx = FF_ARRAY_ELEMS(next_sample_rates) - 1;
 
     env = SDL_getenv("SDL_AUDIO_CHANNELS");
@@ -3075,7 +3080,7 @@ static int audio_open(FFPlayer *opaque, int64_t wanted_channel_layout, int wante
         next_sample_rate_idx--;
     wanted_spec.format = AUDIO_S16SYS;
     wanted_spec.silence = 0;
-    wanted_spec.samples = FFMAX(SDL_AUDIO_MIN_BUFFER_SIZE, 2 << av_log2(wanted_spec.freq / SDL_AoutGetAudioPerSecondCallBacks(ffp->aout)));
+    wanted_spec.samples = FFMIN(0xFFFF, FFMAX(SDL_AUDIO_MIN_BUFFER_SIZE, 2 << av_log2(wanted_spec.freq / SDL_AoutGetAudioPerSecondCallBacks(ffp->aout))));
     wanted_spec.callback = sdl_audio_callback;
     wanted_spec.userdata = opaque;
     while (SDL_AoutOpenAudio(ffp->aout, &wanted_spec, &spec) < 0) {
@@ -3190,17 +3195,18 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
     int64_t channel_layout;
     int ret = 0;
     int stream_lowres = ffp->lowres;
-
+    AVStream *st = ic->streams[stream_index];
+    
     if (stream_index < 0 || stream_index >= ic->nb_streams)
         return -1;
     avctx = avcodec_alloc_context3(NULL);
     if (!avctx)
         return AVERROR(ENOMEM);
 
-    ret = avcodec_parameters_to_context(avctx, ic->streams[stream_index]->codecpar);
+    ret = avcodec_parameters_to_context(avctx, st->codecpar);
     if (ret < 0)
         goto fail;
-    avctx->pkt_timebase = ic->streams[stream_index]->time_base;
+    avctx->pkt_timebase = st->time_base;
 
     codec = avcodec_find_decoder(avctx->codec_id);
 
@@ -3232,15 +3238,16 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
     avctx->lowres = stream_lowres;
     if (ffp->fast)
         avctx->flags2 |= AV_CODEC_FLAG2_FAST;
-    opts = filter_codec_opts(ffp->codec_opts, avctx->codec_id, ic, ic->streams[stream_index], (AVCodec *)codec);
+
+    opts = filter_codec_opts(ffp->codec_opts, avctx->codec_id, ic, st, (AVCodec *)codec);
     if (!av_dict_get(opts, "threads", NULL, 0))
         av_dict_set(&opts, "threads", "auto", 0);
     if (stream_lowres)
         av_dict_set_int(&opts, "lowres", stream_lowres, 0);
     
-	hw_config = NULL;
 #ifdef __APPLE__
-    if (ffp->videotoolbox == 2 && avctx->codec_type == AVMEDIA_TYPE_VIDEO) {
+    hw_config = NULL;
+    if (ffp->videotoolbox == 2 && avctx->codec_type == AVMEDIA_TYPE_VIDEO && !(st->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
         enum AVHWDeviceType type = av_hwdevice_find_type_by_name("videotoolbox");
         const AVCodecHWConfig *config = NULL;
         for (int i = 0;; i++) {
@@ -3264,7 +3271,6 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         }
     }
 #endif
-
     if ((ret = avcodec_open2(avctx, codec, &opts)) < 0) {
         goto fail;
     }
@@ -3277,7 +3283,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
     }
 
     is->eof = 0;
-    ic->streams[stream_index]->discard = AVDISCARD_DEFAULT;
+    st->discard = AVDISCARD_DEFAULT;
     switch (avctx->codec_type) {
     case AVMEDIA_TYPE_AUDIO:
 #if CONFIG_AVFILTER
@@ -3326,7 +3332,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         is->audio_diff_threshold = 2.0 * is->audio_hw_buf_size / is->audio_tgt.bytes_per_sec;
 
         is->audio_stream = stream_index;
-        is->audio_st = ic->streams[stream_index];
+        is->audio_st = st;
 
         if((ret = decoder_init(&is->auddec, avctx, &is->audioq, is->continue_read_thread)) < 0)
             goto fail;
@@ -3340,7 +3346,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         break;
     case AVMEDIA_TYPE_VIDEO:
         is->video_stream = stream_index;
-        is->video_st = ic->streams[stream_index];
+        is->video_st = st;
 
         if (ffp->async_init_decoder) {
             while (!is->initialized_decoder) {
@@ -3390,8 +3396,8 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
                 }
             }
         }
-
-        if (is->is_video_high_fps) {
+        // hevc high fps video use discard_nonref cause hw decode failed.
+        if ((codec->id != AV_CODEC_ID_HEVC) && is->is_video_high_fps) {
             avctx->skip_frame       = FFMAX(avctx->skip_frame, AVDISCARD_NONREF);
             avctx->skip_loop_filter = FFMAX(avctx->skip_loop_filter, AVDISCARD_NONREF);
             avctx->skip_idct        = FFMAX(avctx->skip_loop_filter, AVDISCARD_NONREF);
@@ -3402,7 +3408,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         if (!ffp->subtitle) break;
 
         is->subtitle_stream = stream_index;
-        is->subtitle_st = ic->streams[stream_index];
+        is->subtitle_st = st;
 
         ffp_set_subtitle_codec_info(ffp, AVCODEC_MODULE_NAME, avcodec_get_name(avctx->codec_id));
 
@@ -3524,6 +3530,10 @@ static int external_subtitle_thread(void *arg)
                 sp->sub.end_display_time = (uint32_t)pkt.duration;
                 if (pkt.pts != AV_NOPTS_VALUE)
                     pts = pkt.pts / 1000.0;
+            } else if (d->avctx->codec_id == AV_CODEC_ID_TEXT) {
+                sp->sub.end_display_time = (uint32_t)pkt.duration;
+                if (pkt.pts != AV_NOPTS_VALUE)
+                    pts = pkt.pts / 1000.0;
             }//其它格式pts为0，可暴露问题
             
             sp->pts = pts;
@@ -3575,11 +3585,15 @@ static int external_subtitle_open(FFPlayer* ffp,const char *file_name)
     
     if (!ss->subtitle_st) {
         ret = -3;
+        av_log(NULL, AV_LOG_WARNING, "none subtitle stream in %s\n",
+                file_name);
         goto fail;
     }
     
     AVCodec* codec = avcodec_find_decoder(ss->subtitle_st->codecpar->codec_id);
     if (!codec) {
+        av_log(NULL, AV_LOG_WARNING, "could find codec:%s for %s\n",
+                file_name, avcodec_get_name(ss->subtitle_st->codecpar->codec_id));
         ret = -4;
         goto fail;
     }
@@ -3710,7 +3724,8 @@ static int read_thread(void *arg)
         last_error = err;
         goto fail;
     }
-    ffp_notify_msg1(ffp, FFP_MSG_OPEN_INPUT);
+    
+    ffp_notify_str2(ffp, FFP_MSG_OPEN_INPUT, ic->iformat->name);
     if (scan_all_pmts_set)
         av_dict_set(&ffp->format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
 
@@ -4050,6 +4065,7 @@ static int read_thread(void *arg)
             
             ffp->dcc.current_high_water_mark_in_ms = ffp->dcc.first_high_water_mark_in_ms;
             is->seek_req = 0;
+            is->viddec.after_seek_frame = 1;
             is->queue_attachments_req = 1;
             is->eof = 0;
 #ifdef FFP_MERGE
@@ -4086,6 +4102,14 @@ static int read_thread(void *arg)
 
             ffp_notify_msg3(ffp, FFP_MSG_SEEK_COMPLETE, (int)fftime_to_milliseconds(seek_target), ret);
             ffp_toggle_buffering(ffp, 1);
+            
+            if (is->show_mode != SHOW_MODE_VIDEO) {
+                if (is->viddec.after_seek_frame) {
+                    int du = (int)(SDL_GetTickHR() - is->viddec.start_seek_time);
+                    is->viddec.after_seek_frame = 0;
+                    ffp_notify_msg2(ffp, FFP_MSG_AFTER_SEEK_FIRST_FRAME, du);
+                }
+            }
         }
         if (is->queue_attachments_req) {
             if (is->video_st && (is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
@@ -4645,6 +4669,12 @@ void ffp_global_set_log_report(int use_report)
     } else {
         av_log_set_callback(ffp_log_callback_brief);
     }
+}
+
+int ffp_global_get_log_level(void)
+{
+    int avlv = av_log_get_level();
+    return log_level_av_to_ijk(avlv);
 }
 
 void ffp_global_set_log_level(int log_level)
@@ -5988,10 +6018,9 @@ int ffp_set_external_subtitle(FFPlayer *ffp, const char *file_name)
             return ret;
         }
     }
-
-    if (external_subtitle_open(ffp,file_name) < 0) {
-        av_log(NULL, AV_LOG_WARNING, "%s: could not open external subtitle\n",
-                file_name);
+    int r = external_subtitle_open(ffp,file_name);
+    if (r < 0) {
+        av_log(NULL, AV_LOG_ERROR, "could not open external subtitle:(%d)%s\n", r, file_name);
         return -5;
     } else  {
         //recycle，release mem if the url array has been used

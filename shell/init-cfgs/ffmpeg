@@ -19,13 +19,13 @@
 if [[ "$GIT_FFMPEG_UPSTREAM" != "" ]] ;then
     export GIT_UPSTREAM="$GIT_FFMPEG_UPSTREAM"
 else
-    export GIT_UPSTREAM=https://github.com/bilibili/FFmpeg.git
+    export GIT_UPSTREAM=https://github.com/FFmpeg/FFmpeg.git
 fi
 
 if [[ "$GIT_FFMPEG_COMMIT" != "" ]] ;then
     export GIT_COMMIT="$GIT_FFMPEG_COMMIT"
 else
-    export GIT_COMMIT=ff4.0--ijk0.8.8--20210426--001
+    export GIT_COMMIT=n4.0
 fi
 
 export GIT_LOCAL_REPO=extra/ffmpeg

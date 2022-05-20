@@ -22,8 +22,19 @@
  */
 
 #import "IJKFFMoviePlayerDef.h"
+#include "../ijkmedia/ijkplayer/ff_ffmsg_queue.h"
 
 @implementation IJKFFMoviePlayerMessage
+{
+    @public
+    AVMessage m_msg;
+}
+
+- (AVMessage *)msg
+{
+    return &m_msg;
+}
+
 @end
 
 @implementation IJKFFMoviePlayerMessagePool{
@@ -61,7 +72,7 @@
 {
     if (!msg)
         return;
-    msg_free_res(&msg->_msg);
+    msg_free_res(msg.msg);
     @synchronized(self) {
         if ([_array count] <= 10)
             [_array addObject:msg];

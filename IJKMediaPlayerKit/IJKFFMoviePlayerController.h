@@ -56,6 +56,9 @@
 // stream: audio
 #define k_IJKM_KEY_SAMPLE_RATE    @"sample_rate"
 #define k_IJKM_KEY_CHANNEL_LAYOUT @"channel_layout"
+#define k_IJKM_KEY_ARTIST         @"artist"
+#define k_IJKM_KEY_ALBUM          @"album"
+#define k_IJKM_KEY_TYER           @"TYER"
 // stream: subtitle
 #define k_IJKM_KEY_TITLE          @"title"
 #define k_IJKM_KEY_LANGUAGE       @"language"
@@ -80,16 +83,9 @@ typedef enum IJKLogLevel {
 - (id)initWithContentURL:(NSURL *)aUrl
              withOptions:(IJKFFOptions *)options;
 
-- (id)initWithContentURLString:(NSString *)aUrlString
-                   withOptions:(IJKFFOptions *)options;
-
 - (id)initWithMoreContent:(NSURL *)aUrl
               withOptions:(IJKFFOptions *)options
                withGLView:(GLView<IJKSDLGLViewProtocol> *)glView;
-
-- (id)initWithMoreContentString:(NSString *)aUrlString
-                    withOptions:(IJKFFOptions *)options
-                     withGLView:(GLView<IJKSDLGLViewProtocol> *)glView;
 
 - (void)prepareToPlay;
 - (void)play;
@@ -101,11 +97,13 @@ typedef enum IJKLogLevel {
 - (int)dropFrameCount;
 - (void)setPauseInBackground:(BOOL)pause;
 - (BOOL)isVideoToolboxOpen;
+- (BOOL)isUsingHardwareAccelerae;
 
 - (void)setHudValue:(NSString *)value forKey:(NSString *)key;
 
 + (void)setLogReport:(BOOL)preferLogReport;
 + (void)setLogLevel:(IJKLogLevel)logLevel;
++ (void)setLogHandler:(void (^)(IJKLogLevel level, NSString *tag, NSString *msg))handler;
 + (BOOL)checkIfFFmpegVersionMatch:(BOOL)showAlert;
 + (BOOL)checkIfPlayerVersionMatch:(BOOL)showAlert
                             version:(NSString *)version;
@@ -113,6 +111,8 @@ typedef enum IJKLogLevel {
 @property(nonatomic, readonly) CGFloat fpsInMeta;
 @property(nonatomic, readonly) CGFloat fpsAtOutput;
 @property(nonatomic) BOOL shouldShowHudView;
+
+- (NSDictionary *)allHudItem;
 
 - (void)setOptionValue:(NSString *)value
                 forKey:(NSString *)key

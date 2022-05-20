@@ -2,58 +2,23 @@
 
  Platform | Build Status
  -------- | ------------
- Android | [![Build Status](https://travis-ci.org/Bilibili/ci-ijk-ffmpeg-android.svg?branch=master)](https://travis-ci.org/Bilibili/ci-ijk-ffmpeg-android)
- iOS | [![Build Status](https://travis-ci.org/Bilibili/ci-ijk-ffmpeg-ios.svg?branch=master)](https://travis-ci.org/Bilibili/ci-ijk-ffmpeg-ios)
-macOS | **todo**
+ Android | [![Build Status](https://github.com/debugly/ijkplayer/actions/workflows/android.yml/badge.svg)](https://github.com/debugly/ijkplayer/actions/workflows/android.yml) ⚠️ unknown state 
+ iOS | [![Build Status](https://github.com/debugly/ijkplayer/actions/workflows/ios.yml/badge.svg)](https://github.com/debugly/ijkplayer/actions/workflows/ios.yml)
+macOS | [![Build Status](https://github.com/debugly/ijkplayer/actions/workflows/macos.yml/badge.svg)](https://github.com/debugly/ijkplayer/actions/workflows/macos.yml)
 
 Video player based on [ffplay](http://ffmpeg.org)
 
-### Download
-
-- Android:
- - Gradle
-
-```
-# required
-allprojects {
-    repositories {
-        jcenter()
-    }
-}
-
-dependencies {
-    # required, enough for most devices.
-    compile 'tv.danmaku.ijk.media:ijkplayer-java:0.8.8'
-    compile 'tv.danmaku.ijk.media:ijkplayer-armv7a:0.8.8'
-
-    # Other ABIs: optional
-    compile 'tv.danmaku.ijk.media:ijkplayer-armv5:0.8.8'
-    compile 'tv.danmaku.ijk.media:ijkplayer-arm64:0.8.8'
-    compile 'tv.danmaku.ijk.media:ijkplayer-x86:0.8.8'
-    compile 'tv.danmaku.ijk.media:ijkplayer-x86_64:0.8.8'
-
-    # ExoPlayer as IMediaPlayer: optional, experimental
-    compile 'tv.danmaku.ijk.media:ijkplayer-exo:0.8.8'
-}
-```
-
-- iOS
- - in coming...
-
 ### My Build Environment
-- Common
- - macOS 10.14.5
+
+- macOS Monterey(12.1)
+- Xcode Version 13.1 (13A1030d)
+- cocoapods 1.11.2
+
+TODO check:
 - Android
  - [NDK r10e](http://developer.android.com/tools/sdk/ndk/index.html)
  - Android Studio 2.1.3
  - Gradle 2.14.1
-- iOS
- - Xcode 7.3 (7D175)
-- macOS
- - Xcode 10.2.1 (10E1001)
-- [HomeBrew](http://brew.sh)
- - ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
- - brew install git
 
 ### Latest Changes
 
@@ -62,30 +27,29 @@ dependencies {
 ### Features
 
 - Common
- - remove rarely used ffmpeg components to reduce binary size [config/module-lite.sh](config/module-lite.sh)
- - workaround for some buggy online video.
-- Android
- - platform: API 9~23
- - cpu: ARMv7a, ARM64v8a, x86 (ARMv5 is not tested on real devices)
- - api: [MediaPlayer-like](android/ijkplayer/ijkplayer-java/src/main/java/tv/danmaku/ijk/media/player/IMediaPlayer.java)
- - video-output: NativeWindow, OpenGL ES 2.0
- - audio-output: AudioTrack, OpenSL ES
- - hw-decoder: MediaCodec (API 16+, Android 4.1+)
- - alternative-backend: android.media.MediaPlayer, ExoPlayer
-- iOS
- - platform: iOS 7.0~10.2.x
- - cpu: armv7, arm64, i386, x86_64, (armv7s is obselete)
- - api: [MediaPlayer.framework-like](ios/IJKMediaPlayer/IJKMediaPlayer/IJKMediaPlayback.h)
- - video-output: OpenGL ES 2.0
- - audio-output: AudioQueue, AudioUnit
- - hw-decoder: VideoToolbox (iOS 8+)
- - alternative-backend: AVFoundation.Framework.AVPlayer, MediaPlayer.Framework.MPMoviePlayerControlelr (obselete since iOS 8)
+    - remove rarely used ffmpeg components to reduce binary size [config/module-lite.sh](config/module-lite.sh)
+    - workaround for some buggy online video.
+- iOS/macOS
+    - platform: iOS 9.0/macOS 10.11
+    - cpu: arm64,x86_64
+    - api: [MediaPlayer.framework-like](IJKMediaPlayerKit/IJKMediaPlayback.h)
+    - video-output: OpenGL ES 2.0/OpenGL 3.3
+    - audio-output: AudioQueue, AudioUnit
+    - hw-decoder: auto use VideoToolbox accel by default
+    - subtitle: use Quartz to draw text into a CVPixelBufferRef then use OpenGL render
+    - alternative-backend: AVFoundation.Framework.AVPlayer, MediaPlayer.Framework.MPMoviePlayerControlelr (obselete since iOS 8)
+- Android (⚠️ unknown state)
+    - platform: API 9~23
+    - cpu: ARMv7a, ARM64v8a, x86 (ARMv5 is not tested on real devices)
+    - api: [MediaPlayer-like](android/ijkplayer/ijkplayer-java/src/main/java/tv/danmaku/ijk/media/player/IMediaPlayer.java)
+    - video-output: NativeWindow, OpenGL ES 2.0
+    - audio-output: AudioTrack, OpenSL ES
+    - hw-decoder: MediaCodec (API 16+, Android 4.1+)
+    - alternative-backend: android.media.MediaPlayer, ExoPlayer
 
-### NOT-ON-PLAN
+### ON-PLAN
 
-- obsolete platforms (Android: API-8 and below; iOS: pre-6.0)
-- obsolete cpu: ARMv5, ARMv6, MIPS (I don't even have these types of devices…)
-- native subtitle render
+- use Metal instead of OpenGL
 - avfilter support
 
 ### Before Build
@@ -149,47 +113,31 @@ sudo dpkg-reconfigure dash
 ### Build macOS
 
 ```
-git clone https://github.com/Bilibili/ijkplayer.git ijkplayer-mac
-cd ijkplayer-mac
-git checkout -B latest k0.8.8
+git clone https://github.com/debugly/ijkplayer.git ijkplayer
+cd ijkplayer
+git checkout -B latest k0.9.0.5
 
-./init-mac.sh
-./init-openssl.sh mac
+cd shell
+./init-any.sh macos
+cd macos
+./compile-any.sh build all
+pod install --project-directory=../../examples/macos
+open ../../examples/macos/IJKMediaMacDemo.xcworkspace
+```
 
-cd mac
-./compile-ffmpeg.sh clean
-./compile-openssl.sh clean
-./compile-ffmpeg.sh all
-./compile-openssl.sh all
+### Build iOS
 
-# Demo
-#     open mac/IJKMediaDemo/IJKMediaDemo.xcodeproj with Xcode
-# 
-# Import into Your own Application
-#     Select your project in Xcode.
-#     File -> Add Files to ... -> Select mac/IJKMediaPlayer/IJKMediaPlayer.xcodeproj
-#     Select your Application's target.
-#     Build Phases -> Target Dependencies -> Select IJKMediaFramework
-#     Build Phases -> Link Binary with Libraries -> Add:
-#         IJKMediaFramework.framework
-#
-#					VideoDecodeAcceleration.framework
-#					CoreAudio.framework
-#					AudioUnit.framework
-#         AudioToolbox.framework
-#         OpenGL.framework
-#         QuartzCore.framework
-#         AVFoundation.framework
-#         CoreGraphics.framework
-#         CoreMedia.framework
-#         CoreVideo.framework
-#         VideoToolbox.framework
-#         libbz2.tbd
-#         libz.tbd
-#					libc++.tbd
-#
-#         ... (Maybe something else, if you get any link error)
-# 
+```
+git clone https://github.com/debugly/ijkplayer.git ijkplayer
+cd ijkplayer
+git checkout -B latest k0.9.0.5
+
+cd shell
+./init-any.sh ios
+cd ios
+./compile-any.sh build all
+pod install --project-directory=../../examples/ios
+open ../../examples/macos/IJKMediaDemo.xcworkspace
 ```
 
 ### Build Android
@@ -246,55 +194,10 @@ cd ..
 
 ```
 
-### Build iOS
-
-```
-git clone https://github.com/Bilibili/ijkplayer.git ijkplayer-ios
-cd ijkplayer-ios
-git checkout -B latest k0.8.8
-
-./init-ios.sh
-./init-openssl.sh ios
-
-cd ios
-./compile-ffmpeg.sh clean
-./compile-openssl.sh clean
-./compile-ffmpeg.sh all
-./compile-openssl.sh all
-
-# Demo
-#     open ios/IJKMediaDemo/IJKMediaDemo.xcodeproj with Xcode
-# 
-# Import into Your own Application
-#     Select your project in Xcode.
-#     File -> Add Files to ... -> Select ios/IJKMediaPlayer/IJKMediaPlayer.xcodeproj
-#     Select your Application's target.
-#     Build Phases -> Target Dependencies -> Select IJKMediaFramework
-#     Build Phases -> Link Binary with Libraries -> Add:
-#         IJKMediaFramework.framework
-#
-#         AudioToolbox.framework
-#         AVFoundation.framework
-#         CoreGraphics.framework
-#         CoreMedia.framework
-#         CoreVideo.framework
-#         libbz2.tbd
-#         libz.tbd
-#         MediaPlayer.framework
-#         MobileCoreServices.framework
-#         OpenGLES.framework
-#         QuartzCore.framework
-#         UIKit.framework
-#         VideoToolbox.framework
-#
-#         ... (Maybe something else, if you get any link error)
-# 
-```
-
-### Support (支持) ###
+### Support (支持)
 
 - Please do not send e-mail to me. Public technical discussion on github is preferred.
-- 请尽量在 github 上公开讨论[技术问题](https://github.com/bilibili/ijkplayer/issues)，不要以邮件方式私下询问，恕不一一回复。
+- 请尽量在 github 上公开讨论[技术问题](https://github.com/debugly/ijkplayer/issues)，不要以邮件方式私下询问，恕不一一回复。
 
 ### License
 

@@ -16,7 +16,7 @@
  */
 
 #import "IJKMediaControl.h"
-#import <IJKMediaPlayeriOSKit/IJKMediaPlayeriOSKit.h>
+#import <IJKMediaPlayerKit/IJKMediaPlayerKit.h>
 
 @implementation IJKMediaControl
 {

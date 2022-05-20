@@ -22,9 +22,6 @@
  */
 
 #import <Foundation/Foundation.h>
-#include "ijkplayer/apple/ijkplayer_ios.h"
-#include "ijkplayer/ijkmeta.h"
-
 
 struct IJKSize {
     NSInteger width;
@@ -41,8 +38,6 @@ IJKSizeMake(NSInteger width, NSInteger height)
     return size;
 }
 
-
-
 struct IJKSampleAspectRatio {
     NSInteger numerator;
     NSInteger denominator;
@@ -58,12 +53,12 @@ IJKSampleAspectRatioMake(NSInteger numerator, NSInteger denominator)
     return sampleAspectRatio;
 }
 
+typedef struct AVMessage AVMessage;
 
+@interface IJKFFMoviePlayerMessage : NSObject
 
-@interface IJKFFMoviePlayerMessage : NSObject {
-@public
-    AVMessage _msg;
-}
+@property (nonatomic, assign) AVMessage *msg;
+
 @end
 
 

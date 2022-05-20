@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# if you want skip pull base form net, you can export SKIP_PULL_BASE=1
 
 set -e
 
@@ -21,16 +22,59 @@ TOOLS=$(dirname "$0")
 source ${TOOLS}/env_assert.sh
 
 echo "===check env begin==="
-echo "argv:$*"
+echo "argv:[$*]"
 env_assert "GIT_UPSTREAM"
 env_assert "GIT_LOCAL_REPO"
 env_assert "GIT_COMMIT"
 env_assert "REPO_DIR"
 echo "===check env end==="
 
-iOS_ARCHS="x86_64 arm64"
-macOS_ARCHS="x86_64 arm64"
-win_ARCHS="x86 x86_64"
+ARCH=$2
+
+if [[ "$ARCH" == 'all' || "x$ARCH" == 'x' ]];then
+    iOS_ARCHS="x86_64 arm64"
+    macOS_ARCHS="x86_64 arm64"
+    win_ARCHS="x86 x86_64"
+elif [[ "$ARCH" == 'x86_64' || "$ARCH" == 'arm64' ]];then
+    iOS_ARCHS="$ARCH"
+    macOS_ARCHS="$ARCH"
+    win_ARCHS="$ARCH"
+else
+    echo "wrong arch:[$ARCH], can't init repo."
+    exit -1
+fi
+
+function pull_common() {
+    echo "== pull $REPO_DIR base =="
+    if [[ -d "$GIT_LOCAL_REPO" ]];then
+        cd "$GIT_LOCAL_REPO"
+        git reset --hard
+
+        local origin=$(git remote get-url origin)
+        if [[ "$origin" != "$GIT_UPSTREAM" ]]; then
+            git remote remove origin
+            git remote add origin "$GIT_UPSTREAM"
+            echo "force update origin to: $GIT_UPSTREAM"
+        fi
+        if [[ "$SKIP_PULL_BASE" ]];then
+            echo "skip pull $REPO_DIR because you set SKIP_PULL_BASE env."
+        else
+            git fetch --all --tags    
+        fi
+        
+        git checkout ${GIT_COMMIT} -B localBranch
+        cd - > /dev/null
+    else
+        if [[ "$SKIP_PULL_BASE" ]];then
+            echo "== local repo $REPO_DIR not exist,must clone by net firstly. =="
+            echo "try:unset SKIP_PULL_BASE"
+            exit -1
+        else
+            git clone $GIT_UPSTREAM $GIT_LOCAL_REPO
+            git -C $GIT_LOCAL_REPO checkout ${GIT_COMMIT} -B localBranch
+        fi
+    fi
+}
 
 function apply_patches()
 {
@@ -46,22 +90,11 @@ function apply_patches()
     fi
 }
 
-function pull_common() {
-    echo "== pull $REPO_DIR base =="
-    if [[ -d "$GIT_LOCAL_REPO" ]];then
-        git -C $GIT_LOCAL_REPO reset --hard
-    fi
-    sh $TOOLS/pull-repo-base.sh $GIT_UPSTREAM $GIT_LOCAL_REPO
-}
-
-function pull_fork() {
-    local dir="build/src/$1/$REPO_DIR-$2"
-    echo "== pull $REPO_DIR fork to $dir =="
-    if [[ -d "$dir" ]];then
-        git -C "$dir" reset --hard
-    fi
-    sh $TOOLS/pull-repo-ref.sh $GIT_UPSTREAM $dir $GIT_LOCAL_REPO
-    cd $dir
+function make_arch_repo() {
+    local dest_repo="build/src/$1/$REPO_DIR-$2"
+    echo "== copy $REPO_DIR → $dest_repo =="
+    $TOOLS/copy-local-repo.sh $GIT_LOCAL_REPO $dest_repo
+    cd $dest_repo
     git checkout ${GIT_COMMIT} -B localBranch
     echo "last commit:"$(git log -1 --pretty=format:"[%h] %s:%ce %cd")
     apply_patches
@@ -82,7 +115,7 @@ function main() {
             do
                 if [[ "$2" == "$arch" || "x$2" == "x" ]];then
                     found=1
-                    pull_fork 'ios' $arch
+                    make_arch_repo 'ios' $arch
                 fi
             done
 
@@ -99,7 +132,7 @@ function main() {
             do
                 if [[ "$2" == "$arch" || "x$2" == "x" ]];then
                     found=1
-                    pull_fork 'macos' $arch
+                    make_arch_repo 'macos' $arch
                 fi
             done
 
@@ -112,12 +145,12 @@ function main() {
             pull_common
             for arch in $iOS_ARCHS
             do
-                pull_fork 'ios' $arch
+                make_arch_repo 'ios' $arch
             done
 
             for arch in $macOS_ARCHS
             do
-                pull_fork 'macos' $arch
+                make_arch_repo 'macos' $arch
             done
         ;;
 

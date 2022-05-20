@@ -156,6 +156,7 @@ void            ijkmp_global_uninit(void);
 void            ijkmp_global_set_log_report(int use_report);
 void            ijkmp_global_set_log_level(int log_level);   // log_level = AV_LOG_xxx
 void			ijkmp_global_set_log_callback(void(*callback)(void*, int, const char*, va_list));
+int             ijkmp_global_get_log_level(void);
 void            ijkmp_global_set_inject_callback(ijk_inject_callback cb);
 const char     *ijkmp_version(void);
 void            ijkmp_io_stat_register(void (*cb)(const char *url, int type, int bytes));

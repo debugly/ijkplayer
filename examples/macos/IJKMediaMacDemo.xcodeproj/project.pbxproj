@@ -29,6 +29,10 @@
 		C969BEBA27BDEAD0008BC2AD /* 5003509-693880-1.m3u8 in Resources */ = {isa = PBXBuildFile; fileRef = C969BEB927BDEAD0008BC2AD /* 5003509-693880-1.m3u8 */; };
 		C97DCC0727C867EA0019874F /* MRBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = C97DCC0627C867EA0019874F /* MRBaseView.m */; };
 		C9FFF21527C864C100284B46 /* MRProgressSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = C9FFF21327C864C100284B46 /* MRProgressSlider.m */; };
+		DD0443E627E7749800CB946B /* MRActionProcessor+Private.m in Sources */ = {isa = PBXBuildFile; fileRef = DD0443DE27E7749800CB946B /* MRActionProcessor+Private.m */; };
+		DD0443E727E7749800CB946B /* MRActionProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = DD0443E027E7749800CB946B /* MRActionProcessor.m */; };
+		DD0443E827E7749800CB946B /* MRActionManager.m in Sources */ = {isa = PBXBuildFile; fileRef = DD0443E227E7749800CB946B /* MRActionManager.m */; };
+		DD0443E927E7749800CB946B /* MRActionItem.m in Sources */ = {isa = PBXBuildFile; fileRef = DD0443E327E7749800CB946B /* MRActionItem.m */; };
 		DD050F9D25A43A1300F01E2F /* MRUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = DD050F9625A43A1300F01E2F /* MRUtil.m */; };
 		DD050F9E25A43A1300F01E2F /* MRDragView.m in Sources */ = {isa = PBXBuildFile; fileRef = DD050F9C25A43A1300F01E2F /* MRDragView.m */; };
 		DD1B345722CDD89400022FCA /* 996747-5277368-31.m3u8 in Resources */ = {isa = PBXBuildFile; fileRef = DD1B345622CDD89400022FCA /* 996747-5277368-31.m3u8 */; };
@@ -96,6 +100,16 @@
 		C97DCC0627C867EA0019874F /* MRBaseView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MRBaseView.m; sourceTree = "<group>"; };
 		C9FFF21327C864C100284B46 /* MRProgressSlider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MRProgressSlider.m; sourceTree = "<group>"; };
 		C9FFF21427C864C100284B46 /* MRProgressSlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRProgressSlider.h; sourceTree = "<group>"; };
+		DD0443DC27E7749800CB946B /* MRActionManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRActionManager.h; sourceTree = "<group>"; };
+		DD0443DD27E7749800CB946B /* MRActionItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRActionItem.h; sourceTree = "<group>"; };
+		DD0443DE27E7749800CB946B /* MRActionProcessor+Private.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MRActionProcessor+Private.m"; sourceTree = "<group>"; };
+		DD0443DF27E7749800CB946B /* MRActionKit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRActionKit.h; sourceTree = "<group>"; };
+		DD0443E027E7749800CB946B /* MRActionProcessor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MRActionProcessor.m; sourceTree = "<group>"; };
+		DD0443E127E7749800CB946B /* MRActionProcessorInternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRActionProcessorInternal.h; sourceTree = "<group>"; };
+		DD0443E227E7749800CB946B /* MRActionManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MRActionManager.m; sourceTree = "<group>"; };
+		DD0443E327E7749800CB946B /* MRActionItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MRActionItem.m; sourceTree = "<group>"; };
+		DD0443E427E7749800CB946B /* MRActionProcessor+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "MRActionProcessor+Private.h"; sourceTree = "<group>"; };
+		DD0443E527E7749800CB946B /* MRActionProcessor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRActionProcessor.h; sourceTree = "<group>"; };
 		DD050F9525A43A1300F01E2F /* MRUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRUtil.h; sourceTree = "<group>"; };
 		DD050F9625A43A1300F01E2F /* MRUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MRUtil.m; sourceTree = "<group>"; };
 		DD050F9B25A43A1300F01E2F /* MRDragView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRDragView.h; sourceTree = "<group>"; };
@@ -194,6 +208,23 @@
 			path = Settings;
 			sourceTree = "<group>";
 		};
+		DD0443DB27E7749800CB946B /* MRActionKit */ = {
+			isa = PBXGroup;
+			children = (
+				DD0443DD27E7749800CB946B /* MRActionItem.h */,
+				DD0443E327E7749800CB946B /* MRActionItem.m */,
+				DD0443DF27E7749800CB946B /* MRActionKit.h */,
+				DD0443DC27E7749800CB946B /* MRActionManager.h */,
+				DD0443E227E7749800CB946B /* MRActionManager.m */,
+				DD0443E527E7749800CB946B /* MRActionProcessor.h */,
+				DD0443E027E7749800CB946B /* MRActionProcessor.m */,
+				DD0443E427E7749800CB946B /* MRActionProcessor+Private.h */,
+				DD0443DE27E7749800CB946B /* MRActionProcessor+Private.m */,
+				DD0443E127E7749800CB946B /* MRActionProcessorInternal.h */,
+			);
+			path = MRActionKit;
+			sourceTree = "<group>";
+		};
 		DD050F9425A43A1300F01E2F /* MRUtil */ = {
 			isa = PBXGroup;
 			children = (
@@ -255,6 +286,7 @@
 				C9FFF21327C864C100284B46 /* MRProgressSlider.m */,
 				DD050F9A25A43A1300F01E2F /* DragView */,
 				DD050F9425A43A1300F01E2F /* MRUtil */,
+				DD0443DB27E7749800CB946B /* MRActionKit */,
 				DD9B138E22C23A7A002D1D79 /* Assets.xcassets */,
 				DD9B139022C23A7A002D1D79 /* MainMenu.xib */,
 				C955004627C765A30026AB17 /* PrefixHeader.pch */,
@@ -436,9 +468,11 @@
 			files = (
 				C955004F27C769050026AB17 /* GeneralSettingViewController.m in Sources */,
 				C955004A27C768DD0026AB17 /* SubtitleSettingViewController.m in Sources */,
+				DD0443E927E7749800CB946B /* MRActionItem.m in Sources */,
 				C969BE4B27BDCD27008BC2AD /* MRGlobalNotification.m in Sources */,
 				C955005E27C769D30026AB17 /* GraphicSettingViewController.m in Sources */,
 				DDB7827B2757266900382094 /* SHBaseView.m in Sources */,
+				DD0443E727E7749800CB946B /* MRActionProcessor.m in Sources */,
 				DD9B139522C23A7A002D1D79 /* main.m in Sources */,
 				C955005427C769770026AB17 /* SnapshotSettingViewController.m in Sources */,
 				C97DCC0727C867EA0019874F /* MRBaseView.m in Sources */,
@@ -451,6 +485,8 @@
 				C955005927C7698F0026AB17 /* DecoderSettingViewController.m in Sources */,
 				C9FFF21527C864C100284B46 /* MRProgressSlider.m in Sources */,
 				DD050F9D25A43A1300F01E2F /* MRUtil.m in Sources */,
+				DD0443E827E7749800CB946B /* MRActionManager.m in Sources */,
+				DD0443E627E7749800CB946B /* MRActionProcessor+Private.m in Sources */,
 				DD050F9E25A43A1300F01E2F /* MRDragView.m in Sources */,
 				DD4EAF23272FC22D00FBCD3A /* RootViewController.m in Sources */,
 			);
@@ -599,7 +635,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mr.IJKMediaDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mr.IJKMediaMacDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -620,7 +656,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mr.IJKMediaDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mr.IJKMediaMacDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

@@ -239,7 +239,7 @@
         [self.borderColor set];
         NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(NSMakeRect (0.0f, 0.0f, bgSize.width, bgSize.height), 0.5, 0.5)
                                                         cornerRadius:self.cRadius];
-        [path setLineWidth:1.0f];
+        [path setLineWidth:2.0f];
         if (transform) {
             [path transformUsingAffineTransform:transform];
         }
@@ -286,7 +286,8 @@
 {
     CGSize picSize = [self size];
     //(width = 285914, height = 397)
-    if (picSize.width > 40960 || picSize.height > 40960) {
+    // when width > 16384 or height > 16384 will cause CGLTexImageIOSurface2D return error code kCGLBadValue(10008) invalid numerical value.
+    if (picSize.width > 1<<14 || picSize.height > 1<<14) {
         return NULL;
     }
      
@@ -307,9 +308,12 @@
     CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, width,
             height, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)options,
             &pxbuffer);
-     
-    NSParameterAssert(status == kCVReturnSuccess && pxbuffer != NULL);
-     
+    
+    if (status != kCVReturnSuccess) {
+        NSParameterAssert(status == kCVReturnSuccess && pxbuffer != NULL);
+        return NULL;
+    }
+    
     CVPixelBufferLockBaseAddress(pxbuffer, 0);
     void *pxdata = CVPixelBufferGetBaseAddress(pxbuffer);
     NSParameterAssert(pxdata != NULL);
@@ -317,7 +321,12 @@
     CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
     size_t bpr = CVPixelBufferGetBytesPerRow(pxbuffer);//not use 4 * width
     CGContextRef context = CGBitmapContextCreate(pxdata, width, height, 8, bpr, rgbColorSpace, kCGImageAlphaPremultipliedLast);
-    NSParameterAssert(context);
+    
+    if (!context) {
+        CGColorSpaceRelease(rgbColorSpace);
+        CVPixelBufferUnlockBaseAddress(pxbuffer, 0);
+        return NULL;
+    }
     
     NSGraphicsContext *graphicsContext = [NSGraphicsContext graphicsContextWithCGContext:context flipped:NO];
     [graphicsContext setShouldAntialias:self.antialias];
@@ -326,7 +335,7 @@
     [NSGraphicsContext saveGraphicsState];
     [NSGraphicsContext setCurrentContext:graphicsContext];
     
-//    [self drawBg:(CGSize){width,height}];
+    [self drawBg:(CGSize){width,height}];
     
     NSRect rect = NSMakeRect(self.edgeInsets.left, self.edgeInsets.top, picSize.width, picSize.height);
     [self drawText:rect];
@@ -342,7 +351,7 @@
 
 #else
 
-- (void)drawMySelf:(CGSize)picSize
+- (void)drawBg:(CGSize)picSize
 {
     CGPoint originPoint = CGPointZero;
     
@@ -350,6 +359,13 @@
     if (CGPointEqualToPoint(CGPointZero, originPoint)) {
         transform = CGAffineTransformMakeTranslation(originPoint.x, originPoint.y);
     }
+    
+    UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectInset(CGRectMake (0.0f, 0.0f, picSize.width, picSize.height) , 0.5, 0.5) cornerRadius:self.cRadius];
+    [path setLineWidth:1.0f];
+    if (!CGAffineTransformIsIdentity(transform)) {
+        [path applyTransform:transform];
+    }
+    [path addClip];
     
     if (CGColorGetAlpha(self.boxColor.CGColor)) { // this should be == 0.0f but need to make sure
         [self.boxColor set];
@@ -364,21 +380,30 @@
         [self.borderColor set];
         
         UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectInset(CGRectMake (0.0f, 0.0f, picSize.width, picSize.height) , 0.5, 0.5) cornerRadius:self.cRadius];
-        [path setLineWidth:1.0f];
+        [path setLineWidth:2.0f];
         if (!CGAffineTransformIsIdentity(transform)) {
             [path applyTransform:transform];
         }
         [path stroke];
     }
-    
-    // draw at offset position
-    [self.attributedString drawAtPoint:CGPointMake(self.edgeInsets.left + originPoint.x, self.edgeInsets.top + originPoint.y)];
+}
+
+- (void)drawText:(CGRect)rect
+{
+    NSStringDrawingContext *ctx = [[NSStringDrawingContext alloc] init];
+    ctx.minimumScaleFactor = [[UIScreen mainScreen] scale];
+    [self.attributedString drawWithRect:rect options:NSStringDrawingUsesLineFragmentOrigin context:ctx];
 }
 
 - (CVPixelBufferRef)createPixelBuffer
 {
     CGSize picSize = [self size];
-
+    //(width = 285914, height = 397)
+    // when width > 16384 or height > 16384 will cause CGLTexImageIOSurface2D return error code kCGLBadValue(10008) invalid numerical value.
+    if (picSize.width > 1<<14 || picSize.height > 1<<14) {
+        return NULL;
+    }
+    
     NSDictionary* options = @{
         (__bridge NSString*)kCVPixelBufferOpenGLESCompatibilityKey : @YES,
         (__bridge NSString*)kCVPixelBufferIOSurfaceOpenGLESTextureCompatibilityKey : [NSDictionary dictionary]
@@ -392,29 +417,42 @@
     size_t height = (size_t)picSize.height;
     size_t width  = (size_t)picSize.width;
     
+    width  += self.edgeInsets.left + self.edgeInsets.right; // add padding
+    height += self.edgeInsets.top  + self.edgeInsets.bottom; // add padding
+    
     CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, width,
             height, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)options,
             &pxbuffer);
-     
-    NSParameterAssert(status == kCVReturnSuccess && pxbuffer != NULL);
-     
-    CVPixelBufferLockBaseAddress(pxbuffer, 0);
-    void *pxdata = CVPixelBufferGetBaseAddress(pxbuffer);
-     
-    CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
-    size_t bpr = CVPixelBufferGetBytesPerRow(pxbuffer);//not use 4 * width
-    CGContextRef context = CGBitmapContextCreate(pxdata, width, height, 8, bpr, rgbColorSpace, kCGImageAlphaPremultipliedLast);
-    
-    UIGraphicsPushContext(context);
-    [self drawMySelf:picSize];
-    UIGraphicsPopContext();
-    
-    CGColorSpaceRelease(rgbColorSpace);
-    CGContextRelease(context);
-    
-    CVPixelBufferUnlockBaseAddress(pxbuffer, 0);
-    
-    return pxbuffer;
+    if (status == kCVReturnSuccess) {
+        CVPixelBufferLockBaseAddress(pxbuffer, 0);
+        void *pxdata = CVPixelBufferGetBaseAddress(pxbuffer);
+         
+        CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
+        size_t bpr = CVPixelBufferGetBytesPerRow(pxbuffer);//not use 4 * width
+        CGContextRef context = CGBitmapContextCreate(pxdata, width, height, 8, bpr, rgbColorSpace, kCGImageAlphaPremultipliedLast);
+        
+        UIGraphicsPushContext(context);
+        
+        CGContextTranslateCTM(context, 0, height);
+        CGContextScaleCTM(context, 1.0, -1.0);
+        
+        [self drawBg:(CGSize){width,height}];
+        
+        CGRect rect = CGRectMake(self.edgeInsets.left, self.edgeInsets.top, picSize.width, picSize.height);
+        [self drawText:rect];
+
+        UIGraphicsPopContext();
+
+        CGColorSpaceRelease(rgbColorSpace);
+        CGContextRelease(context);
+        
+        CVPixelBufferUnlockBaseAddress(pxbuffer, 0);
+        
+        return pxbuffer;
+    } else {
+        NSParameterAssert(status == kCVReturnSuccess && pxbuffer != NULL);
+        return NULL;
+    }
 }
 
 #endif

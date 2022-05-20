@@ -30,6 +30,12 @@
 
 void ffp_log_extra_print(int level, const char *tag, const char *fmt, ...);
 void ffp_log_extra_vprint(int level, const char *tag, const char *fmt, va_list ap);
+
+#elif defined __APPLE__
+
+void ffp_apple_log_extra_print(int level, const char *tag, const char *fmt, ...);
+void ffp_apple_log_extra_vprint(int level, const char *tag, const char *fmt, va_list ap);
+
 #endif
 
 #endif  // IJKSDL__IJKSDL_EXTRA_LOG_H

@@ -124,4 +124,5 @@
 #define FFP_PROP_INT64_ANOTHER_VIDEO_DECODER            30000
 #define FFP_MSG_VIDEO_Z_ROTATE_DEGREE                   30001 /* arg1 = degrees */
 #define FFP_MSG_NO_CODEC_FOUND                          30002 /* No codec could be found with id pcm_s16le */
+#define FFP_MSG_AFTER_SEEK_FIRST_FRAME                  30003 /* arg1 = seek duration */
 #endif

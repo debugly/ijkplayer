@@ -1,0 +1,58 @@
+From be2fd28a8c3d984c9814f63af3a6e1575dfc3063 Mon Sep 17 00:00:00 2001
+From: qianlongxu <qianlongxu@gmail.com>
+Date: Mon, 16 May 2022 16:15:10 +0800
+Subject: [PATCH] fix ffmpeg constructed wrong avcc for videotoolbox hwaccel.
+
+---
+ libavcodec/videotoolbox.c | 35 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
+index 57b6698..79ab799 100644
+--- a/libavcodec/videotoolbox.c
++++ b/libavcodec/videotoolbox.c
+@@ -152,7 +152,40 @@ CFDataRef ff_videotoolbox_avcc_extradata_create(AVCodecContext *avctx)
+     if (vtctx)
+         memcpy(vtctx->sps, h->ps.sps->data + 1, 3);
+ 
+-    data = CFDataCreate(kCFAllocatorDefault, vt_extradata, vt_extradata_size);
++    /*
++    ffmpeg constructed avcc is wrong,but i dont't why;eg:
++    ff constructed avcc:
++    014d401effe1001b674d401eec806c1ef3fff8140013f88000000080000019078b16cb01000468ebec4c
++    avctx->extradata avcc:
++    014d401effe1001c674d401eec806c1ef3fff8140013f8800000030080000019078b16cb01000568ebec4c80
++    */
++    if (avctx->extradata_size != vt_extradata_size) {
++        char msg[256];
++        {
++            char buffer[128];
++            sprintf(buffer, "%s", "ff avcc maybe wrong:");
++            int len = (int)strlen(buffer);
++            int size = MIN(vt_extradata_size, 127 - len) / 2;
++            for (int i = 0; i < size; i++) {
++                len += sprintf(buffer + len, "%02X", vt_extradata[i]);
++            }
++            sprintf(msg, "%s", buffer);
++        }
++        {
++            char buffer[128];
++            sprintf(buffer, "%s", "\nuse origin avcc:");
++            int len = (int)strlen(buffer);
++            int size = MIN(avctx->extradata_size, 127 - len) / 2;
++            for (int i = 0; i < size; i++) {
++                len += sprintf(buffer + len, "%02X", avctx->extradata[i]);
++            }
++            sprintf(msg + strlen(msg), "%s", buffer);
++        }
++        av_log(avctx, AV_LOG_INFO, "%s\n", msg);
++        data = CFDataCreate(kCFAllocatorDefault, avctx->extradata, avctx->extradata_size);
++    } else {
++        data = CFDataCreate(kCFAllocatorDefault, vt_extradata, vt_extradata_size);
++    }
+     av_free(vt_extradata);
+     return data;
+ }
+-- 
+2.30.1 (Apple Git-130)
+

@@ -26,7 +26,7 @@
 #include "ffpipeline_ios.h"
 #include <mach/mach_time.h>
 #include "libavformat/avc.h"
-#include "ijksdl_vout_ios_gles2.h"
+#import "ijksdl_vout_ios_gles2.h"
 #include "h264_sps_parser.h"
 #include "ijkplayer/ff_ffplay_debug.h"
 #import <CoreMedia/CoreMedia.h>
@@ -1076,10 +1076,8 @@ static int vtbformat_init(VTBFormatDesc *fmt_desc, AVCodecParameters *codecpar, 
     switch (codec) {
         case AV_CODEC_ID_HEVC:
             format_id = kCMVideoCodecType_HEVC;
-            if (@available(macOS 10.13, *)) {
+            if (@available(macOS 10.13, iOS 11.0, *)) {
                 isHevcSupported = VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC);
-#warning force as support hevc
-                isHevcSupported = true;
             } else {
                 // Fallback on earlier versions
                 isHevcSupported = false;

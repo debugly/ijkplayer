@@ -38,25 +38,28 @@
 
 @property(atomic) CVPixelBufferRef currentVideoPic;
 @property(atomic) CVPixelBufferRef currentSubtitle;
-@property(atomic) NSString *subtitle;
-@property(atomic) IJKSDLSubtitlePicture *subtitlePict;
-@property(atomic) CGSize videoNaturalSize;
-@property(atomic) NSInteger videoDegrees;
+@property(atomic) IJKSDLSubtitle *sub;
+@property(nonatomic) NSInteger videoDegrees;
+@property(nonatomic) CGSize videoNaturalSize;
+//display window size / screen
+@property(atomic) float displayScreenScale;
+//display window size / video size
+@property(atomic) float displayVideoScale;
+@property(atomic) GLint backingWidth;
+@property(atomic) GLint backingHeight;
+@property(atomic) BOOL subtitlePreferenceChanged;
 
 @end
 
-@implementation IJKSDLGLView{
+@implementation IJKSDLGLView
+{
     IJK_GLES2_Renderer *_renderer;
-    int                 _rendererGravity;
-    GLint               _backingWidth;
-    GLint               _backingHeight;
+    int    _rendererGravity;
     //for snapshot.
     CGSize _FBOTextureSize;
     GLuint _FBO;
     GLuint _ColorTexture;
-    float _videoSar;
-    
-    BOOL _subtitlePreferenceChanged;
+    float  _videoSar;
 }
 
 @synthesize scalingMode = _scalingMode;
@@ -97,11 +100,13 @@
     if (self) {
         _videoSar = 1.0;
         [self setup];
-        _subtitlePreference = (IJKSDLSubtitlePreference){25, 0xFFFFFF, 0.1};
+        _subtitlePreference = (IJKSDLSubtitlePreference){1.0, 0xFFFFFF, 0.1};
         _rotatePreference   = (IJKSDLRotatePreference){IJKSDLRotateNone, 0.0};
         _colorPreference    = (IJKSDLColorConversionPreference){1.0, 1.0, 1.0};
         _darPreference      = (IJKSDLDARPreference){0.0};
-        _subtitlePict       = NULL;
+        _displayScreenScale = 1.0;
+        _displayVideoScale  = 1.0;
+        _rendererGravity    = IJK_GLES2_GRAVITY_RESIZE_ASPECT;
     }
     return self;
 }
@@ -143,16 +148,25 @@
     [self setPixelFormat:pf];
     [self setOpenGLContext:context];
     [self setWantsBestResolutionOpenGLSurface:YES];
-}
-
-- (void)videoNaturalSizeChanged:(CGSize)size
-{
-    self.videoNaturalSize = size;
+    
+    ///Fix the default red background color on the Intel platform
+    [[self openGLContext] makeCurrentContext];
+    glClear(GL_COLOR_BUFFER_BIT);
+    CGLFlushDrawable([[self openGLContext] CGLContextObj]);
 }
 
 - (void)videoZRotateDegrees:(NSInteger)degrees
 {
     self.videoDegrees = degrees;
+}
+
+- (void)videoNaturalSizeChanged:(CGSize)size
+{
+    self.videoNaturalSize = size;
+    CGRect viewBounds = [self bounds];
+    if (!CGSizeEqualToSize(CGSizeZero, self.videoNaturalSize)) {
+        self.displayVideoScale = FFMIN(1.0 * viewBounds.size.width / self.videoNaturalSize.width, 1.0 * viewBounds.size.height / self.videoNaturalSize.height);
+    }
 }
 
 - (BOOL)setupRenderer:(SDL_VoutOverlay *)overlay
@@ -180,7 +194,7 @@
         if (!IJK_GLES2_Renderer_use(_renderer))
             return NO;
         
-        IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, _backingWidth, _backingHeight);
+        IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, self.backingWidth, self.backingHeight);
         
         IJK_GLES2_Renderer_updateRotate(_renderer, _rotatePreference.type, _rotatePreference.degrees);
         
@@ -210,11 +224,22 @@
 
 - (void)resetViewPort
 {
-    NSRect viewRectPixels = [self convertRectToBacking:[self bounds]];
-    _backingWidth  = viewRectPixels.size.width;
-    _backingHeight = viewRectPixels.size.height;
-    if (IJK_GLES2_Renderer_isValid(_renderer)) {
-        IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, _backingWidth, _backingHeight);
+    CGSize viewSize = [self bounds].size;
+    CGSize viewSizePixels = [self convertSizeToBacking:viewSize];
+    
+    if (self.backingWidth != viewSizePixels.width || self.backingHeight != viewSizePixels.height) {
+        self.backingWidth  = viewSizePixels.width;
+        self.backingHeight = viewSizePixels.height;
+        
+        CGSize screenSize = [[NSScreen mainScreen]frame].size;
+        self.displayScreenScale = FFMIN(1.0 * viewSize.width / screenSize.width,1.0 * viewSize.height / screenSize.height);
+        if (!CGSizeEqualToSize(CGSizeZero, self.videoNaturalSize)) {
+            self.displayVideoScale = FFMIN(1.0 * viewSize.width / self.videoNaturalSize.width,1.0 * viewSize.height / self.videoNaturalSize.height);
+        }
+        
+        if (IJK_GLES2_Renderer_isValid(_renderer)) {
+            IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, self.backingWidth, self.backingHeight);
+        }
     }
 }
 
@@ -224,49 +249,72 @@
     [self resetViewPort];
 }
 
+- (void)doUploadSubtitle
+{
+    if (self.currentSubtitle) {
+        float ratio = 1.0;
+        if (self.sub.pixels) {
+            ratio = self.subtitlePreference.ratio * self.displayVideoScale * 1.5;
+        } else {
+            //for text subtitle scale display_scale.
+            ratio *= self.displayScreenScale;
+        }
+        
+        IJK_GLES2_Renderer_beginDrawSubtitle(_renderer);
+        IJK_GLES2_Renderer_updateSubtitleVetex(_renderer, ratio * CVPixelBufferGetWidth(self.currentSubtitle), ratio * CVPixelBufferGetHeight(self.currentSubtitle));
+        if (IJK_GLES2_Renderer_uploadSubtitleTexture(_renderer, (void *)self.currentSubtitle)) {
+            IJK_GLES2_Renderer_drawArrays();
+        } else {
+            ALOGE("[GL] GLES2 Render Subtitle failed\n");
+        }
+        IJK_GLES2_Renderer_endDrawSubtitle(_renderer);
+    }
+}
+
+- (void)doUploadVideoPicture:(SDL_VoutOverlay *)overlay
+{
+    if (self.currentVideoPic) {
+        if (IJK_GLES2_Renderer_updateVetex(_renderer, overlay)) {
+            if (IJK_GLES2_Renderer_uploadTexture(_renderer, (void *)self.currentVideoPic)) {
+                IJK_GLES2_Renderer_drawArrays();
+            } else {
+                ALOGE("[GL] Renderer_updateVetex failed\n");
+            }
+        } else {
+            ALOGE("[GL] Renderer_updateVetex failed\n");
+        }
+    }
+}
+
 - (void)setNeedsRefreshCurrentPic
 {
-    [[self openGLContext] makeCurrentContext];
     CGLLockContext([[self openGLContext] CGLContextObj]);
-    // Bind the FBO to screen.
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, _backingWidth, _backingHeight);
-    glClear(GL_COLOR_BUFFER_BIT);
+    [[self openGLContext] makeCurrentContext];
     
-    if (_renderer) {
+    if (IJK_GLES2_Renderer_isValid(_renderer)) {
+        // Bind the FBO to screen.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, self.backingWidth, self.backingHeight);
+        glClear(GL_COLOR_BUFFER_BIT);
+        
         //for video
-        if (self.currentVideoPic) {
-            if (!IJK_GLES2_Renderer_updateVetex(_renderer, NULL))
-                ALOGE("[GL] Renderer_updateVetex failed\n");
-            
-            if (!IJK_GLES2_Renderer_uploadTexture(_renderer, (void *)self.currentVideoPic))
-                ALOGE("[GL] Renderer_updateVetex failed\n");
-            
-            IJK_GLES2_Renderer_drawArrays();
-        }
+        [self doUploadVideoPicture:NULL];
         
         //for subtitle
-        if (_subtitlePreferenceChanged) {
-            if (self.subtitle) {
-                [self _generateSubtitlePixel:self.subtitle];
-            } else if (self.subtitlePict != NULL) {
-                [self _generateSubtitlePixelFromPicture:self.subtitlePict];
+        if (self.subtitlePreferenceChanged) {
+            if (self.sub.text) {
+                [self _generateSubtitlePixel:self.sub.text];
             }
+            self.subtitlePreferenceChanged = NO;
         }
         
-        if (self.currentSubtitle) {
-            IJK_GLES2_Renderer_beginDrawSubtitle(_renderer);
-            IJK_GLES2_Renderer_updateSubtitleVetex(_renderer, CVPixelBufferGetWidth(self.currentSubtitle), CVPixelBufferGetHeight(self.currentSubtitle));
-            if (!IJK_GLES2_Renderer_uploadSubtitleTexture(_renderer, (void *)self.currentSubtitle))
-                ALOGE("[GL] GLES2 Render Subtitle failed\n");
-            IJK_GLES2_Renderer_drawArrays();
-            IJK_GLES2_Renderer_endDrawSubtitle(_renderer);
-        }
+        [self doUploadSubtitle];
+        
+        CGLFlushDrawable([[self openGLContext] CGLContextObj]);
     } else {
         ALOGW("IJKSDLGLView: not ready.\n");
     }
    
-    CGLFlushDrawable([[self openGLContext] CGLContextObj]);
     CGLUnlockContext([[self openGLContext] CGLContextObj]);
 }
 
@@ -278,33 +326,29 @@
     
     IJKSDLSubtitlePreference sp = self.subtitlePreference;
         
-    int fontSize = sp.fontSize;
+    float ratio = sp.ratio;
     int32_t bgrValue = sp.color;
-    //以800为标准，定义出字幕字体默认大小为25pt
-    float ratio = 1.0;
-    if (!CGSizeEqualToSize(self.videoNaturalSize, CGSizeZero)) {
-        int degrees = self.videoDegrees;
-        if (degrees / 90 % 2 == 1) {
-            ratio = self.videoNaturalSize.height / 800.0;
-        } else {
-            ratio = self.videoNaturalSize.width / 800.0;
-        }
+    //以800为标准，定义出字幕字体默认大小为30pt
+    float scale = 1.0;
+    CGSize screenSize = [[NSScreen mainScreen]frame].size;
+    
+    NSInteger degrees = self.videoDegrees;
+    if (degrees / 90 % 2 == 1) {
+        scale = screenSize.height / 800.0;
+    } else {
+        scale = screenSize.width / 800.0;
     }
     //字幕默认配置
     NSMutableDictionary * attributes = [[NSMutableDictionary alloc] init];
     
-    UIFont *subtitleFont = [UIFont systemFontOfSize:fontSize * ratio];
+    UIFont *subtitleFont = [UIFont systemFontOfSize:ratio * scale * 30];
     [attributes setObject:subtitleFont forKey:NSFontAttributeName];
     
     NSColor *subtitleColor = [NSColor colorWithRed:((float)(bgrValue & 0xFF)) / 255.0 green:((float)((bgrValue & 0xFF00) >> 8)) / 255.0 blue:(float)(((bgrValue & 0xFF0000) >> 16)) / 255.0 alpha:1.0];
     
     [attributes setObject:subtitleColor forKey:NSForegroundColorAttributeName];
     
-    MRTextureString *textureString = [[MRTextureString alloc] initWithString:subtitle withAttributes:attributes withBoxColor:[NSColor colorWithRed:0.5f green:0.5f blue:0.5f alpha:0.5f] withBorderColor:nil];
-    
-    float inset = subtitleFont.pointSize / 2.0;
-    textureString.edgeInsets = NSEdgeInsetsMake(inset, inset, inset, inset);
-    textureString.cRadius = inset / 2.0;
+    MRTextureString *textureString = [[MRTextureString alloc] initWithString:subtitle withAttributes:attributes];
     
     if (self.currentSubtitle) {
         CVPixelBufferRelease(self.currentSubtitle);
@@ -312,81 +356,82 @@
     }
     
     self.currentSubtitle = [textureString createPixelBuffer];
-    
-    _subtitlePreferenceChanged = NO;
 }
 
-- (void)_generateSubtitlePixelFromPicture:(IJKSDLSubtitlePicture*)pict
+- (void)_generateSubtitlePixelFromPicture:(IJKSDLSubtitle*)pict
 {
-    /// hadle 8bit color
-    if (pict->nb_colors == 256) {
-        CVPixelBufferRef pixelBuffer = NULL;
-        NSDictionary *options = @{
-            (__bridge NSString*)kCVPixelBufferOpenGLCompatibilityKey : @YES,
-            (__bridge NSString*)kCVPixelBufferIOSurfacePropertiesKey : [NSDictionary dictionary]
-        };
-        
-        CVReturn ret = CVPixelBufferCreate(kCFAllocatorDefault, pict->w, pict->h, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)options, &pixelBuffer);
-        
-        NSParameterAssert(ret == kCVReturnSuccess && pixelBuffer != NULL);
-        
-        CVPixelBufferLockBaseAddress(pixelBuffer, 0);
-        
-        uint8_t *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
-        int *dst_linesize = av_mallocz(sizeof(int)*4);
-        dst_linesize[0] = (int)CVPixelBufferGetBytesPerRow(pixelBuffer);
-        
-        av_image_copy(&baseAddress, dst_linesize, (const uint8_t **)pict->data, pict->linesize, AV_PIX_FMT_BGRA, pict->w, pict->h);
-        
-        CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
-                
+    CVPixelBufferRef pixelBuffer = NULL;
+    NSDictionary *options = @{
+        (__bridge NSString*)kCVPixelBufferOpenGLCompatibilityKey : @YES,
+        (__bridge NSString*)kCVPixelBufferIOSurfacePropertiesKey : [NSDictionary dictionary]
+    };
+    
+    CVReturn ret = CVPixelBufferCreate(kCFAllocatorDefault, pict.w, pict.h, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)options, &pixelBuffer);
+    
+    NSParameterAssert(ret == kCVReturnSuccess && pixelBuffer != NULL);
+    
+    CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+    
+    uint8_t *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
+    int linesize = (int)CVPixelBufferGetBytesPerRow(pixelBuffer);
+
+    uint8_t *dst_data[4] = {baseAddress,NULL,NULL,NULL};
+    int dst_linesizes[4] = {linesize,0,0,0};
+
+    const uint8_t *src_data[4] = {pict.pixels,NULL,NULL,NULL};
+    const int src_linesizes[4] = {pict.w * 4,0,0,0};
+
+    av_image_copy(dst_data, dst_linesizes, src_data, src_linesizes, AV_PIX_FMT_BGRA, pict.w, pict.h);
+    
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+            
+    if (self.currentSubtitle) {
+        CVPixelBufferRelease(self.currentSubtitle);
+        self.currentSubtitle = NULL;
+    }
+    
+    if (kCVReturnSuccess == ret) {
+        self.currentSubtitle = pixelBuffer;
+    }
+}
+
+- (void)_handleSubtitle:(IJKSDLSubtitle *)sub
+{
+    if (sub.text.length > 0) {
+        if (self.subtitlePreferenceChanged || ![self.sub.text isEqualToString:sub.text]) {
+            [self _generateSubtitlePixel:sub.text];
+            self.subtitlePreferenceChanged = NO;
+        }
+    } else if (sub.pixels != NULL) {
+        if (self.subtitlePreferenceChanged || sub.pixels != self.sub.pixels) {
+            [self _generateSubtitlePixelFromPicture:sub];
+            self.subtitlePreferenceChanged = NO;
+        }
+    } else {
         if (self.currentSubtitle) {
             CVPixelBufferRelease(self.currentSubtitle);
             self.currentSubtitle = NULL;
         }
-        
-        if (kCVReturnSuccess == ret) {
-            self.currentSubtitle = pixelBuffer;
-        }
-    } else {
-        // TODO: some dvd sub will set nb_colors to 4, ignore it for now.
     }
     
-    _subtitlePreferenceChanged = NO;
+    self.sub = sub;
 }
 
-- (void)display:(SDL_VoutOverlay *)overlay subtitle:(const char *)text subPict:(IJKSDLSubtitlePicture *)subPict
+- (void)display:(SDL_VoutOverlay *)overlay subtitle:(IJKSDLSubtitle *)sub
 {
     if (!overlay) {
         ALOGW("IJKSDLGLView: overlay is nil\n");
         return;
     }
     
-    if (text && strlen(text) > 0) {
-        NSString *subStr = [[NSString alloc] initWithUTF8String:text];
-        if (_subtitlePreferenceChanged || ![subStr isEqualToString:self.subtitle]) {
-            [self _generateSubtitlePixel:subStr];
-            self.subtitle = subStr;
-        }
-    } else if (subPict != NULL) {
-        if (_subtitlePreferenceChanged || subPict != self.subtitlePict) {
-            [self _generateSubtitlePixelFromPicture:subPict];
-            self.subtitlePict = subPict;
-        }
-    } else {
-        if (self.currentSubtitle) {
-            CVPixelBufferRelease(self.currentSubtitle);
-            self.currentSubtitle = NULL;
-        }
-        self.subtitle = nil;
-        self.subtitlePict = NULL;
-    }
-    
-    [[self openGLContext] makeCurrentContext];
     CGLLockContext([[self openGLContext] CGLContextObj]);
+    [[self openGLContext] makeCurrentContext];
+    
+    [self _handleSubtitle:sub];
+    
     // Bind the FBO to screen.
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, _backingWidth, _backingHeight);
+    glViewport(0, 0, self.backingWidth, self.backingHeight);
     glClear(GL_COLOR_BUFFER_BIT);
     
     if ([self setupRenderer:overlay] && _renderer) {
@@ -398,27 +443,12 @@
         
         CVPixelBufferRef videoPic = (CVPixelBufferRef)IJK_GLES2_Renderer_getVideoImage(_renderer, overlay);
         if (videoPic) {
-            
-            if (!IJK_GLES2_Renderer_updateVetex(_renderer, overlay))
-                ALOGE("[GL] Renderer_updateVetex failed\n");
-            
-            if (!IJK_GLES2_Renderer_uploadTexture(_renderer, (void *)videoPic))
-                ALOGE("[GL] Renderer_updateVetex failed\n");
-            
-            IJK_GLES2_Renderer_drawArrays();
-            
             self.currentVideoPic = CVPixelBufferRetain(videoPic);
+            [self doUploadVideoPicture:overlay];
         }
         
         //for subtitle
-        if (self.currentSubtitle) {
-            IJK_GLES2_Renderer_beginDrawSubtitle(_renderer);
-            IJK_GLES2_Renderer_updateSubtitleVetex(_renderer, CVPixelBufferGetWidth(self.currentSubtitle), CVPixelBufferGetHeight(self.currentSubtitle));
-            if (!IJK_GLES2_Renderer_uploadSubtitleTexture(_renderer, (void *)self.currentSubtitle))
-                ALOGE("[GL] GLES2 Render Subtitle failed\n");
-            IJK_GLES2_Renderer_drawArrays();
-            IJK_GLES2_Renderer_endDrawSubtitle(_renderer);
-        }
+        [self doUploadSubtitle];
     } else {
         ALOGW("IJKSDLGLView: not ready.\n");
     }
@@ -512,8 +542,8 @@
 - (CGImageRef)_snapshotEffectOriginWithSubtitle:(BOOL)containSub
 {
     CGImageRef img = NULL;
-    [[self openGLContext] makeCurrentContext];
     CGLLockContext([[self openGLContext] CGLContextObj]);
+    [[self openGLContext] makeCurrentContext];
     if (self.currentVideoPic && _renderer) {
         CGSize picSize = CGSizeMake(CVPixelBufferGetWidth(self.currentVideoPic) * _videoSar, CVPixelBufferGetHeight(self.currentVideoPic));
         //视频带有旋转 90 度倍数时需要将显示宽高交换后计算
@@ -557,19 +587,15 @@
                 IJK_GLES2_Renderer_drawArrays();
             }
             
-            if (self.currentSubtitle && containSub) {
-                IJK_GLES2_Renderer_beginDrawSubtitle(_renderer);
-                IJK_GLES2_Renderer_updateSubtitleVetex(_renderer, CVPixelBufferGetWidth(self.currentSubtitle), CVPixelBufferGetHeight(self.currentSubtitle));
-                if (!IJK_GLES2_Renderer_uploadSubtitleTexture(_renderer, (void *)self.currentSubtitle))
-                    ALOGE("[GL] GLES2 Render Subtitle failed\n");
-                IJK_GLES2_Renderer_drawArrays();
-                IJK_GLES2_Renderer_endDrawSubtitle(_renderer);
+            if (containSub) {
+                [self doUploadSubtitle];
             }
             
             img = [self _snapshotTheContextWithSize:picSize];
         }
+        
+        CGLFlushDrawable([[self openGLContext] CGLContextObj]);
     }
-    CGLFlushDrawable([[self openGLContext] CGLContextObj]);
     CGLUnlockContext([[self openGLContext] CGLContextObj]);
     return img;
 }
@@ -672,7 +698,7 @@ static CGImageRef _FlipCGImage(CGImageRef src)
         return nil;
     }
  
-    NSRect bounds = [self bounds];
+    CGRect bounds = [self bounds];
     CGSize size =  [self convertSizeToBacking:bounds.size];;
     
     if (CGSizeEqualToSize(CGSizeZero, size)) {
@@ -713,7 +739,7 @@ static CGImageRef _FlipCGImage(CGImageRef src)
     }
     _scalingMode = scalingMode;
     if (IJK_GLES2_Renderer_isValid(_renderer)) {
-        IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, _backingWidth, _backingHeight);
+        IJK_GLES2_Renderer_setGravity(_renderer, _rendererGravity, self.backingWidth, self.backingHeight);
     }
 }
 
@@ -756,9 +782,9 @@ static CGImageRef _FlipCGImage(CGImageRef src)
         }
     }
     
-    if (_subtitlePreference.fontSize != subtitlePreference.fontSize || _subtitlePreference.color != subtitlePreference.color) {
+    if (_subtitlePreference.ratio != subtitlePreference.ratio || _subtitlePreference.color != subtitlePreference.color) {
         _subtitlePreference = subtitlePreference;
-        _subtitlePreferenceChanged = YES;
+        self.subtitlePreferenceChanged = YES;
     }
 }
 

@@ -1,0 +1,32 @@
+From bae24b35d71113b1f9872db215427aa67c974acc Mon Sep 17 00:00:00 2001
+From: YoushiQian <youshiqian206918@sohu-inc.com>
+Date: Mon, 9 May 2022 09:53:18 +0800
+Subject: [PATCH] Correct the wrong codecpar->codec_id which read from MIME of
+ ID3tags, but the real data was encoded in PNG/JPEG/TIFF
+
+---
+ libavformat/id3v2.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/libavformat/id3v2.c b/libavformat/id3v2.c
+index f7de26a1d8..8a29db350d 100644
+--- a/libavformat/id3v2.c
++++ b/libavformat/id3v2.c
+@@ -1156,8 +1156,13 @@ int ff_id3v2_parse_apic(AVFormatContext *s, ID3v2ExtraMeta **extra_meta)
+         st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+         st->codecpar->codec_id   = apic->id;
+ 
+-        if (AV_RB64(apic->buf->data) == 0x89504e470d0a1a0a)
++        if (AV_RB64(apic->buf->data) == 0x89504e470d0a1a0a || AV_RB64(apic->buf->data) == 0x8a4d4e470d0a1a0a) {
+             st->codecpar->codec_id = AV_CODEC_ID_PNG;
++        } else if (AV_RB24(apic->buf->data) == 0xffd8ff) {
++            st->codecpar->codec_id = AV_CODEC_ID_MJPEG;
++        } else if (AV_RB32(apic->buf->data) == 0x49492a00 || AV_RB32(apic->buf->data) == 0x4D4D002a) {
++            st->codecpar->codec_id = AV_CODEC_ID_TIFF;
++        }
+ 
+         if (apic->description[0])
+             av_dict_set(&st->metadata, "title", apic->description, 0);
+-- 
+2.32.0 (Apple Git-132)
+

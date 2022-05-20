@@ -95,6 +95,12 @@ void ijkmp_global_set_log_callback(void(*callback)(void*, int, const char*, va_l
 	ffp_global_set_log_callback(callback);
 }
 
+
+int ijkmp_global_get_log_level(void)
+{
+    return ffp_global_get_log_level();
+}
+
 //…Ë÷√ªÿµ˜
 void ijkmp_global_set_inject_callback(ijk_inject_callback cb)
 {

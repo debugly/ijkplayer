@@ -134,8 +134,8 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create_base(const char *fragment_shader_s
     char vsh_buffer[1024] = { '\0' };
     IJK_GLES2_getVertexShader_default(vsh_buffer,openglVer);
     
-    ALOGI("vertex shader source:\n%s\n",vsh_buffer);
-    ALOGI("fragment shader source:\n%s\n",fragment_shader_source);
+    ALOGD("vertex shader source:\n%s\n",vsh_buffer);
+    ALOGD("fragment shader source:\n%s\n",fragment_shader_source);
     
 	vertex_shader = IJK_GLES2_loadShader(GL_VERTEX_SHADER, vsh_buffer);
 #else
@@ -417,11 +417,18 @@ static void IJK_GLES2_Renderer_Vertices_apply(IJK_GLES2_Renderer *renderer)
     }
     
     //handle use define w-h ratio
+    float dar_ratio = renderer->user_dar_ratio;
     if (renderer->user_dar_ratio > 0) {
-        if (frame_width / frame_height > renderer->user_dar_ratio) {
-            frame_height = frame_width * 1.0 / renderer->user_dar_ratio;
+        
+        //when video's z rotate degrees is 90 odd multiple need swap user's ratio
+        if (IJK_GLES2_Renderer_isZRotate90oddMultiple(renderer)) {
+            dar_ratio = 1.0 / renderer->user_dar_ratio;
+        }
+        
+        if (frame_width / frame_height > dar_ratio) {
+            frame_height = frame_width * 1.0 / dar_ratio;
         } else {
-            frame_width = frame_height * renderer->user_dar_ratio;
+            frame_width = frame_height * dar_ratio;
         }
     }
     
@@ -494,6 +501,7 @@ void IJK_GLES2_Renderer_updateRotate(IJK_GLES2_Renderer *renderer,int type,int d
     }
     //need update mvp
     if (flag) {
+        renderer->vertices_changed = 1;
         renderer->mvp_changed = 1;
     }
 }
@@ -847,12 +855,6 @@ void IJK_GLES2_Renderer_updateSubtitleVetex(IJK_GLES2_Renderer *renderer, float 
     //字幕图片在纹理坐标系上的尺寸
     float ratioW = 1.0 * width / renderer->layer_width;
     float ratioH = 1.0 * height / renderer->layer_height;
-    
-    //跟随视频缩放；画面放大，字幕也放大；画面缩小，字幕也缩小
-    float scale = FFMIN(1.0 * renderer->layer_width / renderer->frame_width,1.0 * renderer->layer_height / renderer->frame_height);
-    
-    ratioW *= scale;
-    ratioH *= scale;
     
     float leftX  = 0 - ratioW;
     float rightX = 0 + ratioW;

@@ -222,11 +222,12 @@ static struct vt_format vt_formats[] = {
         .imgfmt = IMGFMT_BGR0,
         .planes = 1,
         .gl = {
-#if TARGET_OS_OSX
+        #if TARGET_OS_OSX
             { GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, GL_RGBA }
-#else
-            { GL_BGRA, GL_UNSIGNED_INT, GL_RGBA }
-#endif
+        #else
+            //cvpixelbuffer not support kCVPixelFormatType_32RGBA return -6680 errer code.
+            { GL_BGRA, GL_UNSIGNED_BYTE, GL_RGBA }
+        #endif
         }
     },
     {

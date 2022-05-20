@@ -1,6 +1,37 @@
-tag next
+tag 0.9.0.5
 --------------------------------
-- ffmpeg: upgrade to 4.0
+- support cocoapods
+- ffmpeg: use github tag 4.0 source and add pathes
+    - disable all muxer
+    - enable some demuxer for video 
+    - enable all audio decoder
+    - enable some video decoder
+    - enable videotoolbox hwaccel for ios and macos
+
+- macos: begin support macOS plat.
+    - subtitle
+        - support add external subtitles
+        - auto keep aspect ratio to video picture
+        - support delay
+        - text subtitle,eg: ass,srt,ssa,webvtt
+            - change display size、position、color in real time 
+        - graphic subtitle,eg: pgssub,dvdsub
+            - change display size、position in real time
+    - rotation: rotate video picture along the [x,y,z]-axis
+    - snapshot: support capture current window or use origin picture size capture subtitle overlay
+    - adjust brightness、saturation、constast
+    - adjust video scale
+    - use opengl 3.3
+    - support arm64 (Apple Silicon M1)
+- ios/macos:
+    - use universal renderer logic,support bgrx、xrgb、uyvy422、yuv420p、yuv420sp
+    - auto use videotoolbox hwaccel by default
+    - ffmpeg soft decoder also use same renderer logic as hwaccel
+    - auto adjust video rotate
+- openssl: upgrade to 1.1.1m
+- shell: use universal init/compile shell. see [shell/README.md](shell/README.md)
+- opus: depending opus v1.3.1
+- libyuv: depending latest libyuv
 
 tag k0.8.8
 --------------------------------

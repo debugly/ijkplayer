@@ -68,8 +68,19 @@
 #define IJK_LOG_FATAL       7
 #define IJK_LOG_SILENT      8
 
+#ifdef __APPLE__
+
+#include "ijksdl_extra_log.h"
+
+#define VLOG(level, TAG, ...)    ffp_apple_log_extra_vprint(level, TAG, __VA_ARGS__)
+#define ALOG(level, TAG, ...)    ffp_apple_log_extra_print(level, TAG, __VA_ARGS__)
+
+#else
+
 #define VLOG(level, TAG, ...)    ((void)vprintf(__VA_ARGS__))
 #define ALOG(level, TAG, ...)    ((void)printf(__VA_ARGS__))
+
+#endif
 
 #endif
 

@@ -278,6 +278,8 @@ typedef struct Decoder {
     SDL_Profiler decode_profiler;
     Uint64 first_frame_decoded_time;
     int    first_frame_decoded;
+    int    after_seek_frame;
+    Uint64 start_seek_time;
     int    is_switching;
 } Decoder;
 
@@ -349,7 +351,6 @@ typedef struct VideoState {
     unsigned int audio_buf1_size;
     unsigned int audio_new_buf_size;
     int audio_buf_index; /* in bytes */
-    int audio_write_buf_size;
     int audio_volume;
     int muted;
     struct AudioParams audio_src;
@@ -926,6 +927,10 @@ inline static void ffp_notify_msg1(FFPlayer *ffp, int what) {
 
 inline static void ffp_notify_msg2(FFPlayer *ffp, int what, int arg1) {
     msg_queue_put_simple3(&ffp->msg_queue, what, arg1, 0);
+}
+
+inline static void ffp_notify_str2(FFPlayer *ffp, int what, const char *str) {
+    msg_queue_put_str(&ffp->msg_queue, what, str);
 }
 
 inline static void ffp_notify_msg3(FFPlayer *ffp, int what, int arg1, int arg2) {

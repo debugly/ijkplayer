@@ -28,7 +28,7 @@
 #include "ffpipeline_ios.h"
 #include <mach/mach_time.h>
 #include "libavformat/avc.h"
-#include "ijksdl_vout_ios_gles2.h"
+#import "ijksdl_vout_ios_gles2.h"
 #include "h264_sps_parser.h"
 #include "ijkplayer/ff_ffplay_debug.h"
 #import <CoreMedia/CoreMedia.h>
@@ -976,7 +976,7 @@ static int vtbformat_init(VTBFormatDesc *fmt_desc, AVCodecParameters *codecpar, 
 //                        OSStatus status = VTCopySupportedPropertyDictionaryForEncoder(3840, 2160, kCMVideoCodecType_HEVC, encoderSpecification, nil, nil);
 //                isHevcSupported = status == kVTCouldNotFindVideoEncoderErr;
 //FIXME  15年产的 MBP 返回 false，但实际上支持硬解，因此只要系统满足就认为支持
-                isHevcSupported = true;
+//                isHevcSupported = true;
             } else {
                 // Fallback on earlier versions
                 isHevcSupported = false;

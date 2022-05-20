@@ -33,7 +33,9 @@ typedef NSView  UIView;
 @interface IJKSDLHudControl : NSObject
 
 - (UIView *)contentView;
+- (void)destroyContentView;
 - (void)setHudValue:(NSString *)value forKey:(NSString *)key;
+- (NSDictionary *)allHudItem;
 
 @end
 

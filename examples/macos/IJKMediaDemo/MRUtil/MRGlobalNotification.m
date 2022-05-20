@@ -9,6 +9,7 @@
 #import "MRGlobalNotification.h"
 
 DEFINE_CONST_STRING(kPlayExplorerMovieNotificationName_G);
+DEFINE_CONST_STRING(kPlayNetMovieNotificationName_G);
 
 @implementation MRGlobalNotification
 

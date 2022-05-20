@@ -1,24 +1,20 @@
 PODS:
-  - IJKMediaPlayeriOSKit (0.9.0.4):
-    - IJKMediaPlayeriOSKit/ijkmedia (= 0.9.0.4)
-    - IJKMediaPlayeriOSKit/IJKMediaPlayerKit (= 0.9.0.4)
-    - IJKMediaPlayeriOSKit/no-arc (= 0.9.0.4)
-    - IJKMediaPlayeriOSKit/w (= 0.9.0.4)
-  - IJKMediaPlayeriOSKit/ijkmedia (0.9.0.4)
-  - IJKMediaPlayeriOSKit/IJKMediaPlayerKit (0.9.0.4)
-  - IJKMediaPlayeriOSKit/no-arc (0.9.0.4)
-  - IJKMediaPlayeriOSKit/w (0.9.0.4)
+  - IJKMediaPlayerKit (0.9.0.5):
+    - IJKMediaPlayerKit/ijkmedia (= 0.9.0.5)
+    - IJKMediaPlayerKit/IJKMediaPlayerKit (= 0.9.0.5)
+  - IJKMediaPlayerKit/ijkmedia (0.9.0.5)
+  - IJKMediaPlayerKit/IJKMediaPlayerKit (0.9.0.5)
 
 DEPENDENCIES:
-  - IJKMediaPlayeriOSKit (from `../../`)
+  - IJKMediaPlayerKit (from `../../`)
 
 EXTERNAL SOURCES:
-  IJKMediaPlayeriOSKit:
+  IJKMediaPlayerKit:
     :path: "../../"
 
 SPEC CHECKSUMS:
-  IJKMediaPlayeriOSKit: 938fedfc03c888bc98c1ab88a9810eb77a8f4f38
+  IJKMediaPlayerKit: be4980e18d2bba66072a83075c061f87f1c1723d
 
-PODFILE CHECKSUM: 8b0a23f57d1c59f71f25eb4dc3f506e1dd41a246
+PODFILE CHECKSUM: 68b3c9d9141a9605bebe65328e1541c4aedaed99
 
 COCOAPODS: 1.11.2

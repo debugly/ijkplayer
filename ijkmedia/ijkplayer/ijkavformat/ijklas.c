@@ -599,15 +599,15 @@ static int32_t TagQueue_get_duration_ms(TagQueue* q) {
     return ret > 0 ? ret : 0;
 }
 
-static int64_t TagQueue_get_total_bytes(TagQueue* q) {
-    int64_t ret = 0;
-
-    SDL_LockMutex(q->mutex);
-    ret = q->total_tag_bytes;
-    SDL_UnlockMutex(q->mutex);
-
-    return ret > 0 ? ret : 0;
-}
+//static int64_t TagQueue_get_total_bytes(TagQueue* q) {
+//    int64_t ret = 0;
+//
+//    SDL_LockMutex(q->mutex);
+//    ret = q->total_tag_bytes;
+//    SDL_UnlockMutex(q->mutex);
+//
+//    return ret > 0 ? ret : 0;
+//}
 
 
 #pragma mark LasStatistic
@@ -1393,7 +1393,7 @@ static int PlayList_read_thread(void* data) {
     GopReader* gop_reader = &playlist->gop_reader;
     TagQueue* tag_queue = &playlist->tag_queue;
 
-    int64_t ret = 0;
+    int ret = 0;
 
     while (!tag_queue->abort_request) {
         // change GopReader if needed
@@ -1408,7 +1408,7 @@ static int PlayList_read_thread(void* data) {
             break;
         }
         GopReader_init(gop_reader, rep, s, playlist);
-        ret = GopReader_download_gop(gop_reader, &playlist->multi_rate_adaption, playlist);
+        ret = (int)GopReader_download_gop(gop_reader, &playlist->multi_rate_adaption, playlist);
         if (ret < 0) {
             LasStatistic_on_rep_read_error(playlist->las_statistic, ret);
             break;
@@ -1810,13 +1810,13 @@ int parse_adapt_config(char* config_string, AdaptiveConfig* config, PlayList* pl
     return 0;
 }
 
-static int parse_int_from(cJSON* json, const char* key) {
-    cJSON* entry = cJSON_GetObjectItemCaseSensitive(json, key);
-    if (cJSON_IsNumber(entry)) {
-        return entry->valueint;
-    }
-    return 0;
-}
+//static int parse_int_from(cJSON* json, const char* key) {
+//    cJSON* entry = cJSON_GetObjectItemCaseSensitive(json, key);
+//    if (cJSON_IsNumber(entry)) {
+//        return entry->valueint;
+//    }
+//    return 0;
+//}
 
 #pragma mark las
 static int las_close(AVFormatContext* s) {

@@ -201,10 +201,10 @@ static GLboolean upload_Texture(IJK_GLES2_Renderer *renderer, void *texture)
         }
     }
     
-    upload_texture_use_IOSurface(pixel_buffer, renderer);
+    GLboolean uploaded = upload_texture_use_IOSurface(pixel_buffer, renderer);
     
     CVPixelBufferRelease(pixel_buffer);
-    return GL_TRUE;
+    return uploaded;
 }
 
 static CVPixelBufferRef getCVPixelBufferRef(SDL_VoutOverlay *overlay)
@@ -261,10 +261,9 @@ static GLboolean uploadSubtitle(IJK_GLES2_Renderer *renderer,void *subtitle)
     
     CVPixelBufferRef cvPixelRef = (CVPixelBufferRef)subtitle;
     CVPixelBufferRetain(cvPixelRef);
-    GLboolean ok = upload_texture_use_IOSurface(cvPixelRef, renderer);
+    GLboolean uploaded = upload_texture_use_IOSurface(cvPixelRef, renderer);
     CVPixelBufferRelease(cvPixelRef);
-    
-    return ok;
+    return uploaded;
 }
 
 IJK_GLES2_Renderer *IJK_GL_Renderer_create_common_vtb(SDL_VoutOverlay *overlay,IJK_SHADER_TYPE type,int openglVer)

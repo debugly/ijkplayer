@@ -91,6 +91,12 @@ typedef UITableView HudContentView;
     return self.view;
 }
 
+- (void)destroyContentView
+{
+    [self.view removeFromSuperview];
+    self.view = nil;
+}
+
 - (void)setHudValue:(NSString *)value forKey:(NSString *)key
 {
     HudViewCellData *data = nil;
@@ -107,6 +113,17 @@ typedef UITableView HudContentView;
 
     data.value = value;
     [self.tableView reloadData];
+}
+
+- (NSDictionary *)allHudItem
+{
+    NSMutableDictionary *dic = [NSMutableDictionary dictionary];
+    for (HudViewCellData *data in self.hudDataArray) {
+        if (data.key && data.value) {
+            [dic setValue:data.value forKey:data.key];
+        }
+    }
+    return [dic copy];
 }
 
 #if TARGET_OS_OSX

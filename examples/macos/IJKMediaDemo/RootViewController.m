@@ -18,9 +18,15 @@
 #import "AppDelegate.h"
 #import "MRProgressSlider.h"
 #import "MRBaseView.h"
+#import <IOKit/pwr_mgt/IOPMLib.h>
+
+static NSString* lastPlayedKey = @"__lastPlayedKey";
 
 @interface RootViewController ()<MRDragViewDelegate,SHBaseViewDelegate,NSMenuDelegate>
-
+{
+    FILE *my_stderr;
+    FILE *my_stdout;
+}
 @property (weak) IBOutlet NSView *moreView;
 @property (weak) IBOutlet NSLayoutConstraint *moreViewBottomCons;
 @property (assign) BOOL isMoreViewAnimating;
@@ -36,7 +42,6 @@
 @property (weak) IBOutlet NSButton *playCtrlBtn;
 @property (weak) IBOutlet MRProgressSlider *playerSlider;
 
-
 @property (nonatomic, strong) NSMutableArray *playList;
 @property (copy) NSURL *playingUrl;
 @property (weak) NSTimer *tickTimer;
@@ -48,7 +53,7 @@
 
 //for cocoa binding begin
 @property (assign) float volume;
-@property (assign) float subtitleFontSize;
+@property (assign) float subtitleFontRatio;
 @property (assign) float subtitleDelay;
 @property (assign) float subtitleMargin;
 
@@ -60,9 +65,17 @@
 @property (assign) int useAsyncVTB;
 @property (copy) NSString *fcc;
 @property (assign) int snapshot;
+
 //for cocoa binding end
 
+@property (assign) BOOL seeking;
 @property (weak) id eventMonitor;
+
+@property (assign) BOOL autoTest;
+//
+@property (assign) BOOL autoSeeked;
+@property (assign) BOOL snapshot2;
+@property (assign) int tickCount;
 
 @end
 
@@ -70,6 +83,12 @@
 
 - (void)dealloc
 {
+    if (self.tickTimer) {
+        [self.tickTimer invalidate];
+        self.tickTimer = nil;
+        self.tickCount = 0;
+    }
+    
     [NSEvent removeMonitor:self.eventMonitor];
 }
 
@@ -86,7 +105,7 @@
     self.moreView.layer.cornerRadius = 4;
     self.moreView.layer.masksToBounds = YES;
 
-    self.subtitleFontSize = 25;
+    self.subtitleFontRatio = 1.0;
     self.subtitleMargin = 0.7;
     self.fcc = @"fcc-_es2";
     self.useAsyncVTB = 0;
@@ -94,6 +113,7 @@
     self.snapshot = 3;
     self.volume = 0.4;
     [self onReset:nil];
+    [self reSetLoglevel:@"info"];
     
     NSArray *bundleNameArr = @[@"5003509-693880-3.m3u8",@"996747-5277368-31.m3u8"];
     
@@ -108,7 +128,7 @@
         baseView.delegate = self;
         baseView.needTracking = YES;
     }
-    
+
     __weakSelf__
     self.eventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent * _Nullable(NSEvent * _Nonnull theEvent) {
         __strongSelf__
@@ -119,19 +139,19 @@
     }];
     
     OBSERVER_NOTIFICATION(self, _playExplorerMovies:,kPlayExplorerMovieNotificationName_G, nil);
-    
+    OBSERVER_NOTIFICATION(self, _playNetMovies:,kPlayNetMovieNotificationName_G, nil);
     [self prepareRightMenu];
     
     [self.playerSlider onDraggedIndicator:^(double progress, MRProgressSlider * _Nonnull indicator, BOOL isEndDrag) {
         __strongSelf__
+        if (self.autoTest) {
+            self.autoSeeked = 1;
+        }
         [self seekTo:progress];
     }];
     
-#ifdef DEBUG
-    [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_INFO];
-#else
-    [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_WARN];
-#endif
+    self.playedTimeLb.stringValue = @"--:--";
+    self.durationTimeLb.stringValue = @"--:--";
 }
 
 - (void)prepareRightMenu
@@ -203,6 +223,26 @@
     }
 }
 
+- (void)_playNetMovies:(NSNotification *)notifi
+{
+    NSDictionary *info = notifi.userInfo;
+    NSArray *links = info[@"links"];
+    NSMutableArray *videos = [NSMutableArray array];
+    
+    for (NSString *link in links) {
+        NSURL *url = [NSURL URLWithString:link];
+        [videos addObject:url];
+    }
+    
+    if ([videos count] > 0) {
+        // 开始播放
+        [self.playList removeAllObjects];
+        [self.playList addObjectsFromArray:videos];
+        [self stopPlay:nil];
+        [self playFirstIfNeed];
+    }
+}
+
 - (void)switchMoreView:(BOOL)wantShow
 {
     float constant = wantShow ? 0 : - self.moreView.bounds.size.height;
@@ -235,31 +275,46 @@
     [self switchMoreView:!isShowing];
 }
 
+- (void)toggleTitleBar:(BOOL)show
+{
+    if (!show && !self.playingUrl) {
+        return;
+    }
+    
+    if (show == self.view.window.titlebarAppearsTransparent) {
+        self.view.window.titlebarAppearsTransparent = !show;
+        self.view.window.titleVisibility = show ? NSWindowTitleVisible : NSWindowTitleHidden;
+        [[self.view.window standardWindowButton:NSWindowCloseButton] setHidden:!show];
+        [[self.view.window standardWindowButton:NSWindowMiniaturizeButton] setHidden:!show];
+        [[self.view.window standardWindowButton:NSWindowZoomButton] setHidden:!show];
+        
+        [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
+            context.duration = 0.45;
+            self.playerCtrlPanel.animator.alphaValue = show ? 1.0 : 0.0;
+        }];
+    }
+}
+
 - (void)baseView:(SHBaseView *)baseView mouseEntered:(NSEvent *)event
 {
-    
-    [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
-        context.duration = 0.35;
-        self.playerCtrlPanel.animator.alphaValue = 1.0;
-        [[self.view.window standardWindowButton:NSWindowCloseButton] setHidden:NO];
-        [[self.view.window standardWindowButton:NSWindowMiniaturizeButton] setHidden:NO];
-        [[self.view.window standardWindowButton:NSWindowZoomButton] setHidden:NO];
-    }];
+    if ([event locationInWindow].y > self.view.bounds.size.height - 35) {
+        return;
+    }
+    [self toggleTitleBar:YES];
+}
+
+- (void)baseView:(SHBaseView *)baseView mouseMoved:(NSEvent *)event
+{
+    if ([event locationInWindow].y > self.view.bounds.size.height - 35) {
+        return;
+    }
+    [self toggleTitleBar:YES];
 }
 
 - (void)baseView:(SHBaseView *)baseView mouseExited:(NSEvent *)event
 {
     [self switchMoreView:NO];
-    if (self.playingUrl) {
-        [[self.view.window standardWindowButton:NSWindowCloseButton] setHidden:YES];
-        [[self.view.window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
-        [[self.view.window standardWindowButton:NSWindowZoomButton] setHidden:YES];
-        
-        [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
-            context.duration = 0.35;
-            self.playerCtrlPanel.animator.alphaValue = 0.0;
-        }];
-    }
+    [self toggleTitleBar:NO];
 }
 
 - (void)keyDown:(NSEvent *)event
@@ -327,6 +382,11 @@
                 [self toggleHUD:nil];
             }
                 break;
+            case kVK_ANSI_0:
+            {
+                self.autoTest = NO;
+            }
+                break;
             default:
             {
                 NSLog(@"0x%X",[event keyCode]);
@@ -389,6 +449,37 @@
     }
 }
 
+- (void)loadNASPlayList:(NSURL*)url
+{
+    NSString *nas_text = [[NSString alloc] initWithContentsOfFile:[url path] encoding:NSUTF8StringEncoding error:nil];
+    nas_text = [nas_text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSArray *lines = [nas_text componentsSeparatedByString:@"\n"];
+    NSString *host = [lines firstObject];
+    [self.playList removeAllObjects];
+    NSString *lastVideo = [[NSUserDefaults standardUserDefaults] objectForKey:lastPlayedKey];
+    NSURL *lastUrl = nil;
+    for (int i = 1; i < lines.count; i++) {
+        NSString *path = lines[i];
+        if (!path || [path length] == 0 || [path hasPrefix:@"#"]) {
+            continue;
+        }
+        
+        NSString *urlStr = [host stringByAppendingString:path];
+        NSURL *url = [NSURL URLWithString:urlStr];
+        [self.playList addObject:url];
+        
+        if (lastVideo && !lastUrl && [path containsString:lastVideo]) {
+            lastUrl = url;
+        }
+    }
+    if (lastUrl) {
+        [self stopPlay:nil];
+        [self playURL:lastUrl];
+    } else {
+        [self playFirstIfNeed];
+    }
+}
+
 - (NSMutableArray *)playList
 {
     if (!_playList) {
@@ -399,14 +490,50 @@
 
 - (void)perpareIJKPlayer:(NSURL *)url
 {
+    if (self.playingUrl) {
+        [self stopPlay:nil];
+    }
+    
+    self.playingUrl = url;
+    
+    if (my_stdout) {
+        fflush(my_stdout);
+        fclose(my_stdout);
+        my_stdout = NULL;
+    }
+    if (my_stderr) {
+        fflush(my_stderr);
+        fclose(my_stderr);
+        my_stderr = NULL;
+    }
+    
+    if (self.autoTest) {
+        
+        [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_INFO];
+        
+        NSString *dir = [self dirForCurrentPlayingUrl];
+        NSString *movieName = [[url absoluteString] lastPathComponent];
+        NSString *fileName = [NSString stringWithFormat:@"%@.txt",movieName];
+        NSString *filePath = [dir stringByAppendingPathComponent:fileName];
+        
+        my_stdout = freopen([filePath cStringUsingEncoding:NSASCIIStringEncoding], "a+", stdout);
+        my_stderr = freopen([filePath cStringUsingEncoding:NSASCIIStringEncoding], "a+", stderr);
+        
+        self.autoSeeked = NO;
+        self.snapshot2 = NO;
+    }
+    
     IJKFFOptions *options = [IJKFFOptions optionsByDefault];
     //视频帧处理不过来的时候丢弃一些帧达到同步的效果
     [options setPlayerOptionIntValue:1 forKey:@"framedrop"];
-    [options setPlayerOptionIntValue:16      forKey:@"video-pictq-size"];
+    [options setPlayerOptionIntValue:6      forKey:@"video-pictq-size"];
     //    [options setPlayerOptionIntValue:50000      forKey:@"min-frames"];
-    //    [options setPlayerOptionIntValue:50*1024*1024      forKey:@"max-buffer-size"];
-    [options setPlayerOptionIntValue:30     forKey:@"max-fps"];
+    [options setPlayerOptionIntValue:119     forKey:@"max-fps"];
     [options setPlayerOptionIntValue:1      forKey:@"packet-buffering"];
+    
+    if ([url isFileURL]) {
+        [options setPlayerOptionIntValue:10*1024*1024      forKey:@"max-buffer-size"];
+    }
     
 //    [options setPlayerOptionValue:@"fcc-bgra"        forKey:@"overlay-format"];
 //    [options setPlayerOptionValue:@"fcc-bgr0"        forKey:@"overlay-format"];
@@ -419,8 +546,8 @@
     [options setPlayerOptionValue:self.fcc forKey:@"overlay-format"];
     [options setPlayerOptionIntValue:self.useVideoToolBox forKey:@"videotoolbox"];
     [options setPlayerOptionIntValue:self.useAsyncVTB forKey:@"videotoolbox-async"];
+    options.showHudView = YES;
     
-    [self stopPlay:nil];
     [NSDocumentController.sharedDocumentController noteNewRecentDocumentURL:url];
     self.player = [[IJKFFMoviePlayerController alloc] initWithContentURL:url withOptions:options];
     CGRect rect = self.view.frame;
@@ -431,20 +558,35 @@
     playerView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [self.view addSubview:playerView positioned:NSWindowBelow relativeTo:nil];
     
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMediaPlaybackIsPreparedToPlayDidChangeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerPreparedToPlay:) name:IJKMPMediaPlaybackIsPreparedToPlayDidChangeNotification object:self.player];
     
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerSelectedStreamDidChangeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerPreparedToPlay:) name:IJKMPMoviePlayerSelectedStreamDidChangeNotification object:self.player];
     
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerPlaybackDidFinishNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerDidFinish:) name:IJKMPMoviePlayerPlaybackDidFinishNotification object:self.player];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMovieNoCodecFoundNotification object:nil];
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerCouldNotFindCodec:) name:IJKMPMovieNoCodecFoundNotification object:self.player];
     
-    self.player.scalingMode = IJKMPMovieScalingModeAspectFit;
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerNaturalSizeAvailable:) name:IJKMPMovieNaturalSizeAvailableNotification object:self.player];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerAfterSeekFirstVideoFrameDisplay:) name:IJKMPMoviePlayerAfterSeekFirstVideoFrameDisplayNotification object:self.player];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerOpenInput:) name:IJKMPMoviePlayerOpenInputNotification object:self.player];
+    
+    self.kvoCtrl = [[IJKKVOController alloc] initWithTarget:self.player.monitor];
+    [self.kvoCtrl safelyAddObserver:self forKeyPath:@"vdecoder" options:NSKeyValueObservingOptionNew context:nil];
     self.player.shouldAutoplay = YES;
     [self onVolumeChange:nil];
+}
+
+- (void)ijkPlayerOpenInput:(NSNotification *)notifi
+{
+    NSLog(@"demuxer:%@",notifi.userInfo[@"name"]);
+}
+
+- (void)ijkPlayerAfterSeekFirstVideoFrameDisplay:(NSNotification *)notifi
+{
+    NSLog(@"seek cost time:%@ms",notifi.userInfo[@"du"]);
+    self.seeking = NO;
 }
 
 - (void)ijkPlayerCouldNotFindCodec:(NSNotification *)notifi
@@ -452,14 +594,84 @@
     NSLog(@"找不到解码器，联系开发小帅锅：%@",notifi.userInfo);
 }
 
+- (void)ijkPlayerNaturalSizeAvailable:(NSNotification *)notifi
+{
+    if (self.player == notifi.object) {
+        CGSize videoSize = NSSizeFromString(notifi.userInfo[@"size"]);
+        if (!CGSizeEqualToSize(self.view.window.aspectRatio, videoSize)) {
+            
+            [self.view.window setAspectRatio:videoSize];
+            CGRect rect = self.view.window.frame;
+            
+            if (videoSize.width > videoSize.height) {
+                rect.size.width = rect.size.height / videoSize.height * videoSize.width;
+            } else {
+                rect.size.height = rect.size.width / videoSize.width * videoSize.height;
+            }
+            
+            [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
+                [self.view.window.animator setFrame:CGRectIntegral(rect) display:YES];
+            }];
+        }
+    }
+}
+
 - (void)ijkPlayerDidFinish:(NSNotification *)notifi
 {
     if (self.player == notifi.object) {
         int reason = [notifi.userInfo[IJKMPMoviePlayerPlaybackDidFinishReasonUserInfoKey] intValue];
         if (IJKMPMovieFinishReasonPlaybackError == reason) {
-            int errCode = [notifi.userInfo[@"error"] intValue];
+            int errCode = [notifi.userInfo[@"code"] intValue];
             NSLog(@"播放出错:%d",errCode);
-            [self.player stop];
+            if (self.autoTest) {
+                NSString *dir = [self saveDir:nil];
+                NSString *fileName = [NSString stringWithFormat:@"a错误汇总.txt"];
+                NSString *filePath = [dir stringByAppendingPathComponent:fileName];
+                FILE *pf = fopen([filePath UTF8String], "a+");
+                fprintf(pf, "%d:%s\n",errCode,[[self.playingUrl absoluteString]UTF8String]);
+                fflush(pf);
+                fclose(pf);
+                
+                //-5 网络错误
+                if (errCode != -5) {
+                    [self playNext:nil];
+                }
+            } else {
+                NSAlert *alert = [[NSAlert alloc] init];
+                NSString *urlString = [self.player.contentURL isFileURL] ? [self.player.contentURL path] : [self.player.contentURL absoluteString];
+                alert.informativeText = urlString;
+                
+                alert.messageText = [NSString stringWithFormat:@"%@(%d)",notifi.userInfo[@"msg"],errCode];
+                
+                if ([self.playList count] > 1) {
+                    [alert addButtonWithTitle:@"Next"];
+                }
+                [alert addButtonWithTitle:@"Retry"];
+                [alert addButtonWithTitle:@"OK"];
+                [alert beginSheetModalForWindow:self.view.window completionHandler:^(NSModalResponse returnCode) {
+                    if ([[alert buttons] count] == 3) {
+                        if (returnCode == NSAlertFirstButtonReturn) {
+                            [self playNext:nil];
+                        } else if (returnCode == NSAlertSecondButtonReturn) {
+                            //retry
+                            NSURL *url = self.playingUrl;
+                            [self stopPlay:nil];
+                            [self playURL:url];
+                        } else {
+                            //
+                        }
+                    } else if ([[alert buttons] count] == 2) {
+                        if (returnCode == NSAlertFirstButtonReturn) {
+                            //retry
+                            NSURL *url = self.playingUrl;
+                            [self stopPlay:nil];
+                            [self playURL:url];
+                        } else if (returnCode == NSAlertSecondButtonReturn) {
+                            //
+                        }
+                    }
+                }];
+            }
         } else if (IJKMPMovieFinishReasonPlaybackEnded == reason) {
             NSLog(@"播放结束");
             [self playNext:nil];
@@ -489,6 +701,7 @@
             NSString *type = stream[k_IJKM_KEY_TYPE];
             int streamIdx = [stream[k_IJKM_KEY_STREAM_IDX] intValue];
             if ([type isEqualToString:k_IJKM_VAL_TYPE__SUBTITLE]) {
+                NSLog(@"subtile all meta:%@",stream);
                 NSString *url = stream[k_IJKM_KEY_EX_SUBTITLE_URL];
                 NSString *title = nil;
                 if (url) {
@@ -508,6 +721,7 @@
                 }
                 [self.subtitlePopUpBtn addItemWithTitle:title];
             } else if ([type isEqualToString:k_IJKM_VAL_TYPE__AUDIO]) {
+                NSLog(@"audio all meta:%@",stream);
                 NSString *title = stream[k_IJKM_KEY_TITLE];
                 if (title.length == 0) {
                     title = stream[k_IJKM_KEY_LANGUAGE];
@@ -521,6 +735,7 @@
                 }
                 [self.audioPopUpBtn addItemWithTitle:title];
             } else if ([type isEqualToString:k_IJKM_VAL_TYPE__VIDEO]) {
+                NSLog(@"video all meta:%@",stream);
                 NSString *title = stream[k_IJKM_KEY_TITLE];
                 if (title.length == 0) {
                     title = stream[k_IJKM_KEY_LANGUAGE];
@@ -544,24 +759,31 @@
 - (void)playURL:(NSURL *)url
 {
     [self perpareIJKPlayer:url];
-    self.playingUrl = url;
-
-    NSString *title = [url isFileURL] ? [url path] : [[url resourceSpecifier] lastPathComponent];
+    NSString *videoName = [url isFileURL] ? [url path] : [[url resourceSpecifier] lastPathComponent];
+    
+    NSInteger idx = [self.playList indexOfObject:self.playingUrl] + 1;
+    
+    [[NSUserDefaults standardUserDefaults] setObject:videoName forKey:lastPlayedKey];
+    
+    NSString *title = [NSString stringWithFormat:@"(%ld/%ld)%@",(long)idx,[[self playList] count],videoName];
     [self.view.window setTitle:title];
     
     [self onReset:nil];
+    self.playCtrlBtn.state = NSControlStateValueOn;
     
     IJKSDLSubtitlePreference p = self.player.view.subtitlePreference;
     p.bottomMargin = self.subtitleMargin;
     self.player.view.subtitlePreference = p;
     
-    if (!self.tickTimer) {
-        self.tickTimer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(onTick:) userInfo:nil repeats:YES];
+    if (self.tickTimer) {
+        [self.tickTimer invalidate];
+        self.tickTimer = nil;
+        self.tickCount = 0;
     }
     
+    self.tickTimer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(onTick:) userInfo:nil repeats:YES];
+    
     [self.player prepareToPlay];
-    self.kvoCtrl = [[IJKKVOController alloc] initWithTarget:self.player.monitor];
-    [self.kvoCtrl safelyAddObserver:self forKeyPath:@"vdecoder" options:NSKeyValueObservingOptionNew context:nil];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context
@@ -573,10 +795,28 @@
     }
 }
 
+static IOPMAssertionID g_displaySleepAssertionID;
+
+- (void)enableComputerSleep:(BOOL)enable
+{
+    if (!g_displaySleepAssertionID && !enable)
+    {
+        NSLog(@"enableComputerSleep:NO");
+        IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep, kIOPMAssertionLevelOn,
+                                    (__bridge CFStringRef)[[NSBundle mainBundle] bundleIdentifier],&g_displaySleepAssertionID);
+    }
+    else if (g_displaySleepAssertionID && enable)
+    {
+        NSLog(@"enableComputerSleep:YES");
+        IOPMAssertionRelease(g_displaySleepAssertionID);
+        g_displaySleepAssertionID = 0;
+    }
+}
+
 - (void)onTick:(NSTimer *)sender
 {
-    if (self.player) {
-        
+    if ([self.player isPlaying]) {
+        self.tickCount ++;
         long interval = (long)self.player.currentPlaybackTime;
         long duration = self.player.monitor.duration / 1000;
         self.playedTimeLb.stringValue = [NSString stringWithFormat:@"%02d:%02d",(int)(interval/60),(int)(interval%60)];
@@ -584,10 +824,36 @@
         self.playerSlider.currentValue = interval;
         self.playerSlider.minValue = 0;
         self.playerSlider.maxValue = duration;
-    } else {
-        self.playedTimeLb.stringValue = @"--:--";
-        self.durationTimeLb.stringValue = @"--:--";
-        [sender invalidate];
+        
+        if (self.autoTest) {
+            //auto seek
+            if (duration > 0) {
+                if (interval >= 10) {
+                    if (!self.autoSeeked) {
+                        NSLog(@"\n-----------\n%@\n-----------\n",[self.player allHudItem]);
+                        [self onCaptureShot:nil];
+                        [self seekTo:duration - 10];
+                        self.autoSeeked = YES;
+                    }
+                    
+                    if (interval > duration - 5) {
+                        if (!self.snapshot2) {
+                            NSLog(@"\n-----------\n%@\n-----------\n",[self.player allHudItem]);
+                            [self onCaptureShot:nil];
+                            self.snapshot2 = YES;
+                        }
+                    }
+                }
+            }
+            
+            if (self.tickCount >= 60) {
+                NSLog(@"\nwtf? why played %ds\n",self.tickCount);
+                NSLog(@"\n-----------\n%@\n-----------\n",[self.player allHudItem]);
+                [self onCaptureShot:nil];
+                [self playNext:nil];
+            }
+        }
+        [self enableComputerSleep:NO];
     }
 }
 
@@ -607,6 +873,16 @@
 {
     NSMutableArray *videos = [NSMutableArray array];
     NSMutableArray *subtitles = [NSMutableArray array];
+    
+    if (bookmarkArr.count == 1) {
+        NSDictionary *dic = bookmarkArr[0];
+        NSURL *url = dic[@"url"];
+        if ([[[url pathExtension] lowercaseString] isEqualToString:@"xlist"]) {
+            self.autoTest = YES;
+            [self loadNASPlayList:url];
+            return;
+        }
+    }
     
     for (NSDictionary *dic in bookmarkArr) {
         NSURL *url = dic[@"url"];
@@ -717,7 +993,9 @@
     
     if (self.playingUrl) {
         if (self.playCtrlBtn.state == NSControlStateValueOff) {
+            [self enableComputerSleep:YES];
             [self.player pause];
+            [self toggleTitleBar:YES];
         } else {
             [self.player play];
         }
@@ -738,6 +1016,15 @@
 
 - (void)stopPlay:(NSButton *)sender
 {
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMediaPlaybackIsPreparedToPlayDidChangeNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerSelectedStreamDidChangeNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerPlaybackDidFinishNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMovieNoCodecFoundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMovieNaturalSizeAvailableNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerAfterSeekFirstVideoFrameDisplayNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerOpenInputNotification object:nil];
+
+    [self.kvoCtrl safelyRemoveAllObservers];
     if (self.player) {
         [self.player.view removeFromSuperview];
         [self.player pause];
@@ -745,11 +1032,21 @@
         self.player = nil;
     }
     
+    if (self.tickTimer) {
+        [self.tickTimer invalidate];
+        self.tickTimer = nil;
+        self.tickCount = 0;
+    }
+    
     if (self.playingUrl) {
         self.playingUrl = nil;
     }
     
     [self.view.window setTitle:@""];
+    self.playedTimeLb.stringValue = @"--:--";
+    self.durationTimeLb.stringValue = @"--:--";
+    [self enableComputerSleep:YES];
+    self.playCtrlBtn.state = NSControlStateValueOff;
 }
 
 - (IBAction)playPrevious:(NSButton *)sender
@@ -774,10 +1071,20 @@
 - (IBAction)playNext:(NSButton *)sender
 {
     if ([self.playList count] == 0) {
+        [self stopPlay:nil];
         return;
     }
     
     NSUInteger idx = [self.playList indexOfObject:self.playingUrl];
+    //when autotest not loop
+    if (self.autoTest && idx == self.playList.count - 1) {
+        [self stopPlay:nil];
+        self.autoTest = NO;
+        [self.playList removeAllObjects];
+        [[NSUserDefaults standardUserDefaults] removeObjectForKey:lastPlayedKey];
+        return;
+    }
+    
     if (idx == NSNotFound) {
         idx = 0;
     } else if (idx >= [self.playList count] - 1) {
@@ -792,6 +1099,11 @@
 
 - (void)seekTo:(float)cp
 {
+    if (self.seeking) {
+        NSLog(@"xql ignore seek.");
+        return;
+    }
+    self.seeking = YES;
     if (cp < 0) {
         cp = 0;
     }
@@ -822,7 +1134,6 @@
     self.player.playbackVolume = self.volume;
 }
 
-
 #pragma mark 倍速设置
 
 - (void)updateSpeed:(NSButton *)sender
@@ -841,27 +1152,31 @@
     IJKSDLSubtitlePreference p = self.player.view.subtitlePreference;
     p.color = bgrValue;
     self.player.view.subtitlePreference = p;
-    [self.player.view setNeedsRefreshCurrentPic];
+    if (!self.player.isPlaying) {
+        [self.player.view setNeedsRefreshCurrentPic];
+    }
 }
 
 - (IBAction)onChangeSubtitleSize:(NSStepper *)sender
 {
     IJKSDLSubtitlePreference p = self.player.view.subtitlePreference;
-    p.fontSize = sender.intValue;
+    p.ratio = sender.floatValue;
     self.player.view.subtitlePreference = p;
-    [self.player.view setNeedsRefreshCurrentPic];
+    if (!self.player.isPlaying) {
+        [self.player.view setNeedsRefreshCurrentPic];
+    }
 }
 
 - (IBAction)onSelectSubtitle:(NSPopUpButton*)sender
 {
-    NSString *title = sender.selectedItem.title;
-    NSArray *items = [title componentsSeparatedByString:@"-"];
-    if ([items count] == 2) {
-        int idx = [[items lastObject] intValue];
-        NSLog(@"SelectSubtitle:%d",idx);
-        [self.player exchangeSelectedStream:idx];
-    } else {
+    if (sender.indexOfSelectedItem == 0) {
         [self.player closeCurrentStream:k_IJKM_VAL_TYPE__SUBTITLE];
+    } else {
+        NSString *title = sender.selectedItem.title;
+        NSArray *items = [title componentsSeparatedByString:@"-"];
+        int idx = [[items lastObject] intValue];
+        NSLog(@"SelectSubtitleTrack:%d",idx);
+        [self.player exchangeSelectedStream:idx];
     }
 }
 
@@ -876,7 +1191,9 @@
     IJKSDLSubtitlePreference p = self.player.view.subtitlePreference;
     p.bottomMargin = sender.floatValue;
     self.player.view.subtitlePreference = p;
-    [self.player.view setNeedsRefreshCurrentPic];
+    if (!self.player.isPlaying) {
+        [self.player.view setNeedsRefreshCurrentPic];
+    }
 }
 
 #pragma mark 画面设置
@@ -933,14 +1250,34 @@
     NSLog(@"rotate:%@ %d",@[@"None",@"X",@"Y",@"Z"][preference.type],(int)preference.degrees);
 }
 
+- (NSString *)saveDir:(NSString *)subDir
+{
+    NSArray *subDirs = nil;
+    if (self.autoTest) {
+        subDirs = subDir ? @[@"auto-test",subDir] : @[@"auto-test"];
+    } else {
+        subDirs = subDir ? @[@"ijkPro",subDir] : @[@"ijkPro"];
+    }
+    NSString * path = [NSFileManager mr_DirWithType:NSPicturesDirectory WithPathComponents:subDirs];
+    return path;
+}
+
+- (NSString *)dirForCurrentPlayingUrl
+{
+    if ([self.playingUrl isFileURL]) {
+        return [self saveDir:[[self.playingUrl path] lastPathComponent]];
+    }
+    return [self saveDir:[[self.playingUrl path] stringByDeletingLastPathComponent]];
+}
+
 - (IBAction)onCaptureShot:(id)sender
 {
     CGImageRef img = [self.player.view snapshot:self.snapshot];
     if (img) {
-        //,[self.playingUrl lastPathComponent]
-        NSString * path = [NSFileManager mr_DirWithType:NSPicturesDirectory WithPathComponents:@[@"ijkPro"]];
-        NSString *fileName = [NSString stringWithFormat:@"%ld.jpg",(long)CFAbsoluteTimeGetCurrent()];
-        NSString *filePath = [path stringByAppendingPathComponent:fileName];
+        NSString * dir = [self dirForCurrentPlayingUrl];
+        NSString *movieName = [[self.playingUrl absoluteString] lastPathComponent];
+        NSString *fileName = [NSString stringWithFormat:@"%@-%ld.jpg",movieName,(long)CFAbsoluteTimeGetCurrent()];
+        NSString *filePath = [dir stringByAppendingPathComponent:fileName];
         NSLog(@"截屏:%@",filePath);
         [MRUtil saveImageToFile:img path:filePath];
     }
@@ -1048,6 +1385,44 @@
     } else if (r == -4) {
         NSLog(@"exchange decoder faild.");
     }
+}
+
+#pragma mark 日志级别
+
+- (int)levelWithString:(NSString *)str
+{
+    str = [str lowercaseString];
+    if ([str isEqualToString:@"default"]) {
+        return k_IJK_LOG_DEFAULT;
+    } else if ([str isEqualToString:@"verbose"]) {
+        return k_IJK_LOG_VERBOSE;
+    } else if ([str isEqualToString:@"debug"]) {
+        return k_IJK_LOG_DEBUG;
+    } else if ([str isEqualToString:@"info"]) {
+        return k_IJK_LOG_INFO;
+    } else if ([str isEqualToString:@"warn"]) {
+        return k_IJK_LOG_WARN;
+    } else if ([str isEqualToString:@"error"]) {
+        return k_IJK_LOG_ERROR;
+    } else if ([str isEqualToString:@"fatal"]) {
+        return k_IJK_LOG_FATAL;
+    } else if ([str isEqualToString:@"silent"]) {
+        return k_IJK_LOG_SILENT;
+    } else {
+        return k_IJK_LOG_UNKNOWN;
+    }
+}
+
+- (void)reSetLoglevel:(NSString *)loglevel
+{
+    int level = [self levelWithString:loglevel];
+    [IJKFFMoviePlayerController setLogLevel:level];
+}
+
+- (IBAction)onChangeLogLevel:(NSPopUpButton*)sender
+{
+    NSString *title = sender.selectedItem.title;
+    [self reSetLoglevel:title];
 }
 
 @end

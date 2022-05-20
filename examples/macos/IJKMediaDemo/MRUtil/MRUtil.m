@@ -15,11 +15,28 @@
 
 + (NSArray <NSString *>*)audioType
 {
+    //https://samplerateconverter.com/educational/dsd-dsf-dff-audio
+    //https://filesamples.com/categories/audio
+    //https://software-download.name/sample-amr-audio-file/download.html
     return @[
+        @"dsf",
+        @"flac",
+        @"wav",
+        @"ape",
+        @"dff",
+        @"dts",
+        @"aac",
+        @"ac3",
+        @"amr",
+        @"wma",
+        @"mp2",
         @"mp3",
         @"m4a",
-        @"aac",
-        @"ogg"
+        @"m4r",
+        @"caf",
+        @"ogg",
+        @"oga",
+        @"opus"
         ];
 }
 
@@ -29,7 +46,9 @@
         @"srt",
         @"ass",
         @"ssa",
-        @"vtt"
+        @"vtt",
+        @"webvtt",
+        @"lrc"
         ];
 }
 

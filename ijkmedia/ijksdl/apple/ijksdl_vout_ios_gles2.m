@@ -28,7 +28,22 @@
 #include "ijksdl/ijksdl_vout_internal.h"
 #include "ijksdl_vout_overlay_ffmpeg.h"
 #include "ijksdl_vout_overlay_videotoolbox.h"
-#import "IJKSDLGLView.h"
+#if TARGET_OS_IOS
+#include "../ios/IJKSDLGLView.h"
+#else
+#include "../mac/IJKSDLGLView.h"
+#endif
+
+@implementation IJKSDLSubtitle
+
+- (void)dealloc
+{
+    if (_pixels) {
+        av_freep((void *)&_pixels);
+    }
+}
+
+@end
 
 typedef struct SDL_VoutSurface_Opaque {
     SDL_Vout *vout;
@@ -36,8 +51,7 @@ typedef struct SDL_VoutSurface_Opaque {
 
 struct SDL_Vout_Opaque {
     __strong GLView<IJKSDLGLViewProtocol> *gl_view;
-    const char * subtitle;
-    IJKSDLSubtitlePicture * subtitlePict;
+    IJKSDLSubtitle *sub;
 };
 
 static SDL_VoutOverlay *vout_create_overlay_l(int width, int height, int frame_format, SDL_Vout *vout)
@@ -66,20 +80,8 @@ static void vout_free_l(SDL_Vout *vout)
 
     SDL_Vout_Opaque *opaque = vout->opaque;
     if (opaque) {
-        if (opaque->gl_view) {
-            // TODO: post to MainThread?
-            opaque->gl_view = nil;
-        }
-        
-        if (opaque->subtitle) {
-            av_freep((void *)&opaque->subtitle);
-        }
-        
-        if (opaque->subtitlePict) {
-            if (opaque->subtitlePict->data)
-                av_freep((void *)&opaque->subtitlePict->data);
-            av_freep((void *)&opaque->subtitlePict);
-        }
+        opaque->gl_view = nil;
+        opaque->sub = nil;
     }
 
     SDL_Vout_FreeInternal(vout);
@@ -132,7 +134,7 @@ static int vout_display_overlay_l(SDL_Vout *vout, SDL_VoutOverlay *overlay)
             [gl_view display_pixels:&ijk_overlay];
         }
     } else {
-        [gl_view display:overlay subtitle:opaque->subtitle subPict:opaque->subtitlePict];
+        [gl_view display:overlay subtitle:opaque->sub];
     }
     return 0;
 }
@@ -154,43 +156,44 @@ static void vout_update_subtitle(SDL_Vout *vout, const char *text)
         return;
     }
     
-    if (opaque->subtitle) {
-        av_freep((void *)&opaque->subtitle);
-    }
-    
-    if (opaque->subtitlePict) {
-        if (opaque->subtitlePict->data)
-            av_freep((void *)&opaque->subtitlePict->data);
-        av_freep((void *)&opaque->subtitlePict);
-    }
+    opaque->sub = nil;
     
     if (!text || strlen(text) == 0) {
         return;
     }
     
-    opaque->subtitle = av_strdup(text);
+    IJKSDLSubtitle *sub = [[IJKSDLSubtitle alloc]init];
+    sub.text = [[NSString alloc] initWithUTF8String:text];
+    opaque->sub = sub;
 }
 
-static uint32_t* copy_pal8_to_bgra(const AVSubtitleRect* rect)
+static uint8_t* copy_pal8_to_bgra(const AVSubtitleRect* rect)
 {
-    size_t size = rect->w * rect->h * 4; /* times 4 because 4 bytes per pixel */
-    uint32_t colours[255];
-    uint32_t *buff = NULL;
-    
-    buff = av_malloc(size);
+    const int buff_size = rect->w * rect->h * 4; /* times 4 because 4 bytes per pixel */
+    uint32_t *buff = av_malloc((size_t)buff_size);
     if (buff == NULL) {
         ALOGE("Error allocating memory for subtitle bitmap.\n");
         return NULL;
     }
     
-    for (int i = 0; i < 256; ++i) {
-        /* Colour conversion. */
-        int idx = i * 4; /* again, 4 bytes per pixel */
-        uint8_t r = rect->data[1][idx],
-        g = rect->data[1][idx + 1],
-        b = rect->data[1][idx + 2],
-        a = rect->data[1][idx + 3];
-        colours[i] = (b << 24) | (g << 16) | (r << 8) | a;
+    //AV_PIX_FMT_RGB32 is handled in an endian-specific manner. An RGBA color is put together as: (A << 24) | (R << 16) | (G << 8) | B
+    //This is stored as BGRA on little-endian CPU architectures and ARGB on big-endian CPUs.
+    
+    uint32_t colors[256];
+    
+    uint8_t *bgra = rect->data[1];
+    if (bgra) {
+        for (int i = 0; i < 256; ++i) {
+            /* Colour conversion. */
+            int idx = i * 4; /* again, 4 bytes per pixel */
+            uint8_t a = bgra[idx],
+            r = bgra[idx + 1],
+            g = bgra[idx + 2],
+            b = bgra[idx + 3];
+            colors[i] = (b << 24) | (g << 16) | (r << 8) | a;
+        }
+    } else {
+        bzero(colors, 256);
     }
     
     for (int y = 0; y < rect->h; ++y) {
@@ -198,28 +201,16 @@ static uint32_t* copy_pal8_to_bgra(const AVSubtitleRect* rect)
             /* 1 byte per pixel */
             int coordinate = x + y * rect->linesize[0];
             /* 32bpp color table */
-            int idx = rect->data[0][coordinate];
-            buff[x + (y * rect->w)] = colours[idx];
+            int pos = rect->data[0][coordinate];
+            if (pos < 256) {
+                buff[x + (y * rect->w)] = colors[pos];
+            } else {
+                printf("%d\n",pos);
+            }
         }
     }
     
-    return buff;
-}
-
-static void vout_copy_subtitle_picture(IJKSDLSubtitlePicture **dst, const AVSubtitleRect *rect)
-{
-    (*dst)->x = rect->x;
-    (*dst)->y = rect->y;
-    (*dst)->w = rect->w;
-    (*dst)->h = rect->h;
-    (*dst)->nb_colors = rect->nb_colors;
-    
-    /// the graphic subtitles' bitmap with pixel format AV_PIX_FMT_PAL8,
-    /// https://ffmpeg.org/doxygen/trunk/pixfmt_8h.html#a9a8e335cf3be472042bc9f0cf80cd4c5
-    /// need to be converted to BGRA32 before use
-    (*dst)->data[0] = (uint8_t*)copy_pal8_to_bgra(rect);
-    /// PAL8 to BGRA32, bytes per line increased by multiplied 4
-    (*dst)->linesize[0] = rect->linesize[0] * 4;
+    return (uint8_t*)buff;
 }
 
 static void vout_update_subtitle_picture(SDL_Vout *vout, const AVSubtitleRect *rect)
@@ -228,23 +219,21 @@ static void vout_update_subtitle_picture(SDL_Vout *vout, const AVSubtitleRect *r
     if (!opaque) {
         return;
     }
+    opaque->sub = nil;
     
-    if (opaque->subtitle) {
-        av_freep((void *)&opaque->subtitle);
+    if (!rect) {
+        return;
     }
     
-    if (opaque->subtitlePict) {
-        for (int i = 0; i < 4; i++) {
-            if (opaque->subtitlePict->data[i])
-                av_freep((void *)&opaque->subtitlePict->data[i]);
-        }
-        av_freep((void *)&opaque->subtitlePict);
-    }
-    
-    IJKSDLSubtitlePicture *pict = av_mallocz(sizeof(IJKSDLSubtitlePicture));
-    vout_copy_subtitle_picture(&pict, rect);
-    
-    opaque->subtitlePict = pict;
+    IJKSDLSubtitle *sub = [[IJKSDLSubtitle alloc]init];
+    /// the graphic subtitles' bitmap with pixel format AV_PIX_FMT_PAL8,
+    /// https://ffmpeg.org/doxygen/trunk/pixfmt_8h.html#a9a8e335cf3be472042bc9f0cf80cd4c5
+    /// need to be converted to BGRA32 before use
+    /// PAL8 to BGRA32, bytes per line increased by multiplied 4
+    sub.w = rect->w;
+    sub.h = rect->h;
+    sub.pixels = copy_pal8_to_bgra(rect);
+    opaque->sub = sub;
 }
 
 SDL_Vout *SDL_VoutIos_CreateForGLES2()
@@ -255,7 +244,7 @@ SDL_Vout *SDL_VoutIos_CreateForGLES2()
 
     SDL_Vout_Opaque *opaque = vout->opaque;
     opaque->gl_view = nil;
-    opaque->subtitle = NULL;
+    opaque->sub = NULL;
     vout->create_overlay = vout_create_overlay;
     vout->free_l = vout_free_l;
     vout->display_overlay = vout_display_overlay;

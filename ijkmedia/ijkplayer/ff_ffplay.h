@@ -32,6 +32,7 @@
 void      ffp_global_init(void);
 void      ffp_global_uninit(void);
 void      ffp_global_set_log_report(int use_report);
+int       ffp_global_get_log_level(void);
 void      ffp_global_set_log_level(int log_level);
 void      ffp_global_set_inject_callback(ijk_inject_callback cb);
 void      ffp_io_stat_register(void (*cb)(const char *url, int type, int bytes));

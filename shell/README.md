@@ -45,19 +45,20 @@ At present MRFFToolChain contained OpenSSL、FFmpeg 、Lame、X264、Fdk-aac、l
 └── tools           #初始化仓库依赖的脚本
     ├── env_assert.sh
     ├── init-repo.sh
-    ├── pull-repo-base.sh
-    └── pull-repo-ref.sh
+    └── copy-local-repo.sh
 ```
 
 ## Init Lib Repo
 
-脚本参数比较灵活，可根据需要搭配使用
+脚本参数比较灵活，可根据需要搭配使用，常用方式举例：
 
 ```
 #准备 iOS 和 macOS 平台所有库的源码
 ./init-all.sh all
 #准备 iOS 平台源码所有库的源码
 ./init-all.sh ios
+#准备 iOS 平台x86架构下所有库的源码
+./init-all.sh ios all x86_64
 #准备 macOS 平台源码所有库的源码
 /init-all.sh macos
 #准备 ios 平台的某些库的源码
@@ -65,7 +66,7 @@ At present MRFFToolChain contained OpenSSL、FFmpeg 、Lame、X264、Fdk-aac、l
 #准备 macOS 平台的某些库的源码
 /init-all.sh macos "openssl ffmpeg"
 #准备 iOS 和 macOS 平台的某些库的源码
-/init-all.sh macos "openssl ffmpeg"
+/init-all.sh all "openssl ffmpeg"
 ```
 
 ## Compile

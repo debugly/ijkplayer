@@ -21,9 +21,11 @@
 # ./init-any.sh ios "ffmpeg"
 # ./init-any.sh ios "ffmpeg opus"
 # ./init-any.sh ios "ffmpeg opus libyuv"
+# ./init-any.sh ios all x86_64
 
 PLAT=$1
 LIBS=$2
+ARCH=$3
 
 set -e
 
@@ -36,7 +38,7 @@ function usage()
     echo "  $0 [ios,macos,windows] [fdk-aac|ffmpeg|lame|libyuv|openssl|opus|x264]"
 }
 
-if [[ "x$LIBS" == "x" ]]; then
+if [[ "x$LIBS" == "x" || "$LIBS" == "all" ]]; then
     LIBS=$(ls init-cfgs)
 fi
 
@@ -45,7 +47,7 @@ if [[ "$PLAT" == 'ios' || "$PLAT" == 'macos' || "$PLAT" == 'windows' ]]; then
     do
         echo "===[init $lib]===================="
         source $c_dir/init-cfgs/$lib
-        $c_dir/tools/init-repo.sh "$PLAT"
+        $c_dir/tools/init-repo.sh "$PLAT" "$ARCH"
         echo "===================================="
     done
 else

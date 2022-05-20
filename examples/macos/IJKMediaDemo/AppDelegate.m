@@ -12,25 +12,63 @@
 #import <IJKMediaPlayerKit/IJKMediaPlayerKit.h>
 #import "MRGlobalNotification.h"
 #import "MRUtil+SystemPanel.h"
+#import "MRActionKit.h"
 
 @interface AppDelegate ()
 
 @property (strong) NSWindowController *windowCtrl;
+@property (strong) NSArray *waitHandleArr;
 
 @end
 
 @implementation AppDelegate
 
+- (void)prepareActionProcessor
+{
+    MRActionProcessor *processor = [[MRActionProcessor alloc] initWithScheme:@"ijkplayer"];
+    
+    __weakSelf__
+    [processor registerHandler:^(MRActionItem *item) {
+        __strongSelf__
+        NSDictionary *params = [item queryMap];
+        NSString *link = params[@"links"];
+        if (link) {
+            link = [link stringByRemovingPercentEncoding];
+        }
+        NSArray *links = [link componentsSeparatedByString:@"|"];
+        NSMutableDictionary *dic = [NSMutableDictionary new];
+        [dic setObject:links forKey:@"links"];
+        POST_NOTIFICATION(kPlayNetMovieNotificationName_G, self, dic);
+        [NSApp activateIgnoringOtherApps:YES];
+    } forPath:@"/play"];
+    
+    [MRActionManager registerProcessor:processor];
+}
+
+- (void)applicationWillFinishLaunching:(NSNotification *)notification
+{
+    int a = 0x11223344;
+    char *c = (char *)&a;
+    printf("%02X,%02X,%02X,%02X\n",c[0],c[1],c[2],c[3]);
+    int *b = (int *)c;
+    printf("%d:%d\n",a,*b);
+    if (*c == 0x44) {
+        printf("little endian\n");
+    } else {
+        printf("big endian\n");
+    }
+    
+    [self prepareActionProcessor];
+}
+
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
     // Insert code here to initialize your application
-    
     NSWindowStyleMask mask = NSWindowStyleMaskBorderless | NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable | NSWindowStyleMaskFullSizeContentView;
     
     NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600) styleMask:mask backing:NSBackingStoreBuffered defer:YES];
     window.contentViewController = [[RootViewController alloc] init];
     window.movableByWindowBackground = YES;
-    window.titlebarAppearsTransparent = NO;
     
     self.windowCtrl = [[WindowController alloc] init];
     self.windowCtrl.window = window;
@@ -38,6 +76,12 @@
     [self.windowCtrl showWindow:nil];
     BOOL match = [IJKFFMoviePlayerController checkIfFFmpegVersionMatch:YES];
     NSLog(@"==FFmpegVersionMatch:%d",match);
+    
+    
+    if ([self.waitHandleArr count] > 0) {
+        [self application:NSApp openURLs:self.waitHandleArr];
+        self.waitHandleArr = nil;
+    }
 }
 
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag
@@ -92,18 +136,40 @@
     [self.windowCtrl.window.contentViewController presentViewControllerAsModalWindow:[sb instantiateInitialController]];
 }
 
+- (BOOL)application:(NSApplication *)sender openFile:(nonnull NSString *)filename
+{
+    [self application:sender openFiles:@[filename]];
+    return YES;
+}
+
 - (void)application:(NSApplication *)sender openFiles:(NSArray<NSString *> *)filenames
 {
     NSMutableArray *urlArr = [NSMutableArray array];
     for (NSString *file in filenames) {
         [urlArr addObject:[NSURL fileURLWithPath:file]];
     }
-    [self playOpenedURL:urlArr];
+    
+    [self application:sender openURLs:urlArr];
 }
 
-- (void)application:(NSApplication *)application openURLs:(NSArray<NSURL *> *)urls
+- (void)application:(NSApplication *)application openURLs:(NSArray<NSURL *> *)urlArr
 {
-    [self playOpenedURL:urls];
+    if ([urlArr count] > 0) {
+        if (!self.windowCtrl) {
+            self.waitHandleArr = urlArr;
+        } else {
+            if ([urlArr count] == 1) {
+                NSURL *url = [urlArr firstObject];
+                NSError *err = nil;
+                if ([MRActionManager handleActionWithURL:[url absoluteString] error:&err]) {
+                    return;
+                }
+            }
+            
+            [self playOpenedURL:urlArr];
+            [NSApp activateIgnoringOtherApps:YES];
+        }
+    }
 }
 
 @end

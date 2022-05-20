@@ -276,10 +276,29 @@ void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, AVFormatContext *ic)
                     ijkmeta_set_int64_l(stream_meta, IJKM_KEY_CHANNEL_LAYOUT, codecpar->channel_layout);
 				if (codecpar->channels)
 					ijkmeta_set_int64_l(stream_meta, IJKM_KEY_CHANNELS, codecpar->channels);
+                
+                AVDictionaryEntry *artist = av_dict_get(ic->metadata, IJKM_KEY_ARTIST, NULL, 0);
+                if (artist && artist->value)
+                    ijkmeta_set_string_l(stream_meta, IJKM_KEY_ARTIST, artist->value);
+                AVDictionaryEntry *title = av_dict_get(ic->metadata, IJKM_KEY_TITLE, NULL, 0);
+                if (title && title->value)
+                    ijkmeta_set_string_l(stream_meta, IJKM_KEY_TITLE, title->value);
+                AVDictionaryEntry *album = av_dict_get(ic->metadata, IJKM_KEY_ALBUM, NULL, 0);
+                if (album && album->value)
+                    ijkmeta_set_string_l(stream_meta, IJKM_KEY_ALBUM, album->value);
+                AVDictionaryEntry *tyer = av_dict_get(ic->metadata, IJKM_KEY_TYER, NULL, 0);
+                if (tyer && tyer->value)
+                    ijkmeta_set_string_l(stream_meta, IJKM_KEY_TYER, tyer->value);
                 break;
             }
             case AVMEDIA_TYPE_SUBTITLE: {
                 ijkmeta_set_string_l(stream_meta, IJKM_KEY_TYPE, IJKM_VAL_TYPE__TIMEDTEXT);
+                AVDictionaryEntry *lang = av_dict_get(st->metadata, IJKM_KEY_LANGUAGE, NULL, 0);
+                if (lang && lang->value)
+                    ijkmeta_set_string_l(stream_meta, IJKM_KEY_LANGUAGE, lang->value);
+                AVDictionaryEntry *title = av_dict_get(st->metadata, IJKM_KEY_TITLE, NULL, 0);
+                if (title && title->value)
+                    ijkmeta_set_string_l(stream_meta, IJKM_KEY_TITLE, title->value);
                 break;
             }
             default: {
@@ -288,19 +307,11 @@ void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, AVFormatContext *ic)
             }
         }
 
-//        debug all metadata
-//        char *buffer = NULL;
-//        if (av_dict_get_string(st->metadata, &buffer, '=', ',') >= 0) {
-//            printf("stream all metadata:%s\n",buffer);
-//            av_freep(&buffer);
-//        }
-        
-        AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);
-        if (lang && lang->value)
-            ijkmeta_set_string_l(stream_meta, IJKM_KEY_LANGUAGE, lang->value);
-        AVDictionaryEntry *title = av_dict_get(st->metadata, "title", NULL, 0);
-        if (title && title->value)
-            ijkmeta_set_string_l(stream_meta, IJKM_KEY_TITLE, title->value);
+        //debug all metadata
+//        AVDictionaryEntry *tag = NULL;
+//        while ((tag = av_dict_get(ic->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+//            printf("ic metadata item:%s=%s\n", tag->key, tag->value);
+
         ijkmeta_set_int64_l(stream_meta, IJKM_KEY_STREAM_IDX, i);
         
         ijkmeta_append_child_l(meta, stream_meta);

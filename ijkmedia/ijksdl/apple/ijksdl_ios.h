@@ -21,9 +21,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "ijksdl/ijksdl.h"
+#include "../ijksdl.h"
 #include "ijksdl_aout_ios_audiounit.h"
-#include "ijksdl_vout_ios_gles2.h"
+#import "ijksdl_vout_ios_gles2.h"
 #if TARGET_OS_IOS
 #import <UIKit/UIKit.h>
 #define SYSTEM_VERSION_EQUAL_TO(v)                  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedSame)

@@ -162,6 +162,16 @@ inline static void msg_queue_put_simple4(MessageQueue *q, int what, int arg1, in
     msg_queue_put(q, &msg);
 }
 
+inline static void msg_queue_put_str(MessageQueue *q, int what, const char *str)
+{
+    size_t len = strlen(str);
+    if (len > 0) {
+        msg_queue_put_simple4(q, what, 0, 0, (void *)str, (int)strlen(str));
+    } else {
+        msg_queue_put_simple1(q, what);
+    }
+}
+
 inline static void msg_queue_init(MessageQueue *q)
 {
     memset(q, 0, sizeof(MessageQueue));

@@ -23,7 +23,17 @@
 
 #include "ijksdl/ijksdl_stdinc.h"
 #include "ijksdl/ijksdl_vout.h"
-#include "IJKSDLGLViewProtocol.h"
+
+#import <TargetConditionals.h>
+#if TARGET_OS_OSX
+#import <AppKit/AppKit.h>
+typedef NSOpenGLView GLView;
+#else
+#import <UIKit/UIKit.h>
+typedef UIView GLView;
+#endif
+
+@protocol IJKSDLGLViewProtocol;
 
 SDL_Vout *SDL_VoutIos_CreateForGLES2(void);
 void SDL_VoutIos_SetGLView(SDL_Vout *vout, GLView<IJKSDLGLViewProtocol>* view);

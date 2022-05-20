@@ -25,6 +25,8 @@
     tx.bordered = NO;
     tx.backgroundColor = [NSColor clearColor];
     tx.font = [NSFont systemFontOfSize:14];
+    tx.usesSingleLineMode = YES;
+    tx.lineBreakMode = NSLineBreakByTruncatingMiddle;
     tx.textColor = [NSColor whiteColor];
     return tx;
 }

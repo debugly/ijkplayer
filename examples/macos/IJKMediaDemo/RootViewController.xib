@@ -35,24 +35,24 @@
                     </connections>
                 </customView>
                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="XTw-oZ-D8f" customClass="MRBaseView">
-                    <rect key="frame" x="305" y="64" width="450" height="116"/>
+                    <rect key="frame" x="305" y="64" width="450" height="104"/>
                     <subviews>
                         <visualEffectView blendingMode="withinWindow" material="mediumLight" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="Gbp-5x-lHp">
-                            <rect key="frame" x="0.0" y="0.0" width="450" height="116"/>
+                            <rect key="frame" x="0.0" y="0.0" width="450" height="104"/>
                             <subviews>
-                                <stackView distribution="fillProportionally" orientation="vertical" alignment="leading" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="D52-BT-M8o">
-                                    <rect key="frame" x="0.0" y="0.0" width="450" height="116"/>
+                                <stackView distribution="fillProportionally" orientation="vertical" alignment="leading" spacing="6" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="D52-BT-M8o">
+                                    <rect key="frame" x="0.0" y="0.0" width="450" height="104"/>
                                     <subviews>
                                         <stackView autoresizesSubviews="NO" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sgj-KL-zyK">
-                                            <rect key="frame" x="0.0" y="45" width="450" height="51"/>
+                                            <rect key="frame" x="0.0" y="41" width="450" height="53"/>
                                             <edgeInsets key="edgeInsets" left="10" right="10" top="0.0" bottom="0.0"/>
                                             <beginningViews>
                                                 <imageView wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tfD-kK-K9p">
-                                                    <rect key="frame" x="10" y="18.5" width="22.5" height="15"/>
+                                                    <rect key="frame" x="10" y="19.5" width="22.5" height="15"/>
                                                     <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="volume.3.fill" catalog="system" id="Nw6-Sd-YYo"/>
                                                 </imageView>
                                                 <slider verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YIg-F3-SGM">
-                                                    <rect key="frame" x="38" y="17" width="113" height="17"/>
+                                                    <rect key="frame" x="38" y="18" width="95" height="17"/>
                                                     <constraints>
                                                         <constraint firstAttribute="width" relation="lessThanOrEqual" constant="100" id="MTx-J2-dqV"/>
                                                     </constraints>
@@ -64,69 +64,53 @@
                                                 </slider>
                                             </beginningViews>
                                             <middleViews>
-                                                <button autoresizesSubviews="NO" verticalHuggingPriority="750" id="NhA-62-HOW">
-                                                    <rect key="frame" x="157" y="16" width="20" height="22"/>
-                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                    <buttonCell key="cell" type="bevel" bezelStyle="rounded" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="oQA-KX-kjJ">
-                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                        <font key="font" metaFont="system"/>
-                                                        <imageReference key="image" image="gobackward.30" catalog="system" symbolScale="large"/>
-                                                    </buttonCell>
-                                                    <connections>
-                                                        <action selector="fastRewind:" target="-2" id="0gp-Nd-R3J"/>
-                                                    </connections>
-                                                </button>
-                                                <button autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2GU-ij-QZ8">
-                                                    <rect key="frame" x="185" y="17.5" width="25.5" height="16"/>
+                                                <button autoresizesSubviews="NO" verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2GU-ij-QZ8">
+                                                    <rect key="frame" x="139" y="1" width="52" height="52"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="width" constant="35" id="mgE-P8-oID"/>
+                                                        <constraint firstAttribute="height" constant="35" id="orX-9y-DW3"/>
+                                                    </constraints>
                                                     <buttonCell key="cell" type="bevel" bezelStyle="rounded" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="53C-q0-j4F">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                         <font key="font" metaFont="system"/>
-                                                        <imageReference key="image" image="backward.fill" catalog="system" symbolScale="large"/>
+                                                        <imageReference key="image" image="previous" symbolScale="large"/>
                                                     </buttonCell>
                                                     <connections>
                                                         <action selector="playPrevious:" target="-2" id="Wma-Rx-h4s"/>
                                                     </connections>
                                                 </button>
                                                 <button autoresizesSubviews="NO" wantsLayer="YES" verticalHuggingPriority="750" id="fwp-z5-Mp8">
-                                                    <rect key="frame" x="218" y="17" width="15.5" height="17.5"/>
+                                                    <rect key="frame" x="199" y="1" width="52" height="52"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <buttonCell key="cell" type="bevel" bezelStyle="rounded" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="xKg-q9-biq">
                                                         <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
                                                         <font key="font" metaFont="system"/>
-                                                        <imageReference key="image" image="play.fill" catalog="system" symbolScale="large"/>
-                                                        <imageReference key="alternateImage" image="pause.fill" catalog="system" symbolScale="large"/>
+                                                        <imageReference key="image" image="play" symbolScale="large"/>
+                                                        <imageReference key="alternateImage" image="pause" symbolScale="large"/>
                                                     </buttonCell>
                                                     <connections>
                                                         <action selector="pauseOrPlay:" target="-2" id="5uq-HP-uV0"/>
                                                     </connections>
                                                 </button>
-                                                <button autoresizesSubviews="NO" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5td-L9-OOG">
-                                                    <rect key="frame" x="241" y="17.5" width="25.5" height="16"/>
+                                                <button autoresizesSubviews="NO" verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5td-L9-OOG">
+                                                    <rect key="frame" x="259" y="1" width="52" height="52"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="width" constant="35" id="4Es-mR-gNX"/>
+                                                        <constraint firstAttribute="height" constant="35" id="pqU-lq-TtA"/>
+                                                    </constraints>
                                                     <buttonCell key="cell" type="bevel" bezelStyle="rounded" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="H9K-6I-UPP">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                         <font key="font" metaFont="system"/>
-                                                        <imageReference key="image" image="forward.fill" catalog="system" symbolScale="large"/>
+                                                        <imageReference key="image" image="next" symbolScale="large"/>
                                                     </buttonCell>
                                                     <connections>
                                                         <action selector="playNext:" target="-2" id="dYQ-wl-4jV"/>
                                                     </connections>
                                                 </button>
-                                                <button autoresizesSubviews="NO" verticalHuggingPriority="750" id="XrA-8Q-1bZ">
-                                                    <rect key="frame" x="274" y="16" width="20" height="22"/>
-                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                    <buttonCell key="cell" type="bevel" bezelStyle="rounded" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="AfC-ka-MmV">
-                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                        <font key="font" metaFont="system"/>
-                                                        <imageReference key="image" image="goforward.30" catalog="system" symbolScale="large"/>
-                                                    </buttonCell>
-                                                    <connections>
-                                                        <action selector="fastForward:" target="-2" id="tT8-Mp-HV4"/>
-                                                    </connections>
-                                                </button>
                                             </middleViews>
                                             <endViews>
                                                 <button verticalHuggingPriority="750" id="hez-32-c2g">
-                                                    <rect key="frame" x="392" y="16" width="20" height="20"/>
+                                                    <rect key="frame" x="392" y="17" width="20" height="20"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <buttonCell key="cell" type="bevel" bezelStyle="rounded" imagePosition="overlaps" alignment="center" imageScaling="proportionallyDown" inset="2" id="ogH-tj-D8E">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -138,7 +122,7 @@
                                                     </connections>
                                                 </button>
                                                 <button verticalHuggingPriority="750" id="Ksb-3H-5aR">
-                                                    <rect key="frame" x="420" y="17" width="20.5" height="17"/>
+                                                    <rect key="frame" x="420" y="18" width="20.5" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <buttonCell key="cell" type="bevel" bezelStyle="rounded" imagePosition="overlaps" alignment="center" imageScaling="proportionallyDown" inset="2" id="NmY-tN-fI9">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -158,12 +142,8 @@
                                                 <integer value="1000"/>
                                                 <integer value="1000"/>
                                                 <integer value="1000"/>
-                                                <integer value="1000"/>
-                                                <integer value="1000"/>
                                             </visibilityPriorities>
                                             <customSpacing>
-                                                <real value="3.4028234663852886e+38"/>
-                                                <real value="3.4028234663852886e+38"/>
                                                 <real value="3.4028234663852886e+38"/>
                                                 <real value="3.4028234663852886e+38"/>
                                                 <real value="3.4028234663852886e+38"/>
@@ -221,7 +201,7 @@
                                             </customSpacing>
                                         </stackView>
                                     </subviews>
-                                    <edgeInsets key="edgeInsets" left="0.0" right="0.0" top="20" bottom="10"/>
+                                    <edgeInsets key="edgeInsets" left="0.0" right="0.0" top="10" bottom="10"/>
                                     <constraints>
                                         <constraint firstItem="wiQ-PM-Ggl" firstAttribute="leading" secondItem="sgj-KL-zyK" secondAttribute="leading" id="LeW-x6-0vh"/>
                                         <constraint firstAttribute="trailing" secondItem="sgj-KL-zyK" secondAttribute="trailing" id="MLS-MY-2Gz"/>
@@ -279,10 +259,10 @@
                                 </textField>
                                 <stepper toolTip="字体大小" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FTY-Or-1Wk">
                                     <rect key="frame" x="79" y="6" width="19" height="28"/>
-                                    <stepperCell key="cell" continuous="YES" alignment="left" increment="2" maxValue="250" doubleValue="45" id="jrT-rP-2bU"/>
+                                    <stepperCell key="cell" continuous="YES" alignment="left" increment="0.20000000000000001" maxValue="250" doubleValue="1" id="jrT-rP-2bU"/>
                                     <connections>
                                         <action selector="onChangeSubtitleSize:" target="-2" id="03c-bp-WoO"/>
-                                        <binding destination="-2" name="value" keyPath="subtitleFontSize" id="UeG-8X-NhZ"/>
+                                        <binding destination="-2" name="value" keyPath="subtitleFontRatio" id="B4b-Hn-CAZ"/>
                                     </connections>
                                 </stepper>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0AD-kG-47p">
@@ -293,7 +273,7 @@
                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                     <connections>
-                                        <binding destination="-2" name="value" keyPath="subtitleFontSize" id="EZe-MJ-7fL"/>
+                                        <binding destination="-2" name="value" keyPath="subtitleFontRatio" id="USE-P4-GZl"/>
                                     </connections>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jVK-s1-a35">
@@ -841,18 +821,18 @@
                                 <popUpButton verticalHuggingPriority="750" id="mQL-Dr-zwA">
                                     <rect key="frame" x="79" y="6" width="84" height="25"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                    <popUpButtonCell key="cell" type="push" title="FF" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="ZKQ-YD-svF" id="6PW-R0-ej1">
+                                    <popUpButtonCell key="cell" type="push" title="FF" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="ZKQ-YD-svF" id="6PW-R0-ej1">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="menu"/>
                                         <menu key="menu" id="ZFF-0V-Emk">
                                             <items>
-                                                <menuItem title="FF" id="ZKQ-YD-svF">
+                                                <menuItem title="FF" state="on" id="ZKQ-YD-svF">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                 </menuItem>
                                                 <menuItem title="ijk VTB" tag="1" id="uMM-nX-Cnz">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                 </menuItem>
-                                                <menuItem title="FF+HW" state="on" tag="2" id="MQO-YI-LDy">
+                                                <menuItem title="FF+HW" tag="2" id="MQO-YI-LDy">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                 </menuItem>
                                             </items>
@@ -938,6 +918,50 @@
                                     </connections>
                                 </popUpButton>
                             </middleViews>
+                            <endViews>
+                                <textField horizontalHuggingPriority="1000" verticalHuggingPriority="750" id="bTQ-Hs-GPd" userLabel="日志级别：">
+                                    <rect key="frame" x="905" y="12" width="68" height="16"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                    <textFieldCell key="cell" lineBreakMode="clipping" title="日志级别：" id="dF5-Xw-cyS">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" red="0.99215686270000003" green="0.99215686270000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <popUpButton verticalHuggingPriority="750" id="42b-R0-3XI">
+                                    <rect key="frame" x="976" y="6" width="78" height="25"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                    <popUpButtonCell key="cell" type="push" title="info" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="6MB-zo-Y9Y" id="DZB-oJ-9hB">
+                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                        <font key="font" metaFont="menu"/>
+                                        <menu key="menu" id="Zys-fC-z3j">
+                                            <items>
+                                                <menuItem title="info" state="on" id="6MB-zo-Y9Y">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                </menuItem>
+                                                <menuItem title="debug" id="iUA-SS-njK">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                </menuItem>
+                                                <menuItem title="warn" id="wBh-fY-88k">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                </menuItem>
+                                                <menuItem title="error" id="Rgp-YN-I9I">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                </menuItem>
+                                                <menuItem title="fatal" id="tny-TO-Jul">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                </menuItem>
+                                                <menuItem title="silent" id="X8U-JL-95Z">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                </menuItem>
+                                            </items>
+                                        </menu>
+                                    </popUpButtonCell>
+                                    <connections>
+                                        <action selector="onChangeLogLevel:" target="-2" id="KRK-Dh-glD"/>
+                                    </connections>
+                                </popUpButton>
+                            </endViews>
                             <constraints>
                                 <constraint firstAttribute="height" constant="40" id="yk2-to-xvb"/>
                             </constraints>
@@ -948,8 +972,12 @@
                                 <integer value="1000"/>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
                             </visibilityPriorities>
                             <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
@@ -1000,20 +1028,18 @@
                     <color key="value" name="labelColor" catalog="System" colorSpace="catalog"/>
                 </userDefinedRuntimeAttribute>
             </userDefinedRuntimeAttributes>
-            <point key="canvasLocation" x="-600.5" y="-417.5"/>
+            <point key="canvasLocation" x="-601" y="-417.5"/>
         </view>
         <userDefaultsController representsSharedInstance="YES" id="OCk-Q5-1dK"/>
     </objects>
     <resources>
-        <image name="backward.fill" catalog="system" width="25" height="16"/>
         <image name="chevron.forward.2" catalog="system" width="20" height="17"/>
-        <image name="forward.fill" catalog="system" width="25" height="16"/>
-        <image name="gobackward.30" catalog="system" width="20" height="22"/>
-        <image name="goforward.30" catalog="system" width="20" height="22"/>
         <image name="info.circle.fill" catalog="system" width="20" height="20"/>
         <image name="knob_big" width="6" height="30"/>
-        <image name="pause.fill" catalog="system" width="14" height="17"/>
-        <image name="play.fill" catalog="system" width="15" height="17"/>
+        <image name="next" width="52" height="52"/>
+        <image name="pause" width="52" height="52"/>
+        <image name="play" width="52" height="52"/>
+        <image name="previous" width="52" height="52"/>
         <image name="volume.3.fill" catalog="system" width="22" height="15"/>
     </resources>
 </document>

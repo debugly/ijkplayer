@@ -24,5 +24,7 @@ else
 fi
 
 export GIT_LOCAL_REPO=extra/libyuv
-export GIT_COMMIT=master
+#don't use branch name,use tag or a commit id
+#fatal: 'master' is not a commit and a branch 'localBranch' cannot be created from it
+export GIT_COMMIT=5b3351bd  #master latest
 export REPO_DIR=libyuv

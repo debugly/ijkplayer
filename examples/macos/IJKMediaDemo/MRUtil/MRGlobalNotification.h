@@ -21,9 +21,10 @@
 #endif
 
 
-///播放资源管理器打开的本地视频通知，参数为 [ { bookmark,url },... ]
+///播放资源管理器打开的本地视频通知，参数为 obj = [ { bookmark,url },... ]
 EXPORT_CONST_STRING(kPlayExplorerMovieNotificationName_G);
-
+///播放在线视频，参数为 links = [ url1,url2,... ]
+EXPORT_CONST_STRING(kPlayNetMovieNotificationName_G);
 #define POST_NOTIFICATION(_name_,_obj_,_info_) \
         [[NSNotificationCenter defaultCenter] \
         postNotificationName: _name_ \
