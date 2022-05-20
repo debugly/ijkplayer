@@ -36,7 +36,9 @@
 
 typedef struct IJK_EGL_Opaque {
     IJK_GLES2_Renderer *renderer;
+	SDL_VoutOverlay*	overlay;
 	Subtitle_Overlay*	sub_overlay;
+	int	with_subtitle;
 } IJK_EGL_Opaque;
 
 static EGLBoolean IJK_EGL_isValid(IJK_EGL* egl)
@@ -304,6 +306,8 @@ static EGLBoolean IJK_EGL_prepareRenderer(IJK_EGL* egl, SDL_VoutOverlay *overlay
         }
 
 		opaque->sub_overlay = Create_Subitle_Overlay();
+		opaque->overlay = (SDL_VoutOverlay*)calloc(1, sizeof(SDL_VoutOverlay));
+		//opaque->overlay = SDL_Vout_CreateOverlay(overlay->w, overlay->h, overlay->format, );
 		IJK_GLES2_Renderer_setGravity(opaque->renderer, IJK_GLES2_GRAVITY_RESIZE_ASPECT, overlay->w, overlay->h);
 
 		IJK_GLES2_Renderer_updateColorConversion(opaque->renderer, 1, 1, 1);
@@ -316,6 +320,16 @@ static EGLBoolean IJK_EGL_prepareRenderer(IJK_EGL* egl, SDL_VoutOverlay *overlay
 
     glViewport(0, 0, egl->width, egl->height);  IJK_GLES2_checkError_TRACE("glViewport");
     return EGL_TRUE;
+}
+
+static void copy_vout_overlay(SDL_VoutOverlay* dst, SDL_VoutOverlay* src)
+{
+	memcpy(dst, src, sizeof(SDL_VoutOverlay));
+
+	for (int i = 0; i < AV_NUM_DATA_POINTERS; ++i) {
+		dst->pixels[i] = src->pixels[i];
+		dst->pitches[i] = src->pitches[i];
+	}
 }
 
 static EGLBoolean IJK_EGL_display_internal(IJK_EGL* egl, SDL_VoutOverlay *overlay)
@@ -332,6 +346,8 @@ static EGLBoolean IJK_EGL_display_internal(IJK_EGL* egl, SDL_VoutOverlay *overla
 		return EGL_FALSE;
 	}
 
+	copy_vout_overlay(opaque->overlay, overlay);
+
 	IJK_GLES2_Renderer_drawArrays();
 
     return EGL_TRUE;
@@ -341,6 +357,7 @@ static EGLBoolean IJK_EGL_display_subtitle_internal(IJK_EGL* egl,  const char *t
 {
 	IJK_EGL_Opaque *opaque = egl->opaque;
 	Subtitle_Overlay* overlay = opaque->sub_overlay;
+	Release_Bitmap(overlay);
 	Create_Bitmap(text, &overlay);
 
 	IJK_GLES2_Renderer_beginDrawSubtitle(opaque->renderer);
@@ -355,7 +372,6 @@ static EGLBoolean IJK_EGL_display_subtitle_internal(IJK_EGL* egl,  const char *t
 	IJK_GLES2_Renderer_drawArrays();
 	IJK_GLES2_Renderer_endDrawSubtitle(opaque->renderer);
 
-	Release_Bitmap(overlay);
 	return EGL_TRUE;
 }
 
@@ -384,11 +400,12 @@ EGLBoolean IJK_EGL_display(IJK_EGL* egl, EGLNativeWindowType window, SDL_VoutOve
 
 	if (text && strlen(text) > 0){
 		ret = IJK_EGL_display_subtitle_internal(egl, text);
+		opaque->with_subtitle = 1;
 	}
 
 	eglSwapBuffers(egl->display, egl->surface);
     eglMakeCurrent(egl->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    eglReleaseThread(); // FIXME: call at thread exit
+    //eglReleaseThread(); // FIXME: call at thread exit
     return ret;
 }
 
@@ -478,55 +495,127 @@ static bool IJK_EGL_prepare_FBO_if_need(IJK_EGL *egl)
 	}
 }
 
-void* IJK_EGL_snapshot_from_FBO(IJK_EGL* egl)
+static void dump_picture(char *name, const void *ptr, int w, int h)
+{
+	FILE* dump_file = NULL;
+	static int dumpcnt = 1000;
+	char filename[1024];
+	int p_size = 0;
+	int ret_w = 0;
+	sprintf(filename, "D:\\raw");
+	dump_file = fopen(filename, "wb");
+	p_size = 4 * w * h;
+	while (ret_w = fwrite(ptr, 1, p_size, dump_file))
+	{
+		if (ret_w == -1)
+		{
+			printf("ret_w=-1,error\n");
+			break;
+		}
+		else if (ret_w == p_size)
+		{
+			break;
+		}
+		else if (ret_w > 0)
+		{
+			(char*)ptr += ret_w;
+			p_size -= ret_w;
+		}
+	}
+	fclose(dump_file);
+	dumpcnt++;
+}
+
+static int bmp_write(unsigned char *image, int xsize, int ysize, char *filename)
+{
+	unsigned char header[54] = { 0x42, 0x4d, 0, 0, 0, 0, 0, 0, 0, 0,
+		54, 0, 0, 0,40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 32, 0,
+		0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0
+	};
+	long file_size = (long)xsize * (long)ysize * 4 + 54;
+	header[2] = (unsigned char)(file_size & 0x000000ff);
+	header[3] = (file_size >> 8) & 0x000000ff;
+	header[4] = (file_size >> 16) & 0x000000ff;
+	header[5] = (file_size >> 24) & 0x000000ff;
+	long width = xsize;
+	header[18] = width & 0x000000ff;
+	header[19] = (width >> 8) & 0x000000ff;
+	header[20] = (width >> 16) & 0x000000ff;
+	header[21] = (width >> 24) & 0x000000ff;
+	long height = ysize;
+	header[22] = height & 0x000000ff;
+	header[23] = (height >> 8) & 0x000000ff;
+	header[24] = (height >> 16) & 0x000000ff;
+	header[25] = (height >> 24) & 0x000000ff;
+	char fname_bmp[128];
+	sprintf(fname_bmp, "%s.bmp", filename);
+
+	FILE *fp;
+	if (!(fp = fopen(fname_bmp, "wb")))
+		return -1;
+	fwrite(header, sizeof(unsigned char), 54, fp);
+	fwrite(image, sizeof(unsigned char), (size_t)(long)xsize * ysize * 4, fp);
+	fclose(fp);
+	return 0;
+}
+
+static int IJK_EGL_snapshot_from_FBO(IJK_EGL* egl, void** pixel_data_out)
 {
 	GLint bytes_per_row = egl->width * 4;
 	const GLint bits_per_pixel = 32;
-	void* pixels_data = malloc(egl->width * egl->height * 4);
-	glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, bytes_per_row);
-	IJK_GLES2_checkError_TRACE("glPixelStorei");
+	void* pixels_data = malloc(bytes_per_row * egl->height);
+	//glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, bytes_per_row);
+	//IJK_GLES2_checkError_TRACE("glPixelStorei");
 
 	glReadPixels(0, 0, egl->width, egl->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels_data);
 	IJK_GLES2_checkError_TRACE("glReadPixels");
 
-	//FILE* rFp = fopen("D:\\test_r.y", "wb+");
-	//FILE* gFp = fopen("D:\\test_g.y", "wb+");
-	//FILE* bFp = fopen("D:\\test_b.y", "wb+");
+	int width = egl->width;
+	int height = egl->height;
+	dump_picture("", pixels_data, width, height);
 
-	//int size = egl->width * egl->height;
-	//unsigned char * rbuf = (unsigned char*)malloc(size);
-	//unsigned char * gbuf = (unsigned char*)malloc(size);
-	//unsigned char * bbuf = (unsigned char*)malloc(size);
-	//int ridx, gidx, bidx;
-	//ridx = gidx = bidx = 0;
-	//unsigned char*  pixels = (unsigned char*)pixels_data;
-	//for (int rgbidx = 0; rgbidx < size * 3; rgbidx = rgbidx + 4)
-	//{
-	//	rbuf[ridx++] = pixels[rgbidx];
-	//	gbuf[gidx++] = pixels[rgbidx + 1];
-	//	bbuf[bidx++] = pixels[rgbidx + 2];
-	//}
-	//fwrite(rbuf, 1, size, rFp);
-	//fwrite(gbuf, 1, size, gFp);
-	//fwrite(bbuf, 1, size, bFp);
+	FILE* fp = NULL;
 
-	//free(rbuf);
-	//free(gbuf);
-	//free(bbuf);
-	//fclose(rFp);
-	//fclose(gFp);
-	//fclose(bFp);
+	if (!(fp = fopen("D:\\raw", "rb")))
+		return -1;
+	unsigned char * buff = (unsigned char *)malloc(width*height * 4);
+	memset(buff, 0, width*height * 4);
+	size_t count = fread(buff, width*height * 4, 1, fp);
+	if (1)
+	{
+		unsigned char * tmp = (unsigned char *)malloc(width*height * 4);
+		memset(tmp, 0, width*height * 4);
+		int i = 0;
+		for (; i<height; ++i)
+		{
+			memcpy(tmp + (height - 1 - i)*width * 4, buff + width*i * 4, width * 4);
+		}
+		bmp_write(tmp, width, height, "D:\\bmp");
+		free(tmp);
+	}
+	else
+		bmp_write(buff, width, height, "D:\\bmp");
+	fclose(fp);
+	free(buff);
 
-	free(pixels_data);
+	//free(pixels_data);
+	*pixel_data_out = pixels_data;
+	return 0;
 }
 
-void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, SDL_VoutOverlay* overlay, EGLBoolean with_subtitle)
+void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out)
 {
 	if (egl->display && egl->surface && egl->context) {
 		if (!eglMakeCurrent(egl->display, egl->surface, egl->surface, egl->context)) {
 			ALOGE("[EGL] elgMakeCurrent() failed (cached)\n");
-			return EGL_FALSE;
+			return NULL;
 		}
+	}
+
+	if (!egl->opaque || !egl->opaque->overlay) {
+		ALOGE("[EGL] egl->opaque or egl->opaque->overlay is null\n");
+		return NULL;
 	}
 
 	EGLBoolean ret = false;
@@ -543,19 +632,36 @@ void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, SDL_VoutOverlay
 			ALOGE("[EGL] snapshot IJK_GLES2_Renderer_resetVao failed\n");
 		}
 
-		if (!IJK_GLES2_Renderer_uploadTexture(opaque->renderer, overlay)) {
+		if (!IJK_GLES2_Renderer_uploadTexture(opaque->renderer, opaque->overlay)) {
 			ALOGE("[EGL] snapshot IJK_GLES2_Renderer_updateVetex failed\n");
 			return EGL_FALSE;
 		}
 
 		IJK_GLES2_Renderer_drawArrays();
 
-		IJK_EGL_snapshot_from_FBO(egl);
+		if (with_subtitle && opaque->with_subtitle && opaque->sub_overlay && opaque->sub_overlay->pixels) {
+			IJK_EGL_Opaque *opaque = egl->opaque;
+			Subtitle_Overlay* overlay = opaque->sub_overlay;
+
+			IJK_GLES2_Renderer_beginDrawSubtitle(opaque->renderer);
+
+			IJK_GLES2_Renderer_updateSubtitleVetex(opaque->renderer, overlay->w, overlay->h);
+
+			if (!IJK_GLES2_Renderer_uploadSubtitleTexture(opaque->renderer, overlay)) {
+				ALOGE("[EGL] IJK_GLES2_Renderer_updateVetex failed\n");
+				return EGL_FALSE;
+			}
+
+			IJK_GLES2_Renderer_drawArrays();
+			IJK_GLES2_Renderer_endDrawSubtitle(opaque->renderer);
+		}
+
+		IJK_EGL_snapshot_from_FBO(egl, pixels_out);
 	}
 
 	eglSwapBuffers(egl->display, egl->surface);
 	eglMakeCurrent(egl->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-	eglReleaseThread(); // FIXME: call at thread exit
+	//eglReleaseThread(); // FIXME: call at thread exit
 }
 
 

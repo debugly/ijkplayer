@@ -116,7 +116,10 @@ void Release_Bitmap(Subtitle_Overlay* overlay)
 	Gdiplus::Bitmap* bitmap = (Gdiplus::Bitmap*)overlay->bitmap;
 	Gdiplus::BitmapData* bmpData = (Gdiplus::BitmapData*)overlay->bitmap_data;
 
-	bitmap->UnlockBits(bmpData);
-	delete bmpData;
-	delete bitmap;
+	if (bmpData) {
+		bitmap->UnlockBits(bmpData);
+		delete bmpData;
+		if (bitmap)
+			delete bitmap;
+	}
 }

@@ -71,7 +71,7 @@ void        IJK_EGL_freep(IJK_EGL **egl);
 EGLBoolean  IJK_EGL_display(IJK_EGL* vout, EGLNativeWindowType window, SDL_VoutOverlay *overlay, const char* text);
 void        IJK_EGL_terminate(IJK_EGL* egl);
 
-void*		IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, SDL_VoutOverlay* overlay, EGLBoolean with_subtitle);
+void*		IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out);
 
 float		IJK_EGL_get_font_size(IJK_EGL* egl);
 void		IJK_EGL_set_font_size(IJK_EGL* egl, float size);

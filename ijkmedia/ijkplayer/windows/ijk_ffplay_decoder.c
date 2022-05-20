@@ -985,3 +985,8 @@ int ijkFfplayDecoder_setSubtitleFontName(IjkFfplayDecoder* decoder, const char* 
 	SDL_SetSubtitleFontName(decoder->ijk_media_player->ffplayer->vout, font_name);
 	return 0;
 }
+
+void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** pixel_data_out, int* w, int* h)
+{
+	SDL_Snapshot(decoder->ijk_media_player->ffplayer->vout, with_sub, pixel_data_out, w, h);
+}

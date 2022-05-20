@@ -175,6 +175,8 @@ char* ijkFfplayDecoder_getSubtitleFontName(IjkFfplayDecoder* decoder);
 
 int ijkFfplayDecoder_setSubtitleFontName(IjkFfplayDecoder* decoder, const char* font_name);
 
+void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** pixel_data_out, int* w, int* h);
+
 #ifdef  __cplusplus  
 }
 #endif
