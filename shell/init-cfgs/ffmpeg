@@ -25,7 +25,7 @@ fi
 if [[ "$GIT_FFMPEG_COMMIT" != "" ]] ;then
     export GIT_COMMIT="$GIT_FFMPEG_COMMIT"
 else
-    export GIT_COMMIT=n4.1.8
+    export GIT_COMMIT=n4.0
 fi
 
 export GIT_LOCAL_REPO=extra/ffmpeg
