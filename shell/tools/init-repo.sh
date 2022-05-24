@@ -59,7 +59,7 @@ function pull_common() {
         if [[ "$SKIP_PULL_BASE" ]];then
             echo "skip pull $REPO_DIR because you set SKIP_PULL_BASE env."
         else
-            git fetch --all --tags    
+            git fetch --all --tags
         fi
         
         git checkout ${GIT_COMMIT} -B localBranch
@@ -78,7 +78,8 @@ function pull_common() {
 
 function apply_patches()
 {
-    local patch_dir="${TOOLS}/../extra/patches/$REPO_DIR"
+    local patch_file_name = "${TOOLS}/../extra/patches/$REPO_DIR"
+    local patch_dir="${TOOLS}/../extra/patches/`cat patch_file_name`"
     if [[ -d "$patch_dir" ]];then
         echo "Applying patches to $REPO_DIR"
         rm -rf .git/rebase-apply
@@ -162,7 +163,7 @@ function main() {
             do
                 if [[ "$2" == "$arch" || "x$2" == "x" ]];then
                     found=1
-                    pull_fork 'windows' $arch
+                    make_arch_repo 'windows' $arch
                 fi
             done
 
