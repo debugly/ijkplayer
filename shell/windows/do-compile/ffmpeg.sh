@@ -78,7 +78,7 @@ fi
 
 FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --pkg-config-flags=--static"
 
-FFMPEG_LDFLAGS=" -static-libstdc++"
+FFMPEG_LDFLAGS=""
 FFMPEG_DEP_LIBS=
 
 echo "----------------------"
