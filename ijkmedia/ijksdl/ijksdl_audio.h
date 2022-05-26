@@ -99,6 +99,9 @@ void SDL_MixAudio(Uint8*       dst,
 				  SDL_AudioSpec * spec);
 
 #ifdef WIN32
+
+#define MAX_AUDIO_SAMPLE_RATE  192000
+
 void SDL_MixAudioFormat(Uint8 * dst,
 						const Uint8 * src,
 						SDL_AudioFormat format,

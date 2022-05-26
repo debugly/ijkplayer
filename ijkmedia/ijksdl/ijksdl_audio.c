@@ -37,6 +37,13 @@ void SDL_CalculateAudioSpec(SDL_AudioSpec * spec)
     spec->size = SDL_AUDIO_BITSIZE(spec->format) / 8;
     spec->size *= spec->channels;
     spec->size *= spec->samples;
+
+#ifdef WIN32
+	//Reduce sampling rate£¬ to value OS supported
+	while (spec->freq > MAX_AUDIO_SAMPLE_RATE) {
+		spec->freq /= 2;
+	}
+#endif
 }
 
 void SDL_MixAudio(Uint8*       dst,
