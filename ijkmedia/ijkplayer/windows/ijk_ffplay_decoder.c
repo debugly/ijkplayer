@@ -988,5 +988,10 @@ int ijkFfplayDecoder_setSubtitleFontName(IjkFfplayDecoder* decoder, const char* 
 
 void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** pixel_data_out, int* w, int* h)
 {
+	if (!decoder || !decoder->ijk_media_player) {
+		ALOGE("IjkMediaPlayer is NULL.\n");
+		return -1;
+	}
+
 	SDL_Snapshot(decoder->ijk_media_player->ffplayer->vout, with_sub, pixel_data_out, w, h);
 }

@@ -42,6 +42,10 @@ enum {
 };
 #endif
 
+typedef struct IJK_Preference {
+	double	dar_ratio;
+} IJK_Preference;
+
 typedef struct IJK_EGL
 {
     SDL_Class      *opaque_class;
@@ -58,11 +62,16 @@ typedef struct IJK_EGL
 
 	//for snapshot
 	EGLint FBO;
-	EGLint colorTexture;
+	EGLint width_color_tex;
+	EGLint height_color_tex;
+	EGLint color_texture;
+
+	IJK_Preference preference;
 #if 0
     uint8_t gles2_extensions[IJK_GLES2__MAX_EXT];
 #endif
 } IJK_EGL;
+
 
 IJK_EGL    *IJK_EGL_create();
 void        IJK_EGL_free(IJK_EGL *egl);
@@ -71,7 +80,7 @@ void        IJK_EGL_freep(IJK_EGL **egl);
 EGLBoolean  IJK_EGL_display(IJK_EGL* vout, EGLNativeWindowType window, SDL_VoutOverlay *overlay, const char* text);
 void        IJK_EGL_terminate(IJK_EGL* egl);
 
-void*		IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out);
+void*		IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out, int* w_out, int* h_out);
 
 float		IJK_EGL_get_font_size(IJK_EGL* egl);
 void		IJK_EGL_set_font_size(IJK_EGL* egl, float size);

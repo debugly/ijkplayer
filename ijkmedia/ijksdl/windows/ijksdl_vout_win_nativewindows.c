@@ -171,10 +171,7 @@ static void func_update_subtitle(SDL_Vout *vout, const char *text)
 
 static void func_snapshot(SDL_Vout *vout, SDL_VoutOverlay *overlay, EGLBoolean with_subtile)
 {
-	SDL_Vout_Opaque *opaque = vout->opaque;
-	SDL_LockMutex(vout->mutex);
-	IJK_EGL_snapshot_effect_origin_with_subtitle(opaque->egl, overlay, with_subtile);
-	SDL_UnlockMutex(vout->mutex);
+
 }
 
 static void SDL_VoutWindows_SetNativeWindow_l(SDL_Vout *vout, HWND native_window)
@@ -281,8 +278,6 @@ void SDL_SetSubtitleFontName(SDL_Vout* vout, const char* font_name)
 void* SDL_Snapshot(SDL_Vout* vout, int with_sub, void** pixel_data_out, int* w, int* h)
 {
 	SDL_LockMutex(vout->mutex);
-	IJK_EGL_snapshot_effect_origin_with_subtitle(vout->opaque->egl, with_sub, pixel_data_out);
-	*w = vout->opaque->egl->width;
-	*h = vout->opaque->egl->height;
+	IJK_EGL_snapshot_effect_origin_with_subtitle(vout->opaque->egl, with_sub, pixel_data_out, w, h);
 	SDL_UnlockMutex(vout->mutex);
 }

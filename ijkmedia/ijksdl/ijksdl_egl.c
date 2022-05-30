@@ -460,15 +460,22 @@ IJK_EGL *IJK_EGL_create()
 static void IJK_EGL_destroy_FBO(IJK_EGL *egl)
 {
 	glDeleteFramebuffers(1, &egl->FBO);
-	glDeleteFramebuffers(1, &egl->colorTexture);
+	glDeleteFramebuffers(1, &egl->color_texture);
 }
 
-static bool IJK_EGL_prepare_FBO_if_need(IJK_EGL *egl)
+static bool IJK_EGL_prepare_FBO_if_need(IJK_EGL *egl, EGLint w, EGLint h)
 {
-	glGenTextures(1, &egl->colorTexture);        
+	if (egl->width_color_tex == w && egl->height_color_tex == h) {
+		return true;
+	}
+	else{
+		IJK_EGL_destroy_FBO(egl);
+	}
+
+	glGenTextures(1, &egl->color_texture);        
 	IJK_GLES2_checkError_TRACE("IJK_EGL_prepare_FBO_if_need:glGenTextures");
 
-	glBindTexture(GL_TEXTURE_2D, egl->colorTexture);
+	glBindTexture(GL_TEXTURE_2D, egl->color_texture);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -477,15 +484,17 @@ static bool IJK_EGL_prepare_FBO_if_need(IJK_EGL *egl)
 
 	IJK_GLES2_checkError_TRACE("IJK_EGL_prepare_FBO_if_need:glTexParameteri");
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, egl->width, egl->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	
 	glGenFramebuffers(1, &egl->FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, egl->FBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, egl->colorTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, egl->color_texture, 0);
 
 	IJK_GLES2_checkError_TRACE("IJK_EGL_prepare_FBO_if_need:glBindFramebuffer");
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
+		egl->width_color_tex = w;
+		egl->height_color_tex = h;
 		return true;
 	} else {
 		IJK_GLES2_checkError_TRACE("IJK_EGL_prepare_FBO_if_need:glBindFramebuffer");
@@ -560,19 +569,19 @@ static int bmp_write(unsigned char *image, int xsize, int ysize, char *filename)
 	return 0;
 }
 
-static int IJK_EGL_snapshot_from_FBO(IJK_EGL* egl, void** pixel_data_out)
+static int IJK_EGL_snapshot_from_FBO(IJK_EGL* egl, EGLint w, EGLint h, void** pixel_data_out)
 {
-	GLint bytes_per_row = egl->width * 4;
+	GLint bytes_per_row = w * 4;
 	const GLint bits_per_pixel = 32;
-	void* pixels_data = malloc(bytes_per_row * egl->height);
+	void* pixels_data = malloc(bytes_per_row * h);
 	//glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, bytes_per_row);
 	//IJK_GLES2_checkError_TRACE("glPixelStorei");
 
-	glReadPixels(0, 0, egl->width, egl->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels_data);
+	glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels_data);
 	IJK_GLES2_checkError_TRACE("glReadPixels");
 
-	int width = egl->width;
-	int height = egl->height;
+	int width = w;
+	int height = h;
 	dump_picture("", pixels_data, width, height);
 
 	FILE* fp = NULL;
@@ -604,12 +613,25 @@ static int IJK_EGL_snapshot_from_FBO(IJK_EGL* egl, void** pixel_data_out)
 	return 0;
 }
 
-void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out)
+void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out, int* w_out, int* h_out)
 {
 	if (egl->display && egl->surface && egl->context) {
 		if (!eglMakeCurrent(egl->display, egl->surface, egl->surface, egl->context)) {
 			ALOGE("[EGL] elgMakeCurrent() failed (cached)\n");
 			return NULL;
+		}
+	}
+
+	EGLint pic_width = egl->width;
+	EGLint pic_height = egl->height;
+
+	//保持用户定义宽高比
+	if (egl->preference.dar_ratio > 0) {
+		if (pic_width / pic_height > egl->preference.dar_ratio) {
+			pic_height = pic_width * 1.0 / egl->preference.dar_ratio;
+		}
+		else {
+			pic_width = pic_height * egl->preference.dar_ratio;
 		}
 	}
 
@@ -619,12 +641,12 @@ void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with
 	}
 
 	EGLBoolean ret = false;
-	if (IJK_EGL_prepare_FBO_if_need(egl)) {
+	if (IJK_EGL_prepare_FBO_if_need(egl, pic_width, pic_height)) {
 		glBindFramebuffer(GL_FRAMEBUFFER, egl->FBO);
-		glViewport(0, 0, egl->width, egl->height);
+		glViewport(0, 0, pic_width, pic_height);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glBindTexture(GL_TEXTURE_2D, egl->colorTexture);
+		glBindTexture(GL_TEXTURE_2D, egl->color_texture);
 
 		IJK_EGL_Opaque *opaque = egl->opaque;
 
@@ -656,7 +678,9 @@ void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with
 			IJK_GLES2_Renderer_endDrawSubtitle(opaque->renderer);
 		}
 
-		IJK_EGL_snapshot_from_FBO(egl, pixels_out);
+		IJK_EGL_snapshot_from_FBO(egl, pic_width, pic_height, pixels_out);
+		*w_out = pic_width;
+		*h_out = pic_height;
 	}
 
 	eglSwapBuffers(egl->display, egl->surface);
