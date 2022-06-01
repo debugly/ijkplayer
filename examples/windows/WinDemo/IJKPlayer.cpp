@@ -544,12 +544,12 @@ EMediaType IJKPlayer::MediaTypeSniffing(const std::string& file_name)
 
 	for (int index = 0; index < MAX_STREAM_NUM; ++index)
 	{
-		if (info.streams[AVMEDIA_TYPE_VIDEO][index] != -1)
+		if (info.streams[IJKAVMEDIA_TYPE_VIDEO][index] != -1)
 		{
 			type = EMediaType::Video;
 			break;
 		}
-		else if (info.streams[AVMEDIA_TYPE_AUDIO][index] != -1)
+		else if (info.streams[IJKAVMEDIA_TYPE_AUDIO][index] != -1)
 		{
 			type = EMediaType::Audio;
 			break;
