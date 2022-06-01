@@ -996,7 +996,7 @@ void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** 
 	SDL_Snapshot(decoder->ijk_media_player->ffplayer->vout, with_sub, pixel_data_out, w, h);
 }
 
-SimpleStreamInfo extract_stream_info(const char* file_name)
+SimpleStreamInfo ijkUtil_extractStreamInfo(const char* file_name)
 {
 	AVFormatContext *formatCtx = avformat_alloc_context();
 	if (!formatCtx) {

@@ -184,7 +184,7 @@ int ijkFfplayDecoder_setSubtitleFontName(IjkFfplayDecoder* decoder, const char* 
 
 void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** pixel_data_out, int* w, int* h);
 
-SimpleStreamInfo extract_stream_info(const char* file_name);
+SimpleStreamInfo ijkUtil_extractStreamInfo(const char* file_name);
 
 #ifdef  __cplusplus  
 }
