@@ -125,6 +125,11 @@ void play_one(const char* path)
 	}
 }
 
+bool parse_one(const char* path)
+{
+	return IJKPlayer::MediaTypeSniffing(path) != EMediaType::Unknown;
+}
+
 void test_media_list(const char* listPath)
 {
 	if (strstr(listPath, "http://") || strstr(listPath, "https://"))
@@ -570,6 +575,7 @@ int main()
 
 	printf("\nPlease chose your decode mode: \n");
 	printf("1: normal mode\n");
+	printf("2: parse media\n");
 	printf("9: auto test mode\n");
 	printf("decode mode: ");
 	scanf("%d", &mode);
@@ -578,6 +584,12 @@ int main()
 	case 1:
 		printf("\nPlease input file path:\n");
 		scanf("%s", filePath);
+		play_one(filePath);
+		break;
+	case 2:
+		printf("\nPlease input file path:\n");
+		scanf("%s", filePath);
+		parse_one(filePath);
 		break;
 	case 9:
 		printf("\nPlease input test list path:\n");
@@ -587,9 +599,7 @@ int main()
 	default:
 		break;
 	}
-
-	play_one(filePath);
-
+	
 	char input = ' ';
 
 	while (1) 
