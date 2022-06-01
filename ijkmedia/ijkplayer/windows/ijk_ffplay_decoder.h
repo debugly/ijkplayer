@@ -20,6 +20,7 @@ extern "C" {
 
 #include "ijk_frame.h"
 #include "ijk_metadata.h"
+#include "libavutil\avutil.h"
 #include <windows.h>
 
 //get video or audio info 
@@ -85,6 +86,12 @@ enum IJKMP_OPT_CATEGORY
 	OPT_CATEGORY_PLAYER,
 	OPT_CATEGORY_SWR
 };
+
+#define MAX_STREAM_NUM 100
+typedef struct SimpleStreamInfo {
+	int  streams[AVMEDIA_TYPE_NB][MAX_STREAM_NUM];
+	double duration;
+} SimpleStreamInfo;
 
 typedef struct IjkFfplayDecoderCallBack {
 	void (*func_get_frame)(void* opaque, IjkVideoFrame *frame_callback);
@@ -176,6 +183,8 @@ char* ijkFfplayDecoder_getSubtitleFontName(IjkFfplayDecoder* decoder);
 int ijkFfplayDecoder_setSubtitleFontName(IjkFfplayDecoder* decoder, const char* font_name);
 
 void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** pixel_data_out, int* w, int* h);
+
+SimpleStreamInfo extract_stream_info(const char* file_name);
 
 #ifdef  __cplusplus  
 }

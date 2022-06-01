@@ -995,3 +995,55 @@ void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** 
 
 	SDL_Snapshot(decoder->ijk_media_player->ffplayer->vout, with_sub, pixel_data_out, w, h);
 }
+
+SimpleStreamInfo extract_stream_info(const char* file_name)
+{
+	AVFormatContext *formatCtx = avformat_alloc_context();
+	if (!formatCtx) {
+		ALOGE("创建 AVFormatContext 失败！\n");
+		goto end;
+	}
+
+	//打开文件流，读取头信息；
+	if (0 != avformat_open_input(&formatCtx, file_name, NULL, NULL)) {
+		ALOGE("文件打开失败！\n");
+		goto end;
+	}
+
+	if (0 != avformat_find_stream_info(formatCtx, NULL)) {
+		ALOGE("不能找到流！\n");
+		goto end;
+	}
+
+	SimpleStreamInfo info;
+	memset(&info, -1, sizeof(SimpleStreamInfo));
+
+	if (formatCtx->duration > 0) {
+		float duration = (formatCtx->duration / 1000000.0);
+		info.duration = duration;
+	}
+
+	//查找H264格式的视频流
+	int idx_cnt[AVMEDIA_TYPE_NB] = { 0 };
+	for (int i = 0; i < formatCtx->nb_streams; i++) {
+		AVStream *st = formatCtx->streams[i];
+		//skip attached picture/"cover art" (e.g.APIC frame in ID3v2)
+		if (st->disposition & AV_DISPOSITION_ATTACHED_PIC) {
+			continue;
+		}
+		enum AVMediaType type = st->codecpar->codec_type;
+		//这里设置为了丢弃所有帧，解码器里会进行修改！
+		st->discard = AVDISCARD_ALL;
+		if (type < AVMEDIA_TYPE_NB) {
+			int i = idx_cnt[type]++;
+			info.streams[type][i] = st->index;
+		};
+	}
+
+end:
+	if (formatCtx) {
+		avformat_close_input(&formatCtx);
+	}
+
+	return info;
+}
