@@ -76,17 +76,18 @@ void _msg_callback(void* opaque, IjkMsgState message, int arg1, int arg2)
 	case IJK_MSG_VIDEO_RENDERING_START:
 		{
 		    PostMessage(_ijk_vout, UM_PLAYER_PLAYBEGIN, NULL, NULL);
-		    IJKPlayer::setSubtitleFontName("¿¬Ìå");
-		    std::string font_name = IJKPlayer::getSubtitleFontName();
-		    IJKPlayer::setSubtitleFontSize(24.0f);
-		    float font_size = IJKPlayer::getSubtitleFontSize();
-		    IJKPlayer::loadSubtitle("D:\\VideoTest\\Witcher.srt");
-		    IJKPlayer::setSubtitle("D:\\VideoTest\\Witcher.ass");
-		    IJKPlayer::setSubtitleDelay(5.0f);
-		    float subtitle_dalay = IJKPlayer::getSubtitleExtraDelay();
-			IJKPlayer::setPlaybackRate(1.0f);
-			IJKPlayer::setSubtitleStream(1);
+			//IJKPlayer::setSubtitleFontName("¿¬Ìå");
+			//std::string font_name = IJKPlayer::getSubtitleFontName();
+			//IJKPlayer::setSubtitleFontSize(24.0f);
+			//float font_size = IJKPlayer::getSubtitleFontSize();
+			//IJKPlayer::loadSubtitle("D:\\VideoTest\\Witcher.srt");
+			//IJKPlayer::setSubtitle("D:\\VideoTest\\Witcher.ass");
+			//IJKPlayer::setSubtitleDelay(5.0f);
+			//float subtitle_dalay = IJKPlayer::getSubtitleExtraDelay();
+			//IJKPlayer::setPlaybackRate(1.0f);
 			//IJKPlayer::getSubtitleStreams();
+			//IJKPlayer::setSubtitleStream(2);
+			//IJKPlayer::takeSnapshot();
 		}
 		break;
 	case IJK_MSG_AUDIO_RENDERING_START:
@@ -505,8 +506,7 @@ void IJKPlayer::getSubtitleStreams()
 
 int IJKPlayer::setSubtitleStream(int index)
 {
-	//@param:selected 1 select or 0 un-select
-	return ijkFfplayDecoder_setStreamSelected(_ijk_ffplay_decoder, index, 1);
+	return ijkFfplayDecoder_setStreamSelected(_ijk_ffplay_decoder, index, (int)true);
 }
 
 int IJKPlayer::setSubtitleFontName(const std::string& name)
@@ -527,6 +527,36 @@ int IJKPlayer::setSubtitleDelay(float delay)
 float IJKPlayer::getSubtitleExtraDelay()
 {
 	return ijkFfplayDecoder_getSubtitleExtraDelay(_ijk_ffplay_decoder);
+}
+
+void IJKPlayer::takeSnapshot()
+{
+	int width, height = 0;
+	void* buffer;
+	ijkFfplayDecoder_snapshot(_ijk_ffplay_decoder, (int)false, &buffer, &width, &height);
+}
+
+EMediaType IJKPlayer::MediaTypeSniffing(const std::string& file_name)
+{
+	EMediaType type = EMediaType::Unknown;
+
+	SimpleStreamInfo info = ijkUtil_extractStreamInfo(file_name.c_str());
+
+	for (int index = 0; index < MAX_STREAM_NUM; ++index)
+	{
+		if (info.streams[IJKAVMEDIA_TYPE_VIDEO][index] != -1)
+		{
+			type = EMediaType::Video;
+			break;
+		}
+		else if (info.streams[IJKAVMEDIA_TYPE_AUDIO][index] != -1)
+		{
+			type = EMediaType::Audio;
+			break;
+		}
+	}
+
+	return type;
 }
 
 int IJKPlayer::loadSubtitle(const std::string& file_name)

@@ -10,6 +10,13 @@
 #define UM_PLAYER_STATECHANGE		WM_USER + 4
 #define UM_PLAYER_PLAYEND			WM_USER + 5
 
+enum class EMediaType
+{
+	Unknown = -1,
+	Video,
+	Audio,
+};
+
 namespace IJKPlayer
 {
 	// control
@@ -33,7 +40,6 @@ namespace IJKPlayer
 	int setPlaybackRate(float rate);
 	// stream
 	void getSubtitleStreams();
-
 	int setSubtitleStream(int index);
 	// subtitle func
 	int setSubtitleFontName(const std::string& name);
@@ -45,4 +51,9 @@ namespace IJKPlayer
 	float getSubtitleFontSize();
 	int setSubtitleDelay(float delay);
 	float getSubtitleExtraDelay();
+	// snapshot
+	// test for now
+	void takeSnapshot();
+	// parse
+	EMediaType MediaTypeSniffing(const std::string& file_name);
 }

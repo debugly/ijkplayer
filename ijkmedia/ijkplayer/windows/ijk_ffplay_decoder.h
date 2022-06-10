@@ -20,7 +20,6 @@ extern "C" {
 
 #include "ijk_frame.h"
 #include "ijk_metadata.h"
-#include "libavutil\avutil.h"
 #include <windows.h>
 
 //get video or audio info 
@@ -86,10 +85,21 @@ enum IJKMP_OPT_CATEGORY
 	OPT_CATEGORY_PLAYER,
 	OPT_CATEGORY_SWR
 };
+// echo of AVMEDIA_TYPE_UNKNOWN and so on...
+enum IJKAVMEDIA_TYPE
+{
+	IJKAVMEDIA_TYPE_UNKNOWN = -1,  
+	IJKAVMEDIA_TYPE_VIDEO,
+	IJKAVMEDIA_TYPE_AUDIO,
+	IJKAVMEDIA_TYPE_DATA,          
+	IJKAVMEDIA_TYPE_SUBTITLE,
+	IJKAVMEDIA_TYPE_ATTACHMENT,    
+	IJKAVMEDIA_TYPE_NB
+};
 
 #define MAX_STREAM_NUM 100
 typedef struct SimpleStreamInfo {
-	int  streams[AVMEDIA_TYPE_NB][MAX_STREAM_NUM];
+	int  streams[IJKAVMEDIA_TYPE_NB][MAX_STREAM_NUM];
 	double duration;
 } SimpleStreamInfo;
 
