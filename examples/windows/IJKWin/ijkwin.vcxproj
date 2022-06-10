@@ -194,6 +194,8 @@
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\pipeline\ffpipeline_ffplay.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\pipeline\ffpipenode_ffplay_vdec.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_ffplay_decoder.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_sub_decoder.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_text_demuxer.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\windows\pipeline\ffpipeline_win.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\ffmpeg\abi_all\image_convert.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\ffmpeg\ijksdl_vout_overlay_ffmpeg.c" />
@@ -270,6 +272,8 @@
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_ffplay_decoder.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_frame.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_metadata.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_sub_decoder.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_text_demuxer.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\pipeline\ffpipeline_win.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijksdl\ffmpeg\ijksdl_image_convert.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijksdl\ffmpeg\ijksdl_inc_ffmpeg.h" />

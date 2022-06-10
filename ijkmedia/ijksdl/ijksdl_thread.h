@@ -47,5 +47,6 @@ SDL_Thread *SDL_CreateThreadEx(SDL_Thread *thread, int (*fn)(void *), void *data
 int         SDL_SetThreadPriority(SDL_ThreadPriority priority);
 void        SDL_WaitThread(SDL_Thread *thread, int *status);
 void        SDL_DetachThread(SDL_Thread *thread);
+void		SDL_CancelThread(SDL_Thread *thread);
 
 #endif

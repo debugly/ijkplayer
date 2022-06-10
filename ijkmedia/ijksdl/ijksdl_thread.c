@@ -113,3 +113,12 @@ void SDL_DetachThread(SDL_Thread *thread)
 
     pthread_detach(thread->id);
 }
+
+void SDL_CancelThread(SDL_Thread *thread)
+{
+	assert(thread);
+	if (!thread)
+		return;
+
+	pthread_cancel(thread->id);
+}

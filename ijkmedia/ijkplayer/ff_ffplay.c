@@ -3446,6 +3446,11 @@ static int stream_has_enough_packets(AVStream *st, int stream_id, PacketQueue *q
            queue->nb_packets > min_frames;
 }
 
+int ffp_stream_has_enough_packets(AVStream *st, int stream_id, PacketQueue *queue)
+{
+	return stream_has_enough_packets(st, stream_id, queue, 25);
+}
+
 static int is_realtime(AVFormatContext *s)
 {
     if(   !strcmp(s->iformat->name, "rtp")
@@ -5330,6 +5335,16 @@ int ffp_packet_queue_get_or_buffering(FFPlayer *ffp, PacketQueue *q, AVPacket *p
 int ffp_packet_queue_put(PacketQueue *q, AVPacket *pkt)
 {
     return packet_queue_put(q, pkt);
+}
+
+int ffp_packet_queue_put_nullpacket(PacketQueue *q, int stream_index)
+{
+	AVPacket pkt1, *pkt = &pkt1;
+	av_init_packet(pkt);
+	pkt->data = NULL;
+	pkt->size = 0;
+	pkt->stream_index = stream_index;
+	return packet_queue_put(q, pkt);
 }
 
 Frame *ffp_frame_queue_peek_writable(FrameQueue *f)

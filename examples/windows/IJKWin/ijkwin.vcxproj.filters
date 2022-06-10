@@ -256,6 +256,12 @@
     <ClCompile Include="..\..\..\ijkmedia\ijksdl\gles2\renderer_yuv420p.c">
       <Filter>ijksdl\gles</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_sub_decoder.c">
+      <Filter>win\ijkplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_text_demuxer.c">
+      <Filter>win\ijkplayer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global\src\Counter.h">
@@ -449,6 +455,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\ijkmedia\ijksdl\windows\win_text_to_bitmap.h">
       <Filter>win\ijksdl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_sub_decoder.h">
+      <Filter>win\ijkplayer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_text_demuxer.h">
+      <Filter>win\ijkplayer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
