@@ -105,24 +105,24 @@ void play_one(const char* path)
 {
 	IJKPlayer::play(path);
 	
-	int i = 0;
-	while (++i < 10)
-	{
-		Sleep(1000);
-	}
-	i = 0;
+	//int i = 0;
+	//while (++i < 10)
+	//{
+	//	Sleep(1000);
+	//}
+	//i = 0;
 
-	Sleep(0);
+	//Sleep(0);
 
-	long duration = IJKPlayer::getDuration();
-	if (duration > 10 * 1 * 1000)
-	{
-		IJKPlayer::seek(duration - 10 * 1 * 1000);
-		while (++i < 10)
-		{
-			Sleep(1000);
-		}
-	}
+	//long duration = IJKPlayer::getDuration();
+	//if (duration > 10 * 1 * 1000)
+	//{
+	//	IJKPlayer::seek(duration - 10 * 1 * 1000);
+	//	while (++i < 10)
+	//	{
+	//		Sleep(1000);
+	//	}
+	//}
 }
 
 bool parse_one(const char* path)

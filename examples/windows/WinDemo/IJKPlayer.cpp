@@ -367,13 +367,13 @@ void IJKPlayer::prepare(const std::string & url)
 	ijkFfplayDecoder_setOptionStringValue(_ijk_ffplay_decoder, OPT_CATEGORY_FORMAT, "user_agent", "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.51 Safari/537.36 ifox/7.0.0.152");
 
 	std::string codec;
-	for each (auto var in util_getGPUInfo())
-	{
-		codec = _get_hwcodec_name(var);
-		// Is it neccessary to find second?
-		if (!codec.empty())
-			break;
-	}
+	//for each (auto var in util_getGPUInfo())
+	//{
+	//	codec = _get_hwcodec_name(var);
+	//	// Is it neccessary to find second?
+	//	if (!codec.empty())
+	//		break;
+	//}
 	
 	codec.empty() ? OutputDebugString(L"find no hwcodec!\n") : ijkFfplayDecoder_setHwDecoderName(_ijk_ffplay_decoder, codec.c_str());
 
