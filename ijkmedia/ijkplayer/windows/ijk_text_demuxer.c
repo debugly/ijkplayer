@@ -11,6 +11,7 @@
 #include "ijksdl\ijksdl_thread.h"
 #include "ijkplayer\ff_ffplay.h"
 #include "ijkplayer\ijkplayer.h"
+#include "ijksdl\windows\win_text_to_bitmap.h"
 
 
 typedef struct IjkTextDemuxer {
@@ -51,11 +52,6 @@ bool isAbortTextDemuxer(IjkTextDemuxer* demux)
 	return !demux->workThread;
 }
 
-//准备
-void Ijk_prepareTextDemuxer(IjkTextDemuxer* demux)
-{
-
-}
 
 #pragma mark - 打开解码器创建解码线程
 IjkSubDecoder* dumpStreamComponent(AVFormatContext *ic, int idx)
@@ -223,7 +219,7 @@ int findFirstSubStream(AVFormatContext *formatCtx)
 	return first_sub_stream;
 }
 
-#define ITEM_NUM 5
+
 void workFunc(IjkTextDemuxer* demux)
 {
 	char* error = NULL;
@@ -244,13 +240,13 @@ void workFunc(IjkTextDemuxer* demux)
 		demux->st_idx = sub_index;
 
 		char metaKeyArr[ITEM_NUM][10] = { "title","album","artist","author","creator" };
-		char *dumpDic[(ITEM_NUM+1)*2] = {NULL};
+		wchar_t *dumpDic[(ITEM_NUM+1)*2] = {NULL};
 
 		for (int i = 0; i < ITEM_NUM; i++) {
 			AVDictionaryEntry *entry = av_dict_get(formatCtx->metadata, metaKeyArr[i], NULL, 0);
 			if (entry && entry->value) {
-				dumpDic[2*i] = entry->key;
-				dumpDic[2 * i + 1] = entry->value;
+				dumpDic[2*i] = ANS2WCS(entry->key);
+				dumpDic[2 * i + 1] = UTF82WCS(entry->value);
 			}
 		}
 
@@ -258,8 +254,8 @@ void workFunc(IjkTextDemuxer* demux)
 			//创建解码器可解码成 ASS 格式
 			IjkSubDecoder *decoder = dumpStreamComponent(formatCtx, sub_index);
 			if (decoder->codecName) {
-				dumpDic[2*ITEM_NUM] = kMovieSubFmt;
-				dumpDic[2 * ITEM_NUM + 1] = decoder->codecName;
+				dumpDic[2*ITEM_NUM] = ANS2WCS(kMovieSubFmt);
+				dumpDic[2 * ITEM_NUM + 1] = ANS2WCS(decoder->codecName);
 			}
 
 			if (!decoder) {
@@ -294,12 +290,13 @@ void workFunc(IjkTextDemuxer* demux)
 					const char *cstr = (const char *)pkt.data;
 					if (cstr && strlen(cstr) > 0) {
 						char* str = av_strdup(cstr);
+						wchar_t* w_str = UTF82WCS(str);
 						//ctx的时间基不对，所以无法通过time_base计算
 						float time_base = 1000;
 						uint32_t pts = pkt.pts / time_base;
 
 						if (demux->onFrameComingBlock)
-							demux->onFrameComingBlock(demux, str, pts);
+							demux->onFrameComingBlock(demux, w_str, pts);
 					}
 				}
 			}
@@ -374,8 +371,9 @@ void decoderReceivedASub(IjkTextDemuxer* demux, IjkSubDecoder* decoder, AVSubtit
 
 		if (cstr && strlen(cstr) > 0) {
 			char *str = av_strdup(cstr);
+			wchar_t* w_str = UTF82WCS(str);
 			if (demux->onFrameComingBlock)
-				demux->onFrameComingBlock(demux, str, sub->start_display_time);
+				demux->onFrameComingBlock(demux, w_str, sub->start_display_time);
 		}
 	}
 }

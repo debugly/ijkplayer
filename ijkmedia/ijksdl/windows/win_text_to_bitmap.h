@@ -26,6 +26,10 @@ Subtitle_Overlay* Create_Bitmap(const char* text, Subtitle_Overlay** ptr);
 
 void Release_Bitmap(Subtitle_Overlay* overlay);
 
+wchar_t* UTF82WCS(const char* str_utf8);
+
+wchar_t* ANS2WCS(const char* str_utf8);
+
 #ifdef __cplusplus
 }
 #endif

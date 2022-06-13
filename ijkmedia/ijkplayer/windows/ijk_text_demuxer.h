@@ -22,8 +22,9 @@ typedef struct IjkSubDecoder IjkSubDecoder;
 typedef struct AVPacket AVPacket;
 typedef struct AVSubtitle AVSubtitle;
 
-typedef void(*OnStreamOpenedBlock)(IjkTextDemuxer* demux, char** pair);
-typedef void (*OnFrameComingBlock)(IjkTextDemuxer*, char*, uint32_t);
+#define ITEM_NUM 5
+typedef void(*OnStreamOpenedBlock)(IjkTextDemuxer* demux, wchar_t** pairs);
+typedef void (*OnFrameComingBlock)(IjkTextDemuxer*, wchar_t*, uint32_t);
 typedef void (*OnFinishedBlock)(IjkTextDemuxer*, char*);
 
 
