@@ -1,4 +1,4 @@
-//
+﻿//
 //  ijk_ffplay_decoder.c
 //  IJKMediaPlayer
 //
@@ -152,12 +152,12 @@ static int decode_interrupt_cb(void *ctx)
 }
 
 
-AVFormatContext *openStream(IjkTextDemuxer* demux)
+AVFormatContext *openStream(IjkTextDemuxer* demux, wchar_t** errp)
 {
-	bool error = false;
+	wchar_t* error = NULL;
 	AVFormatContext*formatCtx = avformat_alloc_context();
 	if (!formatCtx) {
-		error = true;
+		error = L"创建 AVFormatContext 失败";
 		goto ended;
 	}
 
@@ -172,7 +172,7 @@ AVFormatContext *openStream(IjkTextDemuxer* demux)
 
 	//打开文件流，读取头信息；
 	if (0 != avformat_open_input(&formatCtx, moviePath, NULL, NULL)) {
-		error = true;
+		error = L"文件打开失败";
 		goto ended;
 	}
 
@@ -183,7 +183,7 @@ AVFormatContext *openStream(IjkTextDemuxer* demux)
 	formatCtx->max_analyze_duration = 10 * AV_TIME_BASE;
 
 	if (0 != avformat_find_stream_info(formatCtx, NULL)) {
-		error = true;
+		error = L"不能找到流！";
 		goto ended;
 	}
 
@@ -193,7 +193,9 @@ ended:
 		if (formatCtx) {
 			avformat_free_context(formatCtx);
 		}
-
+		if (errp) {
+			*errp = error;
+		}
 		return NULL;
 	}
 	else {
@@ -225,8 +227,8 @@ int findFirstSubStream(AVFormatContext *formatCtx)
 
 void workFunc(IjkTextDemuxer* demux)
 {
-	char* error = NULL;
-	AVFormatContext* formatCtx = openStream(demux);
+	wchar_t* error = NULL;
+	AVFormatContext* formatCtx = openStream(demux, &error);
 	if (!formatCtx) {
 		goto ended;
 	}
@@ -262,11 +264,13 @@ void workFunc(IjkTextDemuxer* demux)
 			}
 
 			if (!decoder) {
+				error = L"不能找到流！";
 				goto ended;
 			}
 
 			if (ijk_openSubDecoder(decoder)) {
 				demux->subDecoder = decoder;
+				demux->subDecoder->delegDemuxer = demux;
 				demux->subDecoder->name = "subDecoder";
 
 				if (demux->onStreamOpenedBlock)
@@ -276,6 +280,7 @@ void workFunc(IjkTextDemuxer* demux)
 			}
 			else {
 				//有的视频只有一个头，没有包也不能打开解码器；有的是编码格式不支持
+				error = L"不能打开文件";
 				goto ended;
 			}
 		}
@@ -313,11 +318,13 @@ ended:
 	}
 
 	free(demux->subDecoder);
+	demux->subDecoder = NULL;
 	ffp_packet_queue_destroy(&demux->subq);
 	//当取消掉时，不给上层回调
 	if (!isAbortTextDemuxer(demux)) {
-		if (demux->onFinishedBlock)
+		if (demux->onFinishedBlock) {
 			demux->onFinishedBlock(demux, error);
+		}
 	}
 }
 

@@ -25,7 +25,7 @@ typedef struct AVSubtitle AVSubtitle;
 #define ITEM_NUM 5
 typedef void(*OnStreamOpenedBlock)(IjkTextDemuxer* demux, wchar_t** pairs);
 typedef void (*OnFrameComingBlock)(IjkTextDemuxer*, wchar_t*, uint32_t);
-typedef void (*OnFinishedBlock)(IjkTextDemuxer*, char*);
+typedef void (*OnFinishedBlock)(IjkTextDemuxer*, wchar_t*);
 
 
 int decoderWantAPacket(IjkTextDemuxer* demux, IjkSubDecoder* decoder, AVPacket* pkt);

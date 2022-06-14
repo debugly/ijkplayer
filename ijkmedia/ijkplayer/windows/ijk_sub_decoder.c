@@ -176,5 +176,7 @@ void ijk_startSubDecoder(IjkSubDecoder* dec)
 
 void ijk_cancelSubDecoder(IjkSubDecoder* dec)
 {
-	dec->abort_request = true;
+	if (dec) {
+		dec->abort_request = true;
+	}
 }
