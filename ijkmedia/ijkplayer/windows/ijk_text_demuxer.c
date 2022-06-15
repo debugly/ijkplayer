@@ -37,11 +37,11 @@ typedef struct IjkTextDemuxer {
 	bool convertToAss;
 } IjkTextDemuxer;
 
-IjkTextDemuxer* Ijk_createTextDemuxer(const char* content_path, OnStreamOpenedBlock stream_open, OnFinishedBlock finish, OnFrameComingBlock frame_coming)
+IjkTextDemuxer* Ijk_createTextDemuxer(const wchar_t* content_path, OnStreamOpenedBlock stream_open, OnFinishedBlock finish, OnFrameComingBlock frame_coming)
 {
 	IjkTextDemuxer* demux = (IjkTextDemuxer*)calloc(sizeof(IjkTextDemuxer), 1);
 	if (demux) {
-		demux->contentPath = content_path;
+		demux->contentPath = WCS2UTF8(content_path);
 		demux->onStreamOpenedBlock = stream_open;
 		demux->onFinishedBlock = finish;
 		demux->onFrameComingBlock = frame_coming;

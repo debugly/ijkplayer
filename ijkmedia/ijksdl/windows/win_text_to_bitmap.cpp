@@ -3,23 +3,40 @@
 
 #include <windows.h>
 #include <gdiplus.h>
+char* WCS2UTF8(const wchar_t* str_wcs)
+{
+	//预转换，得到所需空间的大小;
+	int utf8Len = ::WideCharToMultiByte(CP_UTF8, 0, str_wcs, -1, NULL, 0, NULL, NULL);
+
+	//分配空间要给'\0'留个空间，WideCharToMultiByte不会给'\0'空间
+	char* uft8String = new char[utf8Len + 1];
+
+	//转换
+	::WideCharToMultiByte(CP_UTF8, 0, str_wcs, -1, uft8String, utf8Len, NULL, NULL);
+
+	//最后加上'\0'
+	uft8String[utf8Len] = '\0';
+
+	return uft8String;
+}
 
 wchar_t* CVT2WCS(int codepage, const char* str_utf8)
 {
 	//预转换，得到所需空间的大小;
-	int wcsLen = ::MultiByteToWideChar(codepage, NULL, str_utf8, strlen(str_utf8), NULL, 0);
+	int wcsLen = ::MultiByteToWideChar(codepage, 0, str_utf8, strlen(str_utf8), NULL, 0);
 
 	//分配空间要给'\0'留个空间，MultiByteToWideChar不会给'\0'空间
 	wchar_t* wszString = new wchar_t[wcsLen + 1];
 
 	//转换
-	::MultiByteToWideChar(codepage, NULL, str_utf8, strlen(str_utf8), wszString, wcsLen);
+	::MultiByteToWideChar(codepage, 0, str_utf8, strlen(str_utf8), wszString, wcsLen);
 
 	//最后加上'\0'
 	wszString[wcsLen] = '\0';
 
 	return wszString;
 }
+
 
 wchar_t* UTF82WCS(const char* str_utf8)
 {

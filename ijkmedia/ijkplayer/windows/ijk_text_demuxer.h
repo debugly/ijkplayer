@@ -32,7 +32,7 @@ int decoderWantAPacket(IjkTextDemuxer* demux, IjkSubDecoder* decoder, AVPacket* 
 bool decoderHasMorePacket(IjkTextDemuxer* demux);
 void decoderReceivedASub(IjkTextDemuxer* demux, IjkSubDecoder* decoder, AVSubtitle* sub);
 
-IjkTextDemuxer* Ijk_createTextDemuxer(const char*, OnStreamOpenedBlock, OnFinishedBlock, OnFrameComingBlock);
+IjkTextDemuxer* Ijk_createTextDemuxer(const wchar_t*, OnStreamOpenedBlock, OnFinishedBlock, OnFrameComingBlock);
 
 ///开始提取
 void Ijk_startTextDemuxer(IjkTextDemuxer* demux);

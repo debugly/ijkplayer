@@ -30,6 +30,8 @@ wchar_t* UTF82WCS(const char* str_utf8);
 
 wchar_t* ANS2WCS(const char* str_utf8);
 
+char* WCS2UTF8(const wchar_t* str_wcs);
+
 #ifdef __cplusplus
 }
 #endif
