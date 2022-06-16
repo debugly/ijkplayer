@@ -168,7 +168,6 @@ static int func_fill_frame(SDL_VoutOverlay *overlay, const AVFrame *frame)
     int need_swap_uv = 0;
     int use_linked_frame = 0;
     
-    
     enum AVPixelFormat dst_format = AV_PIX_FMT_NONE;
     switch (overlay->format) {
         case SDL_FCC_YV12:
@@ -208,10 +207,9 @@ static int func_fill_frame(SDL_VoutOverlay *overlay, const AVFrame *frame)
     // setup frame
     if (use_linked_frame) {
         // linked frame
-        av_frame_ref(opaque->linked_frame, frame);
-
-        overlay_fill(overlay, opaque->linked_frame, opaque->planes);
-
+        //av_frame_ref(opaque->linked_frame, frame);
+        //overlay_fill(overlay, opaque->linked_frame, opaque->planes);
+		overlay_fill(overlay, frame, opaque->planes);
         if (need_swap_uv)
             FFSWAP(Uint8*, overlay->pixels[1], overlay->pixels[2]);
     } else {
