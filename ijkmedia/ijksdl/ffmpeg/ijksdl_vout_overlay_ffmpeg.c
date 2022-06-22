@@ -207,9 +207,30 @@ static int func_fill_frame(SDL_VoutOverlay *overlay, const AVFrame *frame)
     // setup frame
     if (use_linked_frame) {
         // linked frame
-        //av_frame_ref(opaque->linked_frame, frame);
-        //overlay_fill(overlay, opaque->linked_frame, opaque->planes);
-		overlay_fill(overlay, frame, opaque->planes);
+		if (frame->buf[0]) {
+			av_frame_ref(opaque->linked_frame, frame);
+		}
+		else {//avoid mem align
+			opaque->linked_frame->format = frame->format;
+			opaque->linked_frame->width = frame->width;
+			opaque->linked_frame->height = frame->height;
+			opaque->linked_frame->channels = frame->channels;
+			opaque->linked_frame->channel_layout = frame->channel_layout;
+			opaque->linked_frame->nb_samples = frame->nb_samples;
+			int ret = av_frame_copy_props(opaque->linked_frame, frame);
+			if (ret < 0)
+				return ret;
+
+			ret = av_frame_get_buffer(opaque->linked_frame, 1);
+			if (ret < 0)
+				return ret;
+			ret = av_frame_copy(opaque->linked_frame, frame);
+			if (ret < 0)
+				av_frame_unref(opaque->linked_frame);
+		}
+
+		overlay_fill(overlay, opaque->linked_frame, opaque->planes);
+
         if (need_swap_uv)
             FFSWAP(Uint8*, overlay->pixels[1], overlay->pixels[2]);
     } else {
