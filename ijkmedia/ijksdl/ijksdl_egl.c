@@ -613,7 +613,7 @@ static int IJK_EGL_snapshot_from_FBO(IJK_EGL* egl, EGLint w, EGLint h, void** pi
 	return 0;
 }
 
-void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out, int* w_out, int* h_out)
+void* IJK_EGL_snapshotEffectOriginWithSubtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out, int* w_out, int* h_out)
 {
 	if (egl->display && egl->surface && egl->context) {
 		if (!eglMakeCurrent(egl->display, egl->surface, egl->surface, egl->context)) {
@@ -622,8 +622,20 @@ void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with
 		}
 	}
 
+	if (!egl->opaque || !egl->opaque->overlay) {
+		ALOGE("[EGL] egl->opaque or egl->opaque->overlay is null\n");
+		return NULL;
+	}
+
+	IJK_EGL_Opaque *opaque = egl->opaque;
 	EGLint pic_width = egl->width;
 	EGLint pic_height = egl->height;
+
+	if (IJK_GLES2_Renderer_isZRotate90oddMultiple(opaque->renderer)) {
+		EGLint tmp = pic_width;
+		pic_width = pic_height;
+		pic_height = tmp;
+	}
 
 	//保持用户定义宽高比
 	if (egl->preference.dar_ratio > 0) {
@@ -635,11 +647,6 @@ void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with
 		}
 	}
 
-	if (!egl->opaque || !egl->opaque->overlay) {
-		ALOGE("[EGL] egl->opaque or egl->opaque->overlay is null\n");
-		return NULL;
-	}
-
 	EGLBoolean ret = false;
 	if (IJK_EGL_prepare_FBO_if_need(egl, pic_width, pic_height)) {
 		glBindFramebuffer(GL_FRAMEBUFFER, egl->FBO);
@@ -647,8 +654,6 @@ void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindTexture(GL_TEXTURE_2D, egl->color_texture);
-
-		IJK_EGL_Opaque *opaque = egl->opaque;
 
 		if (!IJK_GLES2_Renderer_resetVao(opaque->renderer)) {
 			ALOGE("[EGL] snapshot IJK_GLES2_Renderer_resetVao failed\n");
@@ -689,28 +694,54 @@ void* IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with
 }
 
 
-float IJK_EGL_get_font_size(IJK_EGL* egl)
+float IJK_EGL_getFontSize(IJK_EGL* egl)
 {
+	if (!egl->opaque || !egl->opaque->sub_overlay) {
+		ALOGE("[EGL] egl->opaque or egl->opaque->sub_overlay is null\n");
+		return;
+	}
 	return egl->opaque->sub_overlay->font_size;
 }
 
-void IJK_EGL_set_font_size(IJK_EGL* egl, float size)
+void IJK_EGL_setFontSize(IJK_EGL* egl, float size)
 {
+	if (!egl->opaque || !egl->opaque->sub_overlay) {
+		ALOGE("[EGL] egl->opaque or egl->opaque->sub_overlay is null\n");
+		return;
+	}
 	egl->opaque->sub_overlay->font_size = size;
 }
 
-char* IJK_EGL_get_font_name(IJK_EGL* egl)
+char* IJK_EGL_getFontName(IJK_EGL* egl)
 {
+	if (!egl->opaque || !egl->opaque->sub_overlay) {
+		ALOGE("[EGL] egl->opaque or egl->opaque->sub_overlay is null\n");
+		return NULL;
+	}
 	return egl->opaque->sub_overlay->font_name;
 }
 
-void IJK_EGL_set_font_name(IJK_EGL* egl, const char* font_name)
+void IJK_EGL_setFontName(IJK_EGL* egl, const char* font_name)
 {
+	if (!egl->opaque || !egl->opaque->sub_overlay) {
+		ALOGE("[EGL] egl->opaque or egl->opaque->sub_overlay is null\n");
+		return;
+	}
 	if (egl->opaque->sub_overlay->font_name) {
 		free(egl->opaque->sub_overlay->font_name);
 	}
 
 	egl->opaque->sub_overlay->font_name = strdup(font_name);
+}
+
+void IJK_EGL_setColorPreference(IJK_EGL* egl, double b, double s, double c)
+{
+	if (!egl->opaque) {
+		ALOGE("[EGL] egl->opaque is null\n");
+		return;
+	}
+	
+	IJK_GLES2_Renderer_updateColorConversion(egl->opaque->renderer, b, s, c);
 }
 
 #endif

@@ -996,6 +996,16 @@ void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** 
 	SDL_Snapshot(decoder->ijk_media_player->ffplayer->vout, with_sub, pixel_data_out, w, h);
 }
 
+void  ijkFfplayDecoder_setColorPreference(IjkFfplayDecoder* decoder, double brightness, double saturaion, double contrast)
+{
+	if (!decoder || !decoder->ijk_media_player) {
+		ALOGE("IjkMediaPlayer is NULL.\n");
+		return -1;
+	}
+
+	SDL_SetColorPreference(decoder->ijk_media_player->ffplayer->vout, brightness, saturaion, contrast);
+}
+
 SimpleStreamInfo ijkUtil_extractStreamInfo(const char* file_name)
 {
 	AVFormatContext *formatCtx = avformat_alloc_context();

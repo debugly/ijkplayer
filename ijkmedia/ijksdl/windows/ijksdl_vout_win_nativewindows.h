@@ -22,4 +22,5 @@ void SDL_SetSubtitleFontName(SDL_Vout* vout, const char* font_name);
 
 void* SDL_Snapshot(SDL_Vout* vout, int with_sub, void** pixel_data_out, int* w, int* h);
 
+void SDL_SetColorPreference(SDL_Vout* vout, double brightness, double saturation, double contrast);
 #endif

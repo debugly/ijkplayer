@@ -169,11 +169,6 @@ static void func_update_subtitle(SDL_Vout *vout, const char *text)
 	opaque->subtitle_text = av_strdup(text);
 }
 
-static void func_snapshot(SDL_Vout *vout, SDL_VoutOverlay *overlay, EGLBoolean with_subtile)
-{
-
-}
-
 static void SDL_VoutWindows_SetNativeWindow_l(SDL_Vout *vout, HWND native_window)
 {
    // AMCTRACE("%s(%p, %p)\n", __func__, vout, native_window);
@@ -213,9 +208,7 @@ static void func_free_l(SDL_Vout *vout)
             opaque->native_window = NULL;
         }
 
-        IJK_EGL_freep(&opaque->egl);
-
-        
+        IJK_EGL_freep(&opaque->egl);   
     }
 
     SDL_Vout_FreeInternal(vout);
@@ -239,7 +232,6 @@ SDL_Vout *SDL_VoutWindows_CreateForANativeWindow()
     vout->free_l          = func_free_windows_l;
     vout->display_overlay = func_display_windows_overlay;
 	vout->update_subtitle = func_update_subtitle;
-	vout->snapshot        = func_snapshot;
     return vout;
 fail:
     func_free_l(vout);
@@ -257,27 +249,62 @@ void SDL_VoutWinNative_SetVideoDataCallback(void *arg, SDL_Vout *vout, int(*vide
 
 float SDL_GetSubtileFontSize(SDL_Vout* vout)
 {
-	return IJK_EGL_get_font_size(vout->opaque->egl);
+	if (!vout || !vout->opaque) {
+		ALOGE("vout or vout opaque is NULL!\n");
+		return -1;
+	}
+	return IJK_EGL_getFontSize(vout->opaque->egl);
 }
 
 void SDL_SetSubtitleFontSize(SDL_Vout* vout, float size)
 {
-	IJK_EGL_set_font_size(vout->opaque->egl, size);
+	if (!vout || !vout->opaque) {
+		ALOGE("vout or vout opaque is NULL!\n");
+		return;
+	}
+	SDL_LockMutex(vout->mutex);
+	IJK_EGL_setFontSize(vout->opaque->egl, size);
+	SDL_UnlockMutex(vout->mutex);
 }
 
 char* SDL_GetSubtitleFontName(SDL_Vout* vout)
 {
-	return IJK_EGL_get_font_name(vout->opaque->egl);
+	if (!vout || !vout->opaque) {
+		ALOGE("vout or vout opaque is NULL!\n");
+		return NULL;
+	}
+	return IJK_EGL_getFontName(vout->opaque->egl);
 }
 
 void SDL_SetSubtitleFontName(SDL_Vout* vout, const char* font_name)
 {
-	IJK_EGL_set_font_name(vout->opaque->egl, font_name);
+	if (!vout || !vout->opaque) {
+		ALOGE("vout or vout opaque is NULL!\n");
+		return;
+	}
+	SDL_LockMutex(vout->mutex);
+	IJK_EGL_setFontName(vout->opaque->egl, font_name);
+	SDL_UnlockMutex(vout->mutex);
 }
 
 void* SDL_Snapshot(SDL_Vout* vout, int with_sub, void** pixel_data_out, int* w, int* h)
 {
+	if (!vout || !vout->opaque) {
+		ALOGE("vout or vout opaque is NULL!\n");
+		return;
+	}
 	SDL_LockMutex(vout->mutex);
-	IJK_EGL_snapshot_effect_origin_with_subtitle(vout->opaque->egl, with_sub, pixel_data_out, w, h);
+	IJK_EGL_snapshotEffectOriginWithSubtitle(vout->opaque->egl, with_sub, pixel_data_out, w, h);
+	SDL_UnlockMutex(vout->mutex);
+}
+
+void SDL_SetColorPreference(SDL_Vout* vout, double brightness, double saturation, double contrast)
+{
+	if (!vout || !vout->opaque) {
+		ALOGE("vout or vout opaque is NULL!\n");
+		return;
+	}
+	SDL_LockMutex(vout->mutex);
+	IJK_EGL_setColorPreference(vout->opaque->egl, brightness, saturation, contrast);
 	SDL_UnlockMutex(vout->mutex);
 }

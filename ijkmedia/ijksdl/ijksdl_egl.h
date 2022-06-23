@@ -80,12 +80,13 @@ void        IJK_EGL_freep(IJK_EGL **egl);
 EGLBoolean  IJK_EGL_display(IJK_EGL* vout, EGLNativeWindowType window, SDL_VoutOverlay *overlay, const char* text);
 void        IJK_EGL_terminate(IJK_EGL* egl);
 
-void*		IJK_EGL_snapshot_effect_origin_with_subtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out, int* w_out, int* h_out);
+void*		IJK_EGL_snapshotEffectOriginWithSubtitle(IJK_EGL *egl, EGLBoolean with_subtitle, void** pixels_out, int* w_out, int* h_out);
 
-float		IJK_EGL_get_font_size(IJK_EGL* egl);
-void		IJK_EGL_set_font_size(IJK_EGL* egl, float size);
+float		IJK_EGL_getFontSize(IJK_EGL* egl);
+void		IJK_EGL_setFontSize(IJK_EGL* egl, float size);
 
-char*		IJK_EGL_get_font_name(IJK_EGL* egl);
-void		IJK_EGL_set_font_name(IJK_EGL* egl, const char* font_name);
+char*		IJK_EGL_getFontName(IJK_EGL* egl);
+void		IJK_EGL_setFontName(IJK_EGL* egl, const char* font_name);
 
+void		IJK_EGL_setColorPreference(IJK_EGL* egl, double b, double s, double c);
 #endif
