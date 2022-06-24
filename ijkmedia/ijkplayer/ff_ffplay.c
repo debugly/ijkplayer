@@ -655,12 +655,19 @@ static int decoder_decode_frame(FFPlayer *ffp, Decoder *d, AVFrame *frame, AVSub
 
 			switch (res)
 			{
-			case 0:
-				av_packet_unref(d->pkt);
-				break;
 			case AVERROR(EAGAIN):
 				av_log(d->avctx, AV_LOG_ERROR, "Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n");
 				d->packet_pending = 1;
+				break;
+			case AVERROR_INVALIDDATA:
+				av_log(d->avctx, AV_LOG_ERROR, "Send_packet return AVERROR_INVALIDDATA, decode nal units fail.\n");
+
+				if (!ffp->is->viddec.first_frame_decoded) {
+					ffp_notify_msg1(ffp, FFP_MSG_VIDEO_DECODER_FATAL);
+				}
+				//no break;
+			case 0:
+				av_packet_unref(d->pkt);
 				break;
 			default:
 				av_log(d->avctx, AV_LOG_ERROR, "avcodec_send_packet failed check errcode:%d\n", res);
