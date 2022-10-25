@@ -47,6 +47,9 @@
 
 typedef int (*ijk_inject_callback)(void *opaque, int type, void *data, size_t data_size);
 
+//when sampleSize is -1,means needs reset and refresh ui.
+typedef int (*ijk_audio_samples_callback)(void *opaque, int16_t *samples, int sampleSize, int sampleRate, int channels);
+
 #define FFP_OPT_CATEGORY_FORMAT 1
 #define FFP_OPT_CATEGORY_CODEC  2
 #define FFP_OPT_CATEGORY_SWS    3
@@ -54,7 +57,4 @@ typedef int (*ijk_inject_callback)(void *opaque, int type, void *data, size_t da
 #define FFP_OPT_CATEGORY_SWR    5
 
 #define FFP_EXCHANGE_DECODER_FLAG       -1000
-#define IJK_EX_SUBTITLE_STREAM_OFFSET   1000
-#define IJK_EX_SUBTITLE_STREAM_MAX      1100
-
 #endif

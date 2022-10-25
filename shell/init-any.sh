@@ -46,8 +46,7 @@ if [[ "$PLAT" == 'ios' || "$PLAT" == 'macos' || "$PLAT" == 'windows' ]]; then
     for lib in $LIBS
     do
         echo "===[init $lib]===================="
-        source $c_dir/init-cfgs/$lib
-        $c_dir/tools/init-repo.sh "$PLAT" "$ARCH"
+        $c_dir/tools/init-repo.sh "$c_dir/init-cfgs/$lib" "$PLAT" "$ARCH"
         echo "===================================="
     done
 else

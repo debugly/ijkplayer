@@ -111,6 +111,8 @@ typedef enum IJKLogLevel {
 @property(nonatomic, readonly) CGFloat fpsInMeta;
 @property(nonatomic, readonly) CGFloat fpsAtOutput;
 @property(nonatomic) BOOL shouldShowHudView;
+//when sampleSize is -1,means needs reset and refresh ui.
+@property(nonatomic, copy) void (^audioSamplesCallback)(int16_t *samples, int sampleSize, int sampleRate, int channels);
 
 - (NSDictionary *)allHudItem;
 

@@ -32,7 +32,6 @@ struct IJKFF_Pipenode {
     SDL_mutex *mutex;
     void *opaque;
     int vdec_type;
-    int is_using;
     void (*func_destroy) (IJKFF_Pipenode *node);
     int  (*func_run_sync)(IJKFF_Pipenode *node);
     int  (*func_flush)   (IJKFF_Pipenode *node); // optional

@@ -52,6 +52,17 @@
         ];
 }
 
++ (NSArray <NSString *>*)pictureType
+{
+    return @[
+        @"jpg",
+        @"jpeg",
+        @"png",
+        @"webp",
+        @"pcx",
+        @"tif"
+        ];
+}
 // mov,qt,mp4,m4v,flv,f4v,webm,3gp2,3gpp,3gp,3g2,rm,rmvb,wmv,avi,asf,mpg,mpeg,mpe,ts,mkv,mod,flc,fli,ram,dirac,cpk,lavf,dat,div,dv,divx,vob
 + (NSArray <NSString *>*)videoType
 {

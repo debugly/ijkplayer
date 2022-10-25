@@ -1,0 +1,84 @@
+From 0dc8f7a7858d66dd17d65614189c640dab2f68a8 Mon Sep 17 00:00:00 2001
+From: qianlongxu <qianlongxu@gmail.com>
+Date: Fri, 29 Jul 2022 13:01:10 +0800
+Subject: [PATCH 11/16] update make file
+
+---
+ libavformat/Makefile | 9 +++++++++
+ libavutil/Makefile   | 5 +++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/libavformat/Makefile b/libavformat/Makefile
+index 3eeca50..41e43cd 100644
+--- a/libavformat/Makefile
++++ b/libavformat/Makefile
+@@ -4,6 +4,14 @@ DESC = FFmpeg container format library
+ HEADERS = avformat.h                                                    \
+           avio.h                                                        \
+           version.h                                                     \
++          avc.h                                                         \
++          url.h                                                         \
++          internal.h                                                    \
++          avio_internal.h                                               \
++          flv.h                                                         \
++          id3v2.h                                                       \
++          os_support.h                                                  \
++          metadata.h                                                  \
+ 
+ OBJS = allformats.o         \
+        avio.o               \
+@@ -23,6 +31,7 @@ OBJS = allformats.o         \
+        sdp.o                \
+        url.o                \
+        utils.o              \
++       avc.o                \
+ 
+ OBJS-$(HAVE_LIBC_MSVCRT)                 += file_open.o
+ 
+diff --git a/libavutil/Makefile b/libavutil/Makefile
+index a63ba52..f4b03c6 100644
+--- a/libavutil/Makefile
++++ b/libavutil/Makefile
+@@ -4,6 +4,7 @@ DESC = FFmpeg utility library
+ HEADERS = adler32.h                                                     \
+           aes.h                                                         \
+           aes_ctr.h                                                     \
++          application.h                                                 \
+           attributes.h                                                  \
+           audio_fifo.h                                                  \
+           avassert.h                                                    \
+@@ -25,6 +26,7 @@ HEADERS = adler32.h                                                     \
+           display.h                                                     \
+           downmix_info.h                                                \
+           encryption_info.h                                             \
++          dns_cache.h                                                   \
+           error.h                                                       \
+           eval.h                                                        \
+           fifo.h                                                        \
+@@ -78,6 +80,7 @@ HEADERS = adler32.h                                                     \
+           version.h                                                     \
+           xtea.h                                                        \
+           tea.h                                                         \
++          thread.h                                                      \
+ 
+ HEADERS-$(CONFIG_LZO)                   += lzo.h
+ 
+@@ -92,6 +95,7 @@ BUILT_HEADERS = avconfig.h                                              \
+ OBJS = adler32.o                                                        \
+        aes.o                                                            \
+        aes_ctr.o                                                        \
++       application.o                                                    \
+        audio_fifo.o                                                     \
+        avstring.o                                                       \
+        base64.o                                                         \
+@@ -109,6 +113,7 @@ OBJS = adler32.o                                                        \
+        display.o                                                        \
+        downmix_info.o                                                   \
+        encryption_info.o                                                \
++       dns_cache.o                                                      \
+        error.o                                                          \
+        eval.o                                                           \
+        fifo.o                                                           \
+-- 
+2.30.1 (Apple Git-130)
+

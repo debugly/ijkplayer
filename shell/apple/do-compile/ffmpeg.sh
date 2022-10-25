@@ -175,6 +175,34 @@ else
 fi
 echo "------------------------"
 
+#----------------------
+# with bluray
+if [[ -f "${XC_PRODUCT_ROOT}/bluray-$XC_ARCH/lib/pkgconfig/libbluray.pc" ]]; then
+    
+    FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-libbluray --enable-protocol=bluray"
+    
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${XC_PRODUCT_ROOT}/bluray-$XC_ARCH/lib/pkgconfig"
+
+    echo "[*] --enable-libbluray --enable-protocol=bluray"
+else
+    echo "[*] --disable-libbluray --disable-protocol=bluray"
+fi
+echo "------------------------"
+
+#----------------------
+# FFmpeg 4.2 支持AV1、AVS2等格式
+# dav1d由VideoLAN，VLC和FFmpeg联合开发，项目由AOM联盟赞助，和libaom相比，dav1d性能普遍提升100%，最高提升400%
+if [[ -f "${XC_PRODUCT_ROOT}/dav1d-$XC_ARCH/lib/pkgconfig/dav1d.pc" ]]; then
+    FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-decoder=av1 --enable-libdav1d"
+    
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${XC_PRODUCT_ROOT}/dav1d-$XC_ARCH/lib/pkgconfig"
+
+    echo "[*] --enable-decoder=av1 --enable-libdav1d"
+else
+    echo "[*] --disable-decoder=av1 --disable-libdav1d"
+fi
+echo "------------------------"
+
 #parser subtitles
 FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-demuxer=ass --enable-demuxer=webvtt --enable-demuxer=srt"
     

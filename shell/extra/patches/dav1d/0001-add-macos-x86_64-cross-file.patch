@@ -1,0 +1,50 @@
+From 9f11442c4cde071eaee82dc01df9e8403a2bc39a Mon Sep 17 00:00:00 2001
+From: qianlongxu <qianlongxu@gmail.com>
+Date: Thu, 28 Jul 2022 17:38:38 +0800
+Subject: [PATCH] add macos x86_64 cross file
+
+---
+ package/crossfiles/x86_64-macos.meson | 30 +++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+ create mode 100644 package/crossfiles/x86_64-macos.meson
+
+diff --git a/package/crossfiles/x86_64-macos.meson b/package/crossfiles/x86_64-macos.meson
+new file mode 100644
+index 0000000..bfeb08a
+--- /dev/null
++++ b/package/crossfiles/x86_64-macos.meson
+@@ -0,0 +1,30 @@
++# This is a cross compilation file from OSX (M1) to x86_64
++# Apple keeps changing the location and names of files so
++# these might not work for you. Use the googels and xcrun.
++
++[binaries]
++c = 'clang'
++cpp = 'clang++'
++objc = 'clang'
++objcpp = 'clang++'
++ar = 'ar'
++strip = 'strip'
++
++[built-in options]
++c_args = ['-arch', 'x86_64', '-mmacosx-version-min=10.11', '-isysroot', '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk']
++cpp_args = ['-arch', 'x86_64', '-mmacosx-version-min=10.11', '-isysroot', '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk']
++c_link_args = ['-arch', 'x86_64', '-mmacosx-version-min=10.11', '-isysroot', '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk']
++cpp_link_args = ['-arch', 'x86_64', '-mmacosx-version-min=10.11', '-isysroot', '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk']
++objc_args = ['-arch', 'x86_64', '-mmacosx-version-min=10.11', '-isysroot', '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk']
++objcpp_args = ['-arch', 'x86_64', '-mmacosx-version-min=10.11', '-isysroot', '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk']
++
++[properties]
++root = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer'
++has_function_printf = true
++has_function_hfkerhisadf = false
++
++[host_machine]
++system = 'darwin'
++cpu_family = 'x86_64'
++cpu = 'x86_64'
++endian = 'little'
+\ No newline at end of file
+-- 
+2.30.1 (Apple Git-130)
+

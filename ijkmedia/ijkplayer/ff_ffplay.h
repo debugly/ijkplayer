@@ -50,7 +50,6 @@ void      ffp_reset(FFPlayer *ffp);
 void     ffp_set_frame_at_time(FFPlayer *ffp, const char *path, int64_t start_time, int64_t end_time, int num, int definition);
 #if ! IJK_IO_OFF
 void     *ffp_set_inject_opaque(FFPlayer *ffp, void *opaque);
-void     *ffp_set_ijkio_inject_opaque(FFPlayer *ffp, void *opaque);
 #endif
 void      ffp_set_option(FFPlayer *ffp, int opt_category, const char *name, const char *value);
 void      ffp_set_option_int(FFPlayer *ffp, int opt_category, const char *name, int64_t value);
@@ -76,20 +75,7 @@ void      ffp_set_loop(FFPlayer *ffp, int loop);
 int       ffp_get_loop(FFPlayer *ffp);
 
 /* for internal usage */
-int       ffp_packet_queue_init(PacketQueue *q);
-void      ffp_packet_queue_destroy(PacketQueue *q);
-void      ffp_packet_queue_abort(PacketQueue *q);
-void      ffp_packet_queue_start(PacketQueue *q);
-void      ffp_packet_queue_flush(PacketQueue *q);
-int       ffp_packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *serial);
 int       ffp_packet_queue_get_or_buffering(FFPlayer *ffp, PacketQueue *q, AVPacket *pkt, int *serial, int *finished);
-int       ffp_packet_queue_put(PacketQueue *q, AVPacket *pkt);
-
-int		  ffp_stream_has_enough_packets(AVStream *st, int stream_id, PacketQueue *queue);
-int		  ffp_packet_queue_put_nullpacket(PacketQueue *q, int stream_index);
-
-Frame    *ffp_frame_queue_peek_writable(FrameQueue *f);
-void      ffp_frame_queue_push(FrameQueue *f);
 
 int       ffp_queue_picture(FFPlayer *ffp, AVFrame *src_frame, double pts, double duration, int64_t pos, int serial);
 
@@ -120,17 +106,21 @@ void      ffp_set_property_float(FFPlayer *ffp, int id, float value);
 int64_t   ffp_get_property_int64(FFPlayer *ffp, int id, int64_t default_value);
 void      ffp_set_property_int64(FFPlayer *ffp, int id, int64_t value);
 
-// must be freed with free();
+/* must be freed with free(); */
 struct IjkMediaMeta *ffp_get_meta_l(FFPlayer *ffp);
+
+//when get or set extra delay,make sure already added external subtitle.
 void      ffp_set_subtitle_extra_delay(FFPlayer *ffp, const float delay);
 float     ffp_get_subtitle_extra_delay(FFPlayer *ffp);
-
-int       ffp_set_external_subtitle(FFPlayer *ffp, const char *file_name);
-/*only load ex-subtitle*/
-int       ffp_load_external_subtitle(FFPlayer *ffp, const char *file_name);
-int       ffp_exchange_video_decoder(FFPlayer *ffp);
+/* add + avtive ex-subtitle */
+int       ffp_add_active_external_subtitle(FFPlayer *ffp, const char *file_name);
+/* add only ex-subtitle */
+int       ffp_addOnly_external_subtitle(FFPlayer *ffp, const char *file_name);
 
 int		  ffp_set_decoder_name(FFPlayer *ffp, const char *name);
 int       ffp_get_video_frame_cache_remaining(FFPlayer *ffp);
 
+
+/* audio samples realtime observer callback, callback can be NULL */
+void      ffp_set_audio_sample_observer(FFPlayer *ffp, ijk_audio_samples_callback cb);
 #endif

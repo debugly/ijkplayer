@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSArray <NSString *>*)audioType;
 + (NSArray <NSString *>*)videoType;
 + (NSArray <NSString *>*)subtitleType;
++ (NSArray <NSString *>*)pictureType;
 + (NSArray <NSString *>*)acceptMediaType;
 
 + (BOOL)saveImageToFile:(CGImageRef)img path:(NSString *)imgPath;

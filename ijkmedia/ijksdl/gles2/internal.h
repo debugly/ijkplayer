@@ -155,7 +155,8 @@ const char *IJK_GLES2_getVertexShader_default();
 #endif
 
 #ifdef __APPLE__
-IJK_GLES2_Renderer *IJK_GL_Renderer_create_common_vtb(SDL_VoutOverlay *overlay,IJK_SHADER_TYPE type,int openglVer);
+IJK_GLES2_Renderer *IJK_GL_Renderer_create_common_vtb(Uint32 overlay_format,IJK_SHADER_TYPE type,int openglVer);
+
 void IJK_GL_getAppleCommonFragmentShader(IJK_SHADER_TYPE type,char *out,int ver);
 #endif
 

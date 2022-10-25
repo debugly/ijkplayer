@@ -172,15 +172,6 @@ void *ijkmp_set_inject_opaque(IjkMediaPlayer *mp, void *opaque)
     return prev_weak_thiz;
 }
 
-void *ijkmp_set_ijkio_inject_opaque(IjkMediaPlayer *mp, void *opaque)
-{
-    assert(mp);
-
-    MPTRACE("%s(%p)\n", __func__, opaque);
-    void *prev_weak_thiz = ffp_set_ijkio_inject_opaque(mp->ffplayer, opaque);
-    MPTRACE("%s()=void\n", __func__);
-    return prev_weak_thiz;
-}
 #endif
 
 void ijkmp_set_option(IjkMediaPlayer *mp, int opt_category, const char *name, const char *value)
@@ -317,7 +308,7 @@ void ijkmp_shutdown_l(IjkMediaPlayer *mp)
 
     MPTRACE("ijkmp_shutdown_l()\n");
     if (mp->ffplayer) {
-        ffp_stop_l(mp->ffplayer);
+        //ffp_stop_l(mp->ffplayer);
         ffp_wait_stop_l(mp->ffplayer);
     }
     MPTRACE("ijkmp_shutdown_l()=void\n");
@@ -838,20 +829,20 @@ float ijkmp_get_subtitle_extra_delay(IjkMediaPlayer* mp)
     return ffp_get_subtitle_extra_delay(mp->ffplayer);
 }
 
-int  ijkmp_set_external_subtitle(IjkMediaPlayer* mp, const char* file_name)
+int ijkmp_add_active_external_subtitle(IjkMediaPlayer* mp, const char* file_name)
 {
     assert(file_name);
     MPTRACE("ijkmp_set_external_subtitle(%s)\n", file_name);
-    int retval = ffp_set_external_subtitle(mp->ffplayer, file_name);
+    int retval = ffp_add_active_external_subtitle(mp->ffplayer, file_name);
     MPTRACE("ijkmp_set_external_subtitle()=%d\n", retval);
     return retval;
 }
 
-int ijkmp_load_external_subtitle(IjkMediaPlayer* mp, const char* file_name)
+int ijkmp_addOnly_external_subtitle(IjkMediaPlayer* mp, const char* file_name)
 {
     assert(file_name);
     MPTRACE("ijkmp_load_external_subtitle(%s)\n", file_name);
-    int retval = ffp_load_external_subtitle(mp->ffplayer, file_name);
+    int retval = ffp_addOnly_external_subtitle(mp->ffplayer, file_name);
     MPTRACE("ijkmp_load_external_subtitle()=%d\n", retval);
     return retval;
 }
@@ -871,18 +862,15 @@ int ijkmp_set_decoder_name(IjkMediaPlayer *mp, const char* decoder_name)
 }
 
 
-int ijkmp_exchange_video_decoder(IjkMediaPlayer *mp)
-{
-    assert(mp);
-    MPTRACE("ffp_exchange_video_decoder\n");
-    int retval = ffp_exchange_video_decoder(mp->ffplayer);
-    MPTRACE("ffp_exchange_video_decoder()=%d\n", retval);
-    return retval;
-}
-
 int ijkmp_get_video_frame_cache_remaining(IjkMediaPlayer *mp)
 {
     assert(mp);
     int retval = ffp_get_video_frame_cache_remaining(mp->ffplayer);
     return retval;
+}
+
+void ijkmp_set_audio_sample_observer(IjkMediaPlayer *mp, ijk_audio_samples_callback cb)
+{
+    assert(mp);
+    ffp_set_audio_sample_observer(mp->ffplayer, cb);
 }

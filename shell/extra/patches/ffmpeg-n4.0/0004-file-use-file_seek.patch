@@ -1,0 +1,33 @@
+From 3fe418f1962704b301d68d9898b6102ec04dcde0 Mon Sep 17 00:00:00 2001
+From: qianlongxu <qianlongxu@gmail.com>
+Date: Fri, 29 Jul 2022 12:54:09 +0800
+Subject: [PATCH 04/16] file use file_seek
+
+---
+ libavformat/file.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/libavformat/file.c b/libavformat/file.c
+index 1d321c4..dabecf5 100644
+--- a/libavformat/file.c
++++ b/libavformat/file.c
+@@ -386,7 +386,7 @@ static int pipe_open(URLContext *h, const char *filename, int flags)
+     setmode(fd, O_BINARY);
+ #endif
+     c->fd = fd;
+-    h->is_streamed = 1;
++    h->is_streamed = 0;
+     return 0;
+ }
+ 
+@@ -395,6 +395,7 @@ const URLProtocol ff_pipe_protocol = {
+     .url_open            = pipe_open,
+     .url_read            = file_read,
+     .url_write           = file_write,
++    .url_seek            = file_seek,
+     .url_get_file_handle = file_get_handle,
+     .url_check           = file_check,
+     .priv_data_size      = sizeof(FileContext),
+-- 
+2.30.1 (Apple Git-130)
+

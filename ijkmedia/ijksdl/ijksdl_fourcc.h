@@ -49,7 +49,8 @@
 // YUV formats
 #define SDL_FCC_YV12        SDL_FOURCC('Y', 'V', '1', '2')  /**< bpp=12, Planar mode: Y + V + U  (3 planes) */
 #define SDL_FCC_IYUV        SDL_FOURCC('I', 'Y', 'U', 'V')  /**< bpp=12, Planar mode: Y + U + V  (3 planes) */
-#define SDL_FCC_I420        SDL_FOURCC('I', '4', '2', '0')  /**< bpp=12, Planar mode: Y + U + V  (3 planes) */
+#define SDL_FCC_I420        SDL_FOURCC('I', '4', '2', '0')  /**< bpp=12, Planar mode: Y + U + V  (3 planes) color range [16,235]*/
+#define SDL_FCC_J420        SDL_FOURCC('J', '4', '2', '0')  /**< bpp=12, Planar mode: Y + U + V  (3 planes) color range [0,255] */
 #define SDL_FCC_I444P10LE   SDL_FOURCC('I', '4', 'A', 'L')
 
 #define SDL_FCC_YUV2        SDL_FOURCC('Y', 'U', 'V', '2')  /**< bpp=16, Packed mode: Y0+U0+Y1+V0 (1 plane) */

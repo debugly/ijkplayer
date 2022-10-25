@@ -194,26 +194,26 @@ fail:
 }
 
 #ifdef __APPLE__
-static IJK_GLES2_Renderer * _smart_create_renderer_appple(SDL_VoutOverlay *overlay, const Uint32 cv_format, int openglVer)
+static IJK_GLES2_Renderer * _smart_create_renderer_appple(Uint32 overlay_format, const Uint32 cv_format, int openglVer)
 {
     if (cv_format == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange || cv_format == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
         ALOGI("create render yuv420sp vtb\n");
-        return IJK_GL_Renderer_create_common_vtb(overlay,YUV_2P_SHADER,openglVer);
+        return IJK_GL_Renderer_create_common_vtb(overlay_format,YUV_2P_SHADER,openglVer);
     } else if (cv_format == kCVPixelFormatType_32BGRA) {
         ALOGI("create render bgrx vtb\n");
-        return IJK_GL_Renderer_create_common_vtb(overlay,BGRX_SHADER,openglVer);
+        return IJK_GL_Renderer_create_common_vtb(overlay_format,BGRX_SHADER,openglVer);
     } else if (cv_format == kCVPixelFormatType_32ARGB) {
         ALOGI("create render xrgb vtb\n");
-        return IJK_GL_Renderer_create_common_vtb(overlay,XRGB_SHADER,openglVer);
+        return IJK_GL_Renderer_create_common_vtb(overlay_format,XRGB_SHADER,openglVer);
     } else if (cv_format == kCVPixelFormatType_420YpCbCr8Planar ||
                cv_format == kCVPixelFormatType_420YpCbCr8PlanarFullRange) {
         ALOGI("create render yuv420p vtb\n");
-        return IJK_GL_Renderer_create_common_vtb(overlay,YUV_3P_SHADER,openglVer);
+        return IJK_GL_Renderer_create_common_vtb(overlay_format,YUV_3P_SHADER,openglVer);
     }
     #if TARGET_OS_OSX
     else if (cv_format == kCVPixelFormatType_422YpCbCr8) {
         ALOGI("create render uyvy vtb\n");
-        return IJK_GL_Renderer_create_common_vtb(overlay,UYVY_SHADER,openglVer);
+        return IJK_GL_Renderer_create_common_vtb(overlay_format,UYVY_SHADER,openglVer);
     }
     #endif
     else {
@@ -222,11 +222,8 @@ static IJK_GLES2_Renderer * _smart_create_renderer_appple(SDL_VoutOverlay *overl
 }
 #endif
 
-IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openglVer)
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create2(Uint32 overlay_format, Uint32 ff_format,int openglVer)
 {
-    if (!overlay)
-        return NULL;
-
     //IJK_GLES2_printString("Version", GL_VERSION);
     //IJK_GLES2_printString("Vendor", GL_VENDOR);
     //IJK_GLES2_printString("Renderer", GL_RENDERER);
@@ -259,32 +256,31 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openg
     IJK_GLES2_Renderer *renderer = NULL;
     
 #ifdef __APPLE__
-    if (SDL_FCC__VTB == overlay->format) {
-        const Uint32 ff_format = overlay->ff_format;
-        renderer = _smart_create_renderer_appple(overlay, ff_format, openglVer);
+    if (SDL_FCC__VTB == overlay_format) {
+        renderer = _smart_create_renderer_appple(overlay_format, ff_format, openglVer);
     }
     #if USE_FF_VTB
-    else if (SDL_FCC__FFVTB == overlay->format) {
-        const Uint32 cv_format = overlay->cv_format;
-        renderer = _smart_create_renderer_appple(overlay, cv_format, openglVer);
+    else if (SDL_FCC__FFVTB == overlay_format) {
+        renderer = _smart_create_renderer_appple(overlay_format, ff_format, openglVer);
     }
     #endif
 #else
-    switch (overlay->format) {
+    switch (overlay_format) {
             case SDL_FCC_RV16:      renderer = IJK_GLES2_Renderer_create_rgb565(); break;
             case SDL_FCC_RV24:      renderer = IJK_GLES2_Renderer_create_rgb888(); break;
             case SDL_FCC_RV32:      renderer = IJK_GLES2_Renderer_create_rgbx8888(); break;
             case SDL_FCC_YV12:      renderer = IJK_GLES2_Renderer_create_yuv420p(); break;
             case SDL_FCC_I420:      renderer = IJK_GLES2_Renderer_create_yuv420p(); break;
+            case SDL_FCC_J420:      renderer = IJK_GLES2_Renderer_create_yuv420p(); break;
             case SDL_FCC_I444P10LE: renderer = IJK_GLES2_Renderer_create_yuv444p10le(); break;
 			case SDL_FCC_NV12:		renderer = IJK_GLES2_Renderer_create_yuv420sp(); break;
             default:
-                ALOGE("[GLES2] unknown format %4s(%d)\n", (char *)&overlay->format, overlay->format);
+                ALOGE("[GLES2] unknown format (%d)\n", overlay_format);
                 return NULL;
         }
 #endif
     if (renderer) {
-        renderer->format = overlay->format;
+        renderer->format = overlay_format;
         
         glGenVertexArrays(1, &renderer->vao);
         /// 创建顶点缓存对象
@@ -296,6 +292,30 @@ IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openg
         glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
     }
     return renderer;
+}
+
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openglVer)
+{
+    if (!overlay)
+        return NULL;
+    
+    Uint32 overlay_format = overlay->format;
+    Uint32 ff_format = 0;
+#ifdef __APPLE__
+    if (SDL_FCC__VTB == overlay_format) {
+        ff_format = overlay->ff_format;
+    }
+    #if USE_FF_VTB
+    else if (SDL_FCC__FFVTB == overlay_format) {
+        ff_format = overlay->cv_format;
+    }
+    #endif
+    else {
+        assert(0);
+    }
+#endif
+    
+    return IJK_GLES2_Renderer_create2(overlay_format, ff_format, openglVer);
 }
 
 GLboolean IJK_GLES2_Renderer_isValid(IJK_GLES2_Renderer *renderer)
@@ -312,16 +332,15 @@ GLboolean IJK_GLES2_Renderer_isFormat(IJK_GLES2_Renderer *renderer, int format)
 }
 
 /*
- * Per-Context routine
- */
+* Per-Context routine
+*/
 GLboolean IJK_GLES2_Renderer_setupGLES()
 {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);       IJK_GLES2_checkError_TRACE("glClearColor");
-    glEnable(GL_CULL_FACE);                     IJK_GLES2_checkError_TRACE("glEnable(GL_CULL_FACE)");
-    glCullFace(GL_BACK);                        IJK_GLES2_checkError_TRACE("glCullFace");
-    glDisable(GL_DEPTH_TEST);
-
-    return GL_TRUE;
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);       IJK_GLES2_checkError_TRACE("glClearColor");
+	glEnable(GL_CULL_FACE);                     IJK_GLES2_checkError_TRACE("glEnable(GL_CULL_FACE)");
+	glCullFace(GL_BACK);                        IJK_GLES2_checkError_TRACE("glCullFace");
+	glDisable(GL_DEPTH_TEST);
+	return GL_TRUE;
 }
 
 static void IJK_GLES2_Renderer_Vertices_reset(IJK_GLES2_Renderer *renderer)
@@ -713,6 +732,7 @@ GLboolean IJK_GLES2_Renderer_updateVetex(IJK_GLES2_Renderer *renderer, SDL_VoutO
 
     GLsizei visible_width  = renderer->frame_width;
     GLsizei visible_height = renderer->frame_height;
+
     if (overlay) {
         visible_width  = overlay->w;
         visible_height = overlay->h;
@@ -768,6 +788,69 @@ GLboolean IJK_GLES2_Renderer_updateVetex(IJK_GLES2_Renderer *renderer, SDL_VoutO
 }
 
 /*
+ * update video vetex
+ */
+GLboolean IJK_GLES2_Renderer_updateVetex2(IJK_GLES2_Renderer *renderer,
+                                         int overlay_h,
+                                         int overlay_w,
+                                         int buffer_w,
+                                         int sar_num,
+                                         int sar_den)
+{
+    if (!renderer)
+        return GL_FALSE;
+
+    GLsizei visible_width  = renderer->frame_width;
+    GLsizei visible_height = overlay_h;
+            visible_width  = overlay_w;
+    if (renderer->frame_width   != visible_width    ||
+        renderer->frame_height  != visible_height   ||
+        renderer->frame_sar_num != sar_num ||
+        renderer->frame_sar_den != sar_den) {
+
+        renderer->frame_width   = visible_width;
+        renderer->frame_height  = visible_height;
+        renderer->frame_sar_num = sar_num;
+        renderer->frame_sar_den = sar_den;
+
+        renderer->vertices_changed = 1;
+    }
+    
+    renderer->last_buffer_width = buffer_w;
+    
+    GLsizei buffer_width = renderer->last_buffer_width;
+    if (!renderer->vertices_changed) {
+        if (buffer_width > 0 &&
+             buffer_width > visible_width &&
+             buffer_width != renderer->buffer_width &&
+             visible_width != renderer->visible_width) {
+            renderer->vertices_changed = 1;
+        }
+    }
+    
+    if (renderer->vertices_changed) {
+        renderer->vertices_changed = 0;
+
+        IJK_GLES2_Renderer_Vertices_apply(renderer);
+
+        renderer->buffer_width  = buffer_width;
+        renderer->visible_width = visible_width;
+
+        GLsizei padding_pixels     = buffer_width - visible_width;
+        GLfloat padding_normalized = ((GLfloat)padding_pixels) / buffer_width;
+
+        IJK_GLES2_Renderer_TexCoords_cropRight(renderer, padding_normalized);
+        IJK_GLES2_Renderer_Upload_Vbo_Data(renderer);
+    }
+    
+    IJK_GLES2_updateMVP_ifNeed(renderer);
+    IJK_GLES2_updateRGB_adjust_ifNeed(renderer);
+    glBindVertexArray(renderer->vao); IJK_GLES2_checkError_TRACE("glBindVertexArray");
+
+    return GL_TRUE;
+}
+
+/*
  * reset vao
  */
 GLboolean IJK_GLES2_Renderer_resetVao(IJK_GLES2_Renderer *renderer)
@@ -779,6 +862,7 @@ GLboolean IJK_GLES2_Renderer_resetVao(IJK_GLES2_Renderer *renderer)
     IJK_GLES2_Renderer_TexCoords_reset(renderer);
     IJK_GLES2_Renderer_Upload_Vbo_Data(renderer);
     IJK_GLES2_updateMVP_ifNeed(renderer);
+    IJK_GLES2_updateRGB_adjust_ifNeed(renderer);
     glBindVertexArray(renderer->vao); IJK_GLES2_checkError_TRACE("glBindVertexArray");
     return GL_TRUE;
 }

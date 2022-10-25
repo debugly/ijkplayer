@@ -61,6 +61,8 @@ NSString *const IJKMPMoviePlayerSelectedStreamDidChangeNotification =
     @"IJKMPMoviePlayerSelectedStreamDidChangeNotification";
 NSString *const IJKMPMoviePlayerAfterSeekFirstVideoFrameDisplayNotification = @"IJKMPMoviePlayerAfterSeekFirstVideoFrameDisplayNotification";
 
+NSString *const IJKMPMoviePlayerVideoDecoderFatalNotification = @"IJKMPMoviePlayerVideoDecoderFatalNotification";
+
 @implementation IJKMediaUrlOpenData {
     NSString *_url;
     BOOL _handled;

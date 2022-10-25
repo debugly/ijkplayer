@@ -168,7 +168,6 @@ void            ijkmp_io_stat_complete_register(void (*cb)(const char *url,
 IjkMediaPlayer *ijkmp_create(int (*msg_loop)(void*));
 #if ! IJK_IO_OFF
 void*            ijkmp_set_inject_opaque(IjkMediaPlayer *mp, void *opaque);
-void*            ijkmp_set_ijkio_inject_opaque(IjkMediaPlayer *mp, void *opaque);
 #endif
 void            ijkmp_set_option(IjkMediaPlayer *mp, int opt_category, const char *name, const char *value);
 void            ijkmp_set_option_int(IjkMediaPlayer *mp, int opt_category, const char *name, int64_t value);
@@ -216,21 +215,23 @@ int             ijkmp_get_loop(IjkMediaPlayer *mp);
 void           *ijkmp_get_weak_thiz(IjkMediaPlayer *mp);
 void           *ijkmp_set_weak_thiz(IjkMediaPlayer *mp, void *weak_thiz);
 
-/* return < 0 if aborted, 0 if no packet and > 0 if packet.  */
+/* return < 0 if aborted, 0 if no packet and > 0 if packet. */
 /* need to call msg_free_res for freeing the resouce obtained in msg */
 int             ijkmp_get_msg(IjkMediaPlayer *mp, AVMessage *msg, int block);
 void            ijkmp_set_frame_at_time(IjkMediaPlayer *mp, const char *path, int64_t start_time, int64_t end_time, int num, int definition);
 void            ijkmp_set_subtitle_extra_delay(IjkMediaPlayer *mp,const float delay);
 float           ijkmp_get_subtitle_extra_delay(IjkMediaPlayer *mp);
-int             ijkmp_set_external_subtitle(IjkMediaPlayer* mp, const char* file_name);
-/*only load ex-subtitle, not use*/
-int             ijkmp_load_external_subtitle(IjkMediaPlayer* mp, const char* file_name);
+/* add + avtive ex-subtitle */
+int             ijkmp_add_active_external_subtitle(IjkMediaPlayer* mp, const char* file_name);
+/* add only ex-subtitle */
+int             ijkmp_addOnly_external_subtitle(IjkMediaPlayer* mp, const char* file_name);
 
 int				ijkmp_set_decoder_name(IjkMediaPlayer *mp, const char* decoder_name);
-
-/*force exchange decoder*/
-int				ijkmp_exchange_video_decoder(IjkMediaPlayer *mp);
+/* force exchange decoder */
+int             ijkmp_exchange_video_decoder(IjkMediaPlayer *mp);
 /* get video frame queue chache remaining count*/
-int				ijkmp_get_video_frame_cache_remaining(IjkMediaPlayer *mp);
+int             ijkmp_get_video_frame_cache_remaining(IjkMediaPlayer *mp);
+/* register audio samples observer*/
+void            ijkmp_set_audio_sample_observer(IjkMediaPlayer *mp, ijk_audio_samples_callback cb);
 
 #endif

@@ -115,6 +115,8 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
     [self onReset:nil];
     [self reSetLoglevel:@"info"];
     
+    [self.playList addObject:[NSURL URLWithString:@"https://kvideo01.youju.sohu.com/f559f6ad-df2f-42c9-9f47-841cf6e4086f1_0_0.mp4"]];
+    
     NSArray *bundleNameArr = @[@"5003509-693880-3.m3u8",@"996747-5277368-31.m3u8"];
     
     for (NSString *fileName in bundleNameArr) {
@@ -175,7 +177,7 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
             } else {
                 [menu addItemWithTitle:@"播放" action:@selector(pauseOrPlay:)keyEquivalent:@""];
             }
-            [menu addItemWithTitle:@"停止" action:@selector(stop:)keyEquivalent:@""];
+            [menu addItemWithTitle:@"停止" action:@selector(stopPlay:) keyEquivalent:@"."];
             [menu addItemWithTitle:@"下一集" action:@selector(playNext:)keyEquivalent:@""];
             [menu addItemWithTitle:@"上一集" action:@selector(playPrevious:)keyEquivalent:@""];
             
@@ -397,11 +399,29 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
         switch ([event keyCode]) {
             case kVK_ANSI_H:
             {
-                [self exchangeVideoDecoder];
+                
             }
                 break;
         }
-    } else {
+    } else if (event.modifierFlags & NSEventModifierFlagOption) {
+        switch ([event keyCode]) {
+            case kVK_ANSI_S:
+            {
+                //loop exchange subtitles
+                NSInteger idx = [self.subtitlePopUpBtn indexOfSelectedItem];
+                idx ++;
+                if (idx >= [self.subtitlePopUpBtn numberOfItems]) {
+                    idx = 0;
+                }
+                NSMenuItem *item = [self.subtitlePopUpBtn itemAtIndex:idx];
+                if (item) {
+                    [self.subtitlePopUpBtn selectItem:item];
+                    [self.subtitlePopUpBtn.target performSelector:self.subtitlePopUpBtn.action withObject:self.subtitlePopUpBtn];
+                }
+            }
+                break;
+        }
+    }  else {
         switch ([event keyCode]) {
             case kVK_RightArrow:
             {
@@ -438,6 +458,26 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
             case kVK_Space:
             {
                 [self pauseOrPlay:nil];
+            }
+                break;
+            case kVK_ANSI_Minus:
+            {
+                if (self.player) {
+                    float delay = [self.player currentSubtitleExtraDelay];
+                    delay -= 2;
+                    self.subtitleDelay = delay;
+                    [self.player updateSubtitleExtraDelay:delay];
+                }
+            }
+                break;
+            case kVK_ANSI_Equal:
+            {
+                if (self.player) {
+                    float delay = [self.player currentSubtitleExtraDelay];
+                    delay += 2;
+                    self.subtitleDelay = delay;
+                    [self.player updateSubtitleExtraDelay:delay];
+                }
             }
                 break;
             default:
@@ -507,6 +547,8 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
         my_stderr = NULL;
     }
     
+    self.seeking = NO;
+    
     if (self.autoTest) {
         
         [IJKFFMoviePlayerController setLogLevel:k_IJK_LOG_INFO];
@@ -529,7 +571,12 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
     [options setPlayerOptionIntValue:6      forKey:@"video-pictq-size"];
     //    [options setPlayerOptionIntValue:50000      forKey:@"min-frames"];
     [options setPlayerOptionIntValue:119     forKey:@"max-fps"];
-    [options setPlayerOptionIntValue:1      forKey:@"packet-buffering"];
+    
+//    [options setCodecOptionValue:@"48" forKey:@"skip_loop_filter"];
+//    [options setFormatOptionValue:@"100L" forKey:@"analyzemaxduration"];
+//    [options setFormatOptionValue:@"1" forKey:@"flush_packets"];
+//    [options setPlayerOptionIntValue:0      forKey:@"packet-buffering"];
+//    [options setPlayerOptionIntValue:1      forKey:@"render-wait-start"];
     
     if ([url isFileURL]) {
         [options setPlayerOptionIntValue:10*1024*1024      forKey:@"max-buffer-size"];
@@ -557,6 +604,9 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
     NSView <IJKSDLGLViewProtocol>*playerView = self.player.view;
     playerView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [self.view addSubview:playerView positioned:NSWindowBelow relativeTo:nil];
+    //playerView.preventDisplay = YES;
+    //test
+    [playerView setBackgroundColor:100 g:10 b:20];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerPreparedToPlay:) name:IJKMPMediaPlaybackIsPreparedToPlayDidChangeNotification object:self.player];
     
@@ -572,10 +622,23 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerOpenInput:) name:IJKMPMoviePlayerOpenInputNotification object:self.player];
     
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ijkPlayerVideoDecoderFatal:) name:IJKMPMoviePlayerVideoDecoderFatalNotification object:self.player];
+    
     self.kvoCtrl = [[IJKKVOController alloc] initWithTarget:self.player.monitor];
     [self.kvoCtrl safelyAddObserver:self forKeyPath:@"vdecoder" options:NSKeyValueObservingOptionNew context:nil];
     self.player.shouldAutoplay = YES;
     [self onVolumeChange:nil];
+}
+
+- (void)ijkPlayerVideoDecoderFatal:(NSNotification *)notifi
+{
+    NSLog(@"decoder fatal:%@",notifi.userInfo[@"code"]);
+    if (self.useVideoToolBox == 2) {
+        self.useVideoToolBox = 0;
+        NSURL *playingUrl = self.playingUrl;
+        [self stopPlay:nil];
+        [self playURL:playingUrl];
+    }
 }
 
 - (void)ijkPlayerOpenInput:(NSNotification *)notifi
@@ -673,8 +736,11 @@ static NSString* lastPlayedKey = @"__lastPlayedKey";
                 }];
             }
         } else if (IJKMPMovieFinishReasonPlaybackEnded == reason) {
-            NSLog(@"播放结束");
-            [self playNext:nil];
+            
+            if (![[MRUtil pictureType] containsObject:[[self.playingUrl lastPathComponent] pathExtension]]) {
+                NSLog(@"播放结束");
+                [self playNext:nil];
+            }
         }
     }
 }
@@ -1023,7 +1089,8 @@ static IOPMAssertionID g_displaySleepAssertionID;
     [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMovieNaturalSizeAvailableNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerAfterSeekFirstVideoFrameDisplayNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerOpenInputNotification object:nil];
-
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:IJKMPMoviePlayerVideoDecoderFatalNotification object:nil];
+    
     [self.kvoCtrl safelyRemoveAllObservers];
     if (self.player) {
         [self.player.view removeFromSuperview];
@@ -1265,7 +1332,11 @@ static IOPMAssertionID g_displaySleepAssertionID;
 - (NSString *)dirForCurrentPlayingUrl
 {
     if ([self.playingUrl isFileURL]) {
-        return [self saveDir:[[self.playingUrl path] lastPathComponent]];
+        if (![[MRUtil pictureType] containsObject:[[self.playingUrl lastPathComponent] pathExtension]]) {
+            return [self saveDir:[[self.playingUrl path] lastPathComponent]];
+        } else {
+            return [self saveDir:nil];
+        }
     }
     return [self saveDir:[[self.playingUrl path] stringByDeletingLastPathComponent]];
 }
@@ -1275,8 +1346,8 @@ static IOPMAssertionID g_displaySleepAssertionID;
     CGImageRef img = [self.player.view snapshot:self.snapshot];
     if (img) {
         NSString * dir = [self dirForCurrentPlayingUrl];
-        NSString *movieName = [[self.playingUrl absoluteString] lastPathComponent];
-        NSString *fileName = [NSString stringWithFormat:@"%@-%ld.jpg",movieName,(long)CFAbsoluteTimeGetCurrent()];
+        NSString *movieName = [self.playingUrl lastPathComponent];
+        NSString *fileName = [NSString stringWithFormat:@"%@-%ld.jpg",movieName,(long)(CFAbsoluteTimeGetCurrent() * 1000)];
         NSString *filePath = [dir stringByAppendingPathComponent:fileName];
         NSLog(@"截屏:%@",filePath);
         [MRUtil saveImageToFile:img path:filePath];
@@ -1369,22 +1440,6 @@ static IOPMAssertionID g_displaySleepAssertionID;
     NSString *title = sender.selectedItem.title;
     NSString *fcc = [@"fcc-" stringByAppendingString:title];
     self.fcc = fcc;
-}
-
-- (void)exchangeVideoDecoder
-{
-    int r = [self.player exchangeVideoDecoder];
-    if (r == 1) {
-        NSLog(@"exchang decoder begin");
-    } else if (r == -1) {
-        NSLog(@"exchanging decoder");
-    } else if (r == -2) {
-        NSLog(@"can't exchange decoder,try later");
-    } else if (r == -3) {
-        NSLog(@"no more decoder can exchange.");
-    } else if (r == -4) {
-        NSLog(@"exchange decoder faild.");
-    }
 }
 
 #pragma mark 日志级别

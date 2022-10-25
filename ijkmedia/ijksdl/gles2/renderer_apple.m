@@ -207,25 +207,11 @@ static GLboolean upload_Texture(IJK_GLES2_Renderer *renderer, void *texture)
     return uploaded;
 }
 
-static CVPixelBufferRef getCVPixelBufferRef(SDL_VoutOverlay *overlay)
-{
-    switch (overlay->format) {
-        case SDL_FCC__VTB:
-            return SDL_VoutOverlayVideoToolBox_GetCVPixelBufferRef(overlay);
-#if USE_FF_VTB
-        case SDL_FCC__FFVTB:
-            return SDL_VoutFFmpeg_GetCVPixelBufferRef(overlay);
-#endif
-        default:
-            return NULL;
-    }
-}
-
 static void * getVideoImage(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay)
 {
-    if (!renderer || !renderer->opaque || !overlay)
-        return NULL;
-    return getCVPixelBufferRef(overlay);
+    assert(0);
+    //why call me?
+    return NULL;
 }
 
 static GLvoid destroy(IJK_GLES2_Renderer *renderer)
@@ -266,9 +252,9 @@ static GLboolean uploadSubtitle(IJK_GLES2_Renderer *renderer,void *subtitle)
     return uploaded;
 }
 
-IJK_GLES2_Renderer *IJK_GL_Renderer_create_common_vtb(SDL_VoutOverlay *overlay,IJK_SHADER_TYPE type,int openglVer)
+IJK_GLES2_Renderer *IJK_GL_Renderer_create_common_vtb(Uint32 overlay_format,IJK_SHADER_TYPE type,int openglVer)
 {
-    assert(overlay->format == SDL_FCC__VTB || overlay->format == SDL_FCC__FFVTB);
+    assert(overlay_format == SDL_FCC__VTB || overlay_format == SDL_FCC__FFVTB);
     char shader_buffer[2048] = { '\0' };
     
     IJK_GL_getAppleCommonFragmentShader(type,shader_buffer,openglVer);
@@ -319,7 +305,7 @@ IJK_GLES2_Renderer *IJK_GL_Renderer_create_common_vtb(SDL_VoutOverlay *overlay,I
     renderer->opaque->isSubtitle = isSubtitle;
     
 #if TARGET_OS_OSX
-    if (overlay->format == SDL_FCC__VTB || overlay->format == SDL_FCC__FFVTB) {
+    if (overlay_format == SDL_FCC__VTB || overlay_format == SDL_FCC__FFVTB) {
         
         for (int i = 0; i < samples; i++) {
             char name[20] = "textureDimension";

@@ -77,7 +77,14 @@ static void vout_free_l(SDL_Vout *vout)
 {
     if (!vout)
         return;
-
+    
+#if USE_FF_VTB
+    if (vout->cvPixelBufferPool) {
+        CVPixelBufferPoolRelease(vout->cvPixelBufferPool);
+        vout->cvPixelBufferPool = NULL;
+    }
+#endif
+    
     SDL_Vout_Opaque *opaque = vout->opaque;
     if (opaque) {
         opaque->gl_view = nil;
@@ -118,14 +125,11 @@ static int vout_display_overlay_l(SDL_Vout *vout, SDL_VoutOverlay *overlay)
         ijk_overlay.sar_num = overlay->sar_num;
         ijk_overlay.sar_den = overlay->sar_den;
 #ifdef __APPLE__
-        if (ijk_overlay.format == SDL_FCC__VTB) {
-            ijk_overlay.pixel_buffer = SDL_VoutOverlayVideoToolBox_GetCVPixelBufferRef(overlay);
-        } else if (ijk_overlay.format == SDL_FCC__FFVTB) {
-            ijk_overlay.pixel_buffer = SDL_VoutFFmpeg_GetCVPixelBufferRef(overlay);
-        } else {
-#if ! USE_FF_VTB
+        ijk_overlay.pixel_buffer = SDL_Overlay_getCVPixelBufferRef(overlay);
+        if (!ijk_overlay.pixel_buffer) {
+            #if ! USE_FF_VTB
             ijk_overlay.pixels = overlay->pixels;
-#endif
+            #endif
         }
 #else
         ijk_overlay.pixels = overlay->pixels;
@@ -236,7 +240,7 @@ static void vout_update_subtitle_picture(SDL_Vout *vout, const AVSubtitleRect *r
     opaque->sub = sub;
 }
 
-SDL_Vout *SDL_VoutIos_CreateForGLES2()
+SDL_Vout *SDL_VoutIos_CreateForGLES2(Uint32 overlay_format)
 {
     SDL_Vout *vout = SDL_Vout_CreateInternal(sizeof(SDL_Vout_Opaque));
     if (!vout)
@@ -250,6 +254,7 @@ SDL_Vout *SDL_VoutIos_CreateForGLES2()
     vout->display_overlay = vout_display_overlay;
     vout->update_subtitle = vout_update_subtitle;
     vout->update_subtitle_picture = vout_update_subtitle_picture;
+    vout->overlay_format = overlay_format;
     return vout;
 }
 
@@ -273,4 +278,18 @@ void SDL_VoutIos_SetGLView(SDL_Vout *vout, GLView<IJKSDLGLViewProtocol>* view)
     SDL_LockMutex(vout->mutex);
     SDL_VoutIos_SetGLView_l(vout, view);
     SDL_UnlockMutex(vout->mutex);
+}
+
+CVPixelBufferRef SDL_Overlay_getCVPixelBufferRef(SDL_VoutOverlay *overlay)
+{
+    switch (overlay->format) {
+        case SDL_FCC__VTB:
+            return SDL_VoutOverlayVideoToolBox_GetCVPixelBufferRef(overlay);
+        #if USE_FF_VTB
+        case SDL_FCC__FFVTB:
+            return SDL_VoutFFmpeg_GetCVPixelBufferRef(overlay);
+        #endif
+        default:
+            return NULL;
+    }
 }

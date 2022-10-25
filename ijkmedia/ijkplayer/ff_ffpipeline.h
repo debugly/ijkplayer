@@ -41,8 +41,6 @@ struct IJKFF_Pipeline {
     SDL_Aout       *(*func_open_audio_output)         (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
     IJKFF_Pipenode *(*func_init_video_decoder)        (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
     int           (*func_config_video_decoder)        (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
-    int            (*func_has_another_video_decoder)  (IJKFF_Pipeline *pipeline, FFPlayer *ffp);
-    IJKFF_Pipenode *(*func_open_another_video_decoder)(IJKFF_Pipeline *pipeline, FFPlayer *ffp);
 };
 
 IJKFF_Pipeline *ffpipeline_alloc(SDL_Class *opaque_class, size_t opaque_size);

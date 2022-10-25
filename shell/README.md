@@ -24,6 +24,7 @@ At present MRFFToolChain contained OpenSSL、FFmpeg 、Lame、X264、Fdk-aac、l
 │   ├── ffmpeg
 │   ├── libyuv
 │   ├── openssl
+│   ├── bluray
 │   └── opus
 ├── ffconfig        #ffmpeg 功能裁剪配置
 │   ├── configure.md
@@ -37,6 +38,7 @@ At present MRFFToolChain contained OpenSSL、FFmpeg 、Lame、X264、Fdk-aac、l
 │   ├── ffmpeg
 │   ├── libyuv
 │   ├── openssl
+│   ├── bluray
 │   └── opus
 ├── ios             #ios 平台编译脚本
 │   └── compile-any.sh

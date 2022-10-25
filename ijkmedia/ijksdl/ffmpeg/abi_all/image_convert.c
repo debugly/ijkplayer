@@ -22,7 +22,7 @@
  *****************************************************************************/
 
 #include "../ijksdl_image_convert.h"
-#if defined(__ANDROID__) || defined(__APPLE__)
+#if defined(__ANDROID__)
 #include "libyuv/convert_from.h"
 #endif
 
@@ -55,28 +55,6 @@ int ijk_image_convert(int width, int height,
             break;
         default:
             break;
-    }
-#endif
-#if defined(__APPLE__)
-    switch (src_format) {
-        case AV_PIX_FMT_YUV420P:
-        case AV_PIX_FMT_YUVJ420P:
-            switch (dst_format) {
-            case AV_PIX_FMT_NV12:
-                return I420ToNV12(
-                    src_data[0], src_linesize[0],
-                    src_data[1], src_linesize[1],
-                    src_data[2], src_linesize[2],
-                    dst_data[0], dst_linesize[0],
-                    dst_data[1], dst_linesize[0],
-                    width, height);
-            default:
-                break;
-            }
-            break;
-        default:
-            break;
-
     }
 #endif
     return -1;

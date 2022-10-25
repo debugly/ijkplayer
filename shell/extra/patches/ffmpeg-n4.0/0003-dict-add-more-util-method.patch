@@ -1,0 +1,91 @@
+From 77387f8a47c69225f336a7aeaf6a3e6298ebe2c3 Mon Sep 17 00:00:00 2001
+From: qianlongxu <qianlongxu@gmail.com>
+Date: Fri, 29 Jul 2022 12:50:10 +0800
+Subject: [PATCH 03/16] dict add more util method
+
+---
+ libavutil/dict.c | 39 ++++++++++++++++++++++++++++++++++++++-
+ libavutil/dict.h | 10 ++++++++++
+ 2 files changed, 48 insertions(+), 1 deletion(-)
+
+diff --git a/libavutil/dict.c b/libavutil/dict.c
+index 0ea7138..48209ac 100644
+--- a/libavutil/dict.c
++++ b/libavutil/dict.c
+@@ -42,7 +42,7 @@ AVDictionaryEntry *av_dict_get(const AVDictionary *m, const char *key,
+ {
+     unsigned int i, j;
+ 
+-    if (!m)
++    if (!m || !key)
+         return NULL;
+ 
+     if (prev)
+@@ -153,6 +153,43 @@ int av_dict_set_int(AVDictionary **pm, const char *key, int64_t value,
+     return av_dict_set(pm, key, valuestr, flags);
+ }
+ 
++int av_dict_set_intptr(AVDictionary **pm, const char *key, uintptr_t value,
++                int flags)
++{
++    char valuestr[22];
++    snprintf(valuestr, sizeof(valuestr), "%p", value);
++    flags &= ~AV_DICT_DONT_STRDUP_VAL;
++    return av_dict_set(pm, key, valuestr, flags);
++}
++
++uintptr_t av_dict_get_intptr(const AVDictionary *m, const char* key) {
++    uintptr_t ptr = NULL;
++    AVDictionaryEntry *t = NULL;
++    if ((t = av_dict_get(m, key, NULL, 0))) {
++      return av_dict_strtoptr(t->value);
++    }
++    return NULL;
++}
++
++uintptr_t av_dict_strtoptr(char * value) {
++   uintptr_t ptr = NULL;
++   char *next = NULL;
++   if(!value || value[0] !='0' || (value[1]|0x20)!='x') {
++       return NULL;
++   }
++   ptr = strtoull(value, &next, 16);
++   if (next == value) {
++       return NULL;
++   }
++   return ptr;
++}
++
++char * av_dict_ptrtostr(uintptr_t value) {
++    char valuestr[22] = {0};
++    snprintf(valuestr, sizeof(valuestr), "%p", value);
++    return av_strdup(valuestr);
++}
++
+ static int parse_key_value_pair(AVDictionary **pm, const char **buf,
+                                 const char *key_val_sep, const char *pairs_sep,
+                                 int flags)
+diff --git a/libavutil/dict.h b/libavutil/dict.h
+index 118f1f0..9d6d8df 100644
+--- a/libavutil/dict.h
++++ b/libavutil/dict.h
+@@ -137,6 +137,16 @@ int av_dict_set(AVDictionary **pm, const char *key, const char *value, int flags
+  */
+ int av_dict_set_int(AVDictionary **pm, const char *key, int64_t value, int flags);
+ 
++/**
++ * Convenience wrapper for av_dict_get that converts the value to a pointer
++ * and stores it.
++ *
++ */
++int av_dict_set_intptr(AVDictionary **pm, const char *key, uintptr_t value, int flags);
++uintptr_t av_dict_get_intptr(const AVDictionary *m, const char* key);
++uintptr_t av_dict_strtoptr(char * value);
++char * av_dict_ptrtostr(uintptr_t value);
++
+ /**
+  * Parse the key/value pairs list and add the parsed entries to a dictionary.
+  *
+-- 
+2.30.1 (Apple Git-130)
+

@@ -136,6 +136,8 @@ typedef enum : NSUInteger {
 - (UIImage *)snapshot;
 #else
 - (CGImageRef)snapshot:(IJKSDLSnapshotType)aType;
+// not render picture and subtitle,but holder overlay content.
+@property(atomic) BOOL preventDisplay;
 #endif
 
 @optional;//when isThirdGLView,will call display_pixels method.
@@ -144,6 +146,8 @@ typedef enum : NSUInteger {
 - (void)videoNaturalSizeChanged:(CGSize)size;
 //when video z rotate degrees changed will call videoZRotateDegrees.
 - (void)videoZRotateDegrees:(NSInteger)degrees;
+- (void)setBackgroundColor:(uint8_t)r g:(uint8_t)g b:(uint8_t)b;
+
 @end
 
 #endif /* IJKSDLGLViewProtocol_h */

@@ -60,17 +60,11 @@
 #endif
 
 #include <stdbool.h>
-#if !IJK_IO_OFF
-#include "ijkavformat/ijkiomanager.h"
-#include "ijkavformat/ijkioapplication.h"
-#endif
 #include "ff_ffinc.h"
 #include "ff_ffmsg_queue.h"
 #include "ff_ffpipenode.h"
 #include "ijkmeta.h"
-#ifndef WIN32
-#include "ijkavformat/ijklas.h"
-#endif
+
 
 #define DEFAULT_HIGH_WATER_MARK_IN_BYTES        (256 * 1024)
 
@@ -280,23 +274,9 @@ typedef struct Decoder {
     int    first_frame_decoded;
     int    after_seek_frame;
     Uint64 start_seek_time;
-    int    is_switching;
 } Decoder;
 
-typedef struct SubtitleExState{
-    AVInputFormat *iformat;
-    AVFormatContext *ic;
-
-    FrameQueue subpq;
-    Decoder subdec;
-
-    int sub_st_idx;
-    AVStream *subtitle_st;
-    PacketQueue subtitleq;
-    int eof;
-    
-    SDL_mutex* mutex;
-} SubtitleExState;
+typedef struct FFSubtitle FFSubtitle;
 
 typedef struct VideoState {
     SDL_Thread *read_tid;
@@ -312,7 +292,6 @@ typedef struct VideoState {
     int64_t seek_pos;
     int64_t seek_rel;
     
-    int load_sub_ex;
 #ifdef FFP_MERGE
     int read_pause_return;
 #endif
@@ -324,13 +303,11 @@ typedef struct VideoState {
     Clock extclk;
 
     FrameQueue pictq;
-    FrameQueue subpq;
     FrameQueue sampq;
 
     Decoder auddec;
     Decoder viddec;
-    Decoder subdec;
-
+    
     int audio_stream;
 
     int av_sync_type;
@@ -380,10 +357,6 @@ typedef struct VideoState {
     SDL_Texture *vis_texture;
     SDL_Texture *sub_texture;
 #endif
-
-    int subtitle_stream;
-    AVStream *subtitle_st;
-    PacketQueue subtitleq;
 
     double frame_timer;
     double frame_last_returned_time;
@@ -451,10 +424,7 @@ typedef struct VideoState {
     SDL_cond  *audio_accurate_seek_cond;
     volatile int initialized_decoder;
     int seek_buffering;
-    float subtitle_extra_delay;//(s)
-    SubtitleExState* subtitle_ex;
-    char* ex_sub_url[IJK_EX_SUBTITLE_STREAM_MAX - IJK_EX_SUBTITLE_STREAM_OFFSET];
-    int   ex_sub_next;
+    FFSubtitle *ffSub;
 } VideoState;
 
 /* options specified by the user */
@@ -546,11 +516,6 @@ typedef struct FFStatistic
     SDL_SpeedSampler2 tcp_read_sampler;
     int64_t latest_seek_load_duration;
     int64_t byte_count;
-    int64_t cache_physical_pos;
-    int64_t cache_file_forwards;
-    int64_t cache_file_pos;
-    int64_t cache_count_bytes;
-    int64_t logical_file_size;
     int drop_frame_count;
     int decode_frame_count;
     float drop_frame_rate;
@@ -675,9 +640,7 @@ typedef struct FFPlayer {
     SDL_Vout *vout;
     struct IJKFF_Pipeline *pipeline;
     struct IJKFF_Pipenode *node_vdec;
-    //store the next decode
-    struct IJKFF_Pipenode *node_vdec_2;
-    int is_switching_vdec_node;
+
     int sar_num;
     int sar_den;
 
@@ -744,13 +707,11 @@ typedef struct FFPlayer {
     int         pf_playback_volume_changed;
 
     void               *inject_opaque;
-    void               *ijkio_inject_opaque;
     FFStatistic         stat;
     FFDemuxCacheControl dcc;
 
 #if ! IJK_IO_OFF
     AVApplicationContext *app_ctx;
-    IjkIOManagerContext *ijkio_manager_ctx;
 #endif
 	int gopSize;
 	int64_t packetSize;
@@ -771,14 +732,13 @@ typedef struct FFPlayer {
     char *mediacodec_default_name;
     int ijkmeta_delay_init;
     int render_wait_start;
-#if ! IJK_IO_OFF
-    int is_manifest;
-#endif
-    //LasPlayerStatistic las_player_statistic;
+
+    ijk_audio_samples_callback audio_samples_callback;
 } FFPlayer;
 
 #define fftime_to_milliseconds(ts) (av_rescale(ts, 1000, AV_TIME_BASE))
 #define milliseconds_to_fftime(ms) (av_rescale(ms, AV_TIME_BASE, 1000))
+#define seconds_to_fftime(ms)      (av_rescale(ms, AV_TIME_BASE, 1))
 
 inline static void ffp_reset_internal(FFPlayer *ffp)
 {
@@ -836,8 +796,7 @@ inline static void ffp_reset_internal(FFPlayer *ffp)
     ffp->vout                   = NULL; /* reset outside */
     ffp->pipeline               = NULL;
     ffp->node_vdec              = NULL;
-    ffp->node_vdec_2            = NULL;
-    ffp->is_switching_vdec_node = 0;
+    
     ffp->sar_num                = 0;
     ffp->sar_den                = 0;
 
@@ -845,7 +804,7 @@ inline static void ffp_reset_internal(FFPlayer *ffp)
     av_freep(&ffp->audio_codec_info);
     av_freep(&ffp->subtitle_codec_info);
 #ifdef __APPLE__
-    ffp->overlay_format         = SDL_FCC_BGR0;
+    ffp->overlay_format         = SDL_FCC__GLES2;
 #else
     ffp->overlay_format         = SDL_FCC_RV32;
 #endif
@@ -890,9 +849,6 @@ inline static void ffp_reset_internal(FFPlayer *ffp)
     ffp->mediacodec_default_name        = NULL; // option
     ffp->ijkmeta_delay_init             = 0; // option
     ffp->render_wait_start              = 0;
-#if ! IJK_IO_OFF
-    ffp->is_manifest                    = 0;
-#endif
     ijkmeta_reset(ffp->meta);
 
     SDL_SpeedSamplerReset(&ffp->vfps_sampler);
@@ -907,12 +863,10 @@ inline static void ffp_reset_internal(FFPlayer *ffp)
     ffp->pf_playback_volume_changed     = 0;
 #if ! IJK_IO_OFF
     av_application_closep(&ffp->app_ctx);
-    ijkio_manager_destroyp(&ffp->ijkio_manager_ctx);
 #endif
     msg_queue_flush(&ffp->msg_queue);
 
     ffp->inject_opaque = NULL;
-    ffp->ijkio_inject_opaque = NULL;
     ffp_reset_statistic(&ffp->stat);
     ffp_reset_demux_cache_control(&ffp->dcc);
 
@@ -961,5 +915,10 @@ inline static const char *ffp_get_error_string(int error) {
 
 #define AVCODEC_MODULE_NAME    "avcodec"
 #define MEDIACODEC_MODULE_NAME "MediaCodec"
+
+int decoder_init(Decoder *d, AVCodecContext *avctx, PacketQueue *queue, SDL_cond *empty_queue_cond);
+int decoder_start(Decoder *d, int (*fn)(void *), void *arg, const char *name);
+void decoder_destroy(Decoder *d);
+void decoder_abort(Decoder *d, FrameQueue *fq);
 
 #endif

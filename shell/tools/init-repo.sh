@@ -18,6 +18,8 @@
 
 set -e
 
+source $1
+
 TOOLS=$(dirname "$0")
 source ${TOOLS}/env_assert.sh
 
@@ -29,7 +31,8 @@ env_assert "GIT_COMMIT"
 env_assert "REPO_DIR"
 echo "===check env end==="
 
-ARCH=$2
+PLAT=$2
+ARCH=$3
 
 if [[ "$ARCH" == 'all' || "x$ARCH" == 'x' ]];then
     iOS_ARCHS="x86_64 arm64"
@@ -48,6 +51,7 @@ function pull_common() {
     echo "== pull $REPO_DIR base =="
     if [[ -d "$GIT_LOCAL_REPO" ]];then
         cd "$GIT_LOCAL_REPO"
+        [[ -d .git/rebase-apply ]] && git am --skip
         git reset --hard
 
         local origin=$(git remote get-url origin)
@@ -82,10 +86,10 @@ function apply_patches()
     local patch_dir="${TOOLS}/../extra/patches/`cat patch_file_name`"
     if [[ -d "$patch_dir" ]];then
         echo "Applying patches to $REPO_DIR"
-        rm -rf .git/rebase-apply
         git am $patch_dir/*.patch
         if [[ $? -ne 0 ]]; then
             echo 'Apply patches failed!'
+            git am --skip
             exit 1
         fi
     fi
@@ -97,6 +101,9 @@ function make_arch_repo() {
     $TOOLS/copy-local-repo.sh $GIT_LOCAL_REPO $dest_repo
     cd $dest_repo
     git checkout ${GIT_COMMIT} -B localBranch
+    if [[ "$GIT_WITH_SUBMODULE" ]]; then
+        git submodule update --init --depth=1
+    fi
     echo "last commit:"$(git log -1 --pretty=format:"[%h] %s:%ce %cd")
     apply_patches
     cd - > /dev/null
@@ -114,7 +121,7 @@ function main() {
             found=0
             for arch in $iOS_ARCHS
             do
-                if [[ "$2" == "$arch" || "x$2" == "x" ]];then
+                if [[ "$2" == "$arch" || "x$2" == "x" || "$2" == "all" ]];then
                     found=1
                     make_arch_repo 'ios' $arch
                 fi
@@ -131,7 +138,7 @@ function main() {
             found=0
             for arch in $macOS_ARCHS
             do
-                if [[ "$2" == "$arch" || "x$2" == "x" ]];then
+                if [[ "$2" == "$arch" || "x$2" == "x" || "$2" == "all" ]];then
                     found=1
                     make_arch_repo 'macos' $arch
                 fi
@@ -178,4 +185,4 @@ function main() {
     esac
 }
 
-main $*
+main $PLAT $ARCH

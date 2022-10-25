@@ -37,7 +37,7 @@ IjkMediaPlayer *ijkmp_ios_create(int (*msg_loop)(void*))
     if (!mp)
     goto fail;
     
-    mp->ffplayer->vout = SDL_VoutIos_CreateForGLES2();
+    mp->ffplayer->vout = SDL_VoutIos_CreateForGLES2(mp->ffplayer->overlay_format);
     if (!mp->ffplayer->vout)
     goto fail;
     

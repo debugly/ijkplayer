@@ -65,17 +65,18 @@ GLuint IJK_GLES2_loadShader(GLenum shader_type, const char *shader_source);
 typedef struct IJK_GLES2_Renderer IJK_GLES2_Renderer;
 //openglVer greater than 330 use morden opengl, otherwise use legacy opengl
 IJK_GLES2_Renderer *IJK_GLES2_Renderer_create(SDL_VoutOverlay *overlay,int openglVer);
+IJK_GLES2_Renderer *IJK_GLES2_Renderer_create2(Uint32 overlay_format,Uint32 ff_format,int openglVer);
 void      IJK_GLES2_Renderer_reset(IJK_GLES2_Renderer *renderer);
 void      IJK_GLES2_Renderer_free(IJK_GLES2_Renderer *renderer);
 void      IJK_GLES2_Renderer_freeP(IJK_GLES2_Renderer **renderer);
 
-GLboolean IJK_GLES2_Renderer_setupGLES(void);
 GLboolean IJK_GLES2_Renderer_isValid(IJK_GLES2_Renderer *renderer);
 GLboolean IJK_GLES2_Renderer_isFormat(IJK_GLES2_Renderer *renderer, int format);
 GLboolean IJK_GLES2_Renderer_use(IJK_GLES2_Renderer *renderer);
 void IJK_GLES2_Renderer_updateColorConversion(IJK_GLES2_Renderer *renderer,float brightness,float satutaion,float contrast);
 
 GLboolean IJK_GLES2_Renderer_updateVetex(IJK_GLES2_Renderer *renderer, SDL_VoutOverlay *overlay);
+GLboolean IJK_GLES2_Renderer_updateVetex2(IJK_GLES2_Renderer *renderer, int overlay_h, int overlay_w, int buffer_w, int sar_num, int sar_den);
 GLboolean IJK_GLES2_Renderer_uploadTexture(IJK_GLES2_Renderer *renderer, void *texture);
 GLboolean IJK_GLES2_Renderer_resetVao(IJK_GLES2_Renderer *renderer);
 void IJK_GLES2_Renderer_drawArrays(void);

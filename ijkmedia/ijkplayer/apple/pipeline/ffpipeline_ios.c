@@ -21,7 +21,6 @@
  */
 
 #include "ffpipeline_ios.h"
-#include "ffpipenode_ios_videotoolbox_vdec.h"
 #include "ffpipenode_ffplay_vdec.h"
 #include "ff_ffplay.h"
 #import "ijksdl/apple/ijksdl_aout_ios_audiounit.h"
@@ -35,46 +34,11 @@ static void func_destroy(IJKFF_Pipeline *pipeline)
     
 }
 
-static int func_has_another_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
-{
-    return 1;
-}
-
-static IJKFF_Pipenode *func_open_another_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
-{
-    IJKFF_Pipenode* node = ffp->node_vdec ?: ffp->node_vdec_2;
-    IJKFF_Pipenode* node2 = NULL;
-    
-    if (node->vdec_type == FFP_PROPV_DECODER_AVCODEC) {
-        node2 = ffpipenode_create_video_decoder_from_ios_videotoolbox(ffp);
-        if (node2) {
-            node2->vdec_type = FFP_PROPV_DECODER_VIDEOTOOLBOX;
-        }
-    } else if (node->vdec_type == FFP_PROPV_DECODER_VIDEOTOOLBOX) {
-        node2 = ffpipenode_create_video_decoder_from_ffplay(ffp);
-        if (node2) {
-            node2->vdec_type = FFP_PROPV_DECODER_AVCODEC;
-        }
-    }
-    return node2;
-}
-
 static IJKFF_Pipenode *func_open_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
 {
-    IJKFF_Pipenode* node = NULL;
-    if (ffp->videotoolbox == 1) {
-        node = ffpipenode_create_video_decoder_from_ios_videotoolbox(ffp);
-        if (!node) {
-            ALOGE("vtb fail!!! switch to ffmpeg decode!!!! \n");
-        }
-    }
-    
-    if (node == NULL) {
-        node = ffpipenode_create_video_decoder_from_ffplay(ffp);
-    }
+    IJKFF_Pipenode* node = ffpipenode_create_video_decoder_from_ffplay(ffp);;
     
     if (node) {
-        node->is_using = 1;
         ffp_notify_msg2(ffp, FFP_MSG_VIDEO_DECODER_OPEN, node->vdec_type);
     }
     return node;
@@ -100,8 +64,6 @@ IJKFF_Pipeline *ffpipeline_create_from_ios(FFPlayer *ffp)
     pipeline->func_destroy                    = func_destroy;
     pipeline->func_open_video_decoder         = func_open_video_decoder;
     pipeline->func_open_audio_output          = func_open_audio_output;
-    pipeline->func_has_another_video_decoder  = func_has_another_video_decoder;
-    pipeline->func_open_another_video_decoder = func_open_another_video_decoder;
     
     return pipeline;
 }

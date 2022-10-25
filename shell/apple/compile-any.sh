@@ -30,7 +30,7 @@ SHELL_DIR="$PWD"
 
 function usage() {
     echo " useage:"
-    echo "  $0 [ios|macos] [build|lipo|clean] [all|fdk-aac|ffmpeg|lame|libyuv|openssl|opus|x264] [arm64|x86_64|all] [opts...]"
+    echo "  $0 [ios|macos] [build|lipo|clean] [all|ffmpeg|libyuv|openssl|opus|dav1d] [arm64|x86_64|all] [opts...]"
 }
 
 if [[ "$PLAT" != 'ios' && "$PLAT" != 'macos' ]]; then

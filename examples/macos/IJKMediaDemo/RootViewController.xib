@@ -326,7 +326,7 @@
                                 <stepper toolTip="延迟" horizontalHuggingPriority="750" verticalHuggingPriority="750" allowsExpansionToolTips="YES" id="9h5-pM-0wJ">
                                     <rect key="frame" x="559" y="6" width="19" height="28"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                    <stepperCell key="cell" continuous="YES" alignment="left" increment="2" minValue="-10" maxValue="10" id="Agy-iU-8i5"/>
+                                    <stepperCell key="cell" continuous="YES" alignment="left" minValue="-100" maxValue="100" id="Agy-iU-8i5"/>
                                     <connections>
                                         <action selector="onChangeSubtitleDelay:" target="-2" id="cwE-DY-iA2"/>
                                         <binding destination="-2" name="value" keyPath="subtitleDelay" id="XEV-k9-QZc"/>

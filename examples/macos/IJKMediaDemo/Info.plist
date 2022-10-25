@@ -206,6 +206,7 @@
 				<string>h265</string>
 				<string>avc</string>
 				<string>xlist</string>
+				<string>swf</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string>VIDEO.icns</string>
@@ -213,6 +214,25 @@
 			<string>Other Media Document</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>png</string>
+				<string>jpg</string>
+				<string>jpeg</string>
+				<string>webp</string>
+				<string>tif</string>
+				<string>pcx</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>Other Picture Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
