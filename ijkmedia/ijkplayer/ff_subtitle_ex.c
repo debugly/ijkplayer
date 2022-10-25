@@ -22,7 +22,7 @@ typedef struct IJKEXSubtitle {
     SDL_mutex* mutex;
     FFSubComponent* opaque;
     AVFormatContext* ic;
-    int stream_idx;//相对于 IJK_EX_SUBTITLE_STREAM_OFFSET 的
+    int stream_idx;
     FrameQueue * frameq;
     PacketQueue * pktq;
     char* pathArr[IJK_EX_SUBTITLE_STREAM_MAX - IJK_EX_SUBTITLE_STREAM_OFFSET];
@@ -39,11 +39,11 @@ int exSub_create(IJKEXSubtitle **subp, FrameQueue * frameq, PacketQueue * pktq)
     if (!sub) {
         return -2;
     }
-    bzero(sub, sizeof(IJKEXSubtitle));
+    memset(sub, 0, sizeof(IJKEXSubtitle));
     
     sub->mutex = SDL_CreateMutex();
     if (NULL == sub->mutex) {
-        av_free(sub);
+       av_free(sub);
        return -2;
     }
     sub->frameq = frameq;

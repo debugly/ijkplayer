@@ -178,17 +178,17 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ass_parser.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_cmdutils.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ffpipeline.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ffpipenode.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ffplay.c" />
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\allformats.c" />
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijkasync.c" />
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijklivehook.c" />
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijklongurl.c" />
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijkmediadatasource.c" />
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijksegment.c" />
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijkurlhook.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ffplay_def.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_frame_queue.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_packet_list.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_subtitle.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_subtitle_ex.c" />
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_sub_component.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkmeta.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkplayer.c" />
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\pipeline\ffpipeline_ffplay.c" />
@@ -250,6 +250,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\config.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_ass_parser.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_cmdutils.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_fferror.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_ffinc.h" />
@@ -261,6 +262,11 @@
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_ffplay_debug.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_ffplay_def.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_ffplay_options.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_frame_queue.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_packet_list.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_subtitle.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_subtitle_ex.h" />
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_sub_component.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijkavformat.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ijkavutil\opt.h" />
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ijkmeta.h" />

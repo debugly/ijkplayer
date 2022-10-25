@@ -8,7 +8,7 @@
 
 #pragma comment(lib,"DXGI.lib")
 
-#define WIN32_WINDOW
+#define SDL_WINDOW
 
 IjkFfplayDecoder *ijk_ffplay_decoder;
 IjkFfplayDecoderCallBack *decoder_callback;

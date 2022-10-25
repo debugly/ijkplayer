@@ -621,7 +621,7 @@ int ijkFfplayDecoder_setExternalSubtitle(IjkFfplayDecoder* decoder, const char* 
 		return -1;
 	}
 
-	return ffp_set_external_subtitle(decoder->ijk_media_player->ffplayer, file_name);
+	return ijkmp_addOnly_external_subtitle(decoder->ijk_media_player->ffplayer, file_name);
 }
 
 /*only load ex-subtitle, not apply*/
@@ -632,7 +632,7 @@ int ijkFfplayDecoder_loadExternalSubtitle(IjkFfplayDecoder* decoder, const char*
 		return -1;
 	}
 
-	return ffp_load_external_subtitle(decoder->ijk_media_player->ffplayer, file_name);
+	return ijkmp_add_active_external_subtitle(decoder->ijk_media_player->ffplayer, file_name);
 }
 
 int ijkFfplayDecoder_getMediaMeta(IjkFfplayDecoder* decoder, IjkMetadata* metadata)

@@ -70,7 +70,6 @@ static void remove_last_n(char *buffer)
 static char * remove_ass_line_effect(const char *ass)
 {
     while (ass && strlen(ass) > 2) {
-        //移除 { 开头并且 } 结尾的特效内容
         if (ass[0] == '{') {
             char* end = strchr(ass, '}');
             if (end) {
@@ -84,7 +83,7 @@ static char * remove_ass_line_effect(const char *ass)
     }
     
     char *buffer = av_malloc(strlen(ass) + 1);
-    bzero(buffer, strlen(ass) + 1);
+    memset(buffer, 0, strlen(ass) + 1);
     memcpy(buffer, ass, strlen(ass));
     
     while (1) {
@@ -92,11 +91,11 @@ static char * remove_ass_line_effect(const char *ass)
         char *right = strstr(buffer, "}");
         if (left && right > left) {
             if (right - buffer == strlen(buffer)) {
-                bzero(left, right - left);
+                memset(left, 0, right - left);
             } else {
                 int count = (int)strlen(buffer) - (int)(right - buffer);
                 memmove(left, right + 1, count);
-                bzero(left + count + 1, 1);
+                memset(left + count + 1, 0, 1);
             }
         } else {
             break;

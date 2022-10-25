@@ -148,27 +148,6 @@
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ffpipenode.c">
       <Filter>ijkpalyer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\allformats.c">
-      <Filter>ijkpalyer\ijkavformat</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijkasync.c">
-      <Filter>ijkpalyer\ijkavformat</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijklivehook.c">
-      <Filter>ijkpalyer\ijkavformat</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijklongurl.c">
-      <Filter>ijkpalyer\ijkavformat</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijkmediadatasource.c">
-      <Filter>ijkpalyer\ijkavformat</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijksegment.c">
-      <Filter>ijkpalyer\ijkavformat</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ijkavformat\ijkurlhook.c">
-      <Filter>ijkpalyer\ijkavformat</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\pipeline\ffpipeline_ffplay.c">
       <Filter>ijkpalyer\pipeline</Filter>
     </ClCompile>
@@ -261,6 +240,27 @@
     </ClCompile>
     <ClCompile Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_text_demuxer.c">
       <Filter>win\ijkplayer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ass_parser.c">
+      <Filter>ijkpalyer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_frame_queue.c">
+      <Filter>ijkpalyer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_packet_list.c">
+      <Filter>ijkpalyer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_sub_component.c">
+      <Filter>ijkpalyer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_subtitle.c">
+      <Filter>ijkpalyer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_subtitle_ex.c">
+      <Filter>ijkpalyer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ijkmedia\ijkplayer\ff_ffplay_def.c">
+      <Filter>ijkpalyer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -461,6 +461,24 @@
     </ClInclude>
     <ClInclude Include="..\..\..\ijkmedia\ijkplayer\windows\ijk_text_demuxer.h">
       <Filter>win\ijkplayer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_ass_parser.h">
+      <Filter>ijkpalyer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_frame_queue.h">
+      <Filter>ijkpalyer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_packet_list.h">
+      <Filter>ijkpalyer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_sub_component.h">
+      <Filter>ijkpalyer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_subtitle.h">
+      <Filter>ijkpalyer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ijkmedia\ijkplayer\ff_subtitle_ex.h">
+      <Filter>ijkpalyer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

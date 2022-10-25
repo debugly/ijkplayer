@@ -85,6 +85,23 @@ enum IJKMP_OPT_CATEGORY
 	OPT_CATEGORY_PLAYER,
 	OPT_CATEGORY_SWR
 };
+// echo of AVMEDIA_TYPE_UNKNOWN and so on...
+enum IJKAVMEDIA_TYPE
+{
+	IJKAVMEDIA_TYPE_UNKNOWN = -1,  
+	IJKAVMEDIA_TYPE_VIDEO,
+	IJKAVMEDIA_TYPE_AUDIO,
+	IJKAVMEDIA_TYPE_DATA,          
+	IJKAVMEDIA_TYPE_SUBTITLE,
+	IJKAVMEDIA_TYPE_ATTACHMENT,    
+	IJKAVMEDIA_TYPE_NB
+};
+
+#define MAX_STREAM_NUM 100
+typedef struct SimpleStreamInfo {
+	int  streams[IJKAVMEDIA_TYPE_NB][MAX_STREAM_NUM];
+	double duration;
+} SimpleStreamInfo;
 
 typedef struct IjkFfplayDecoderCallBack {
 	void (*func_get_frame)(void* opaque, IjkVideoFrame *frame_callback);
@@ -133,6 +150,8 @@ int ijkFfplayDecoder_setVolume(IjkFfplayDecoder* decoder, float volume);
 
 float ijkFfplayDecoder_getVolume(IjkFfplayDecoder* decoder);
 
+int ijkFfplayDecoder_setStreamSelected(IjkFfplayDecoder* decoder, int stream, int selected);
+
 int ijkFfplayDecoder_setOptionLongValue(IjkFfplayDecoder* decoder, int opt_category, const char* key, long value);
 
 int ijkFfplayDecoder_setOptionStringValue(IjkFfplayDecoder* decoder, int opt_category, const char* key, const char* value);
@@ -147,10 +166,37 @@ float ijkFfplayDecoder_getPropertyFloat(IjkFfplayDecoder* decoder, int id, float
 
 int ijkFfplayDecoder_getMediaMeta(IjkFfplayDecoder* decoder, IjkMetadata* metadata);
 
+int ijkFfplayDecoder_releaseMetadata(IjkFfplayDecoder* decoder, IjkMetadata* metadata);
+
+int ijkFfplayDecoder_setPlaybackRate(IjkFfplayDecoder *decoder, float rate);
+
+int ijkFfplayDecoder_setSubtitleExtraDelay(IjkFfplayDecoder* decoder, float delay);
+
+float ijkFfplayDecoder_getSubtitleExtraDelay(IjkFfplayDecoder* decoder);
+
+int ijkFfplayDecoder_setExternalSubtitle(IjkFfplayDecoder* decoder, const char* file_name);
+
+/*only load ex-subtitle, not apply*/
+int ijkFfplayDecoder_loadExternalSubtitle(IjkFfplayDecoder* decoder, const char* file_name);
+
 //decoder_name: h264_cuvid, h264_qsv
 int ijkFfplayDecoder_setHwDecoderName(IjkFfplayDecoder* decoder, const char* decoder_name);
 
 void ijkFfplayDecoder_setWindowHwnd(IjkFfplayDecoder* decoder, HWND window);
+
+float ijkFfplayDecoder_getSubtitleFontSize(IjkFfplayDecoder* decoder);
+
+int ijkFfplayDecoder_setSubtitleFontSize(IjkFfplayDecoder* decoder, float size);
+
+char* ijkFfplayDecoder_getSubtitleFontName(IjkFfplayDecoder* decoder);
+
+int ijkFfplayDecoder_setSubtitleFontName(IjkFfplayDecoder* decoder, const char* font_name);
+
+void* ijkFfplayDecoder_snapshot(IjkFfplayDecoder* decoder, int with_sub, void** pixel_data_out, int* w, int* h);
+
+void  ijkFfplayDecoder_setColorPreference(IjkFfplayDecoder* decoder, double brightness, double saturation, double contrast);
+
+SimpleStreamInfo ijkUtil_extractStreamInfo(const char* file_name);
 
 #ifdef  __cplusplus  
 }
