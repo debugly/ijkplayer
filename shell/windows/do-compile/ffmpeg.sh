@@ -180,11 +180,11 @@ echo "[*] check libmfx"
 # with opus
 if [[ -f "/usr/local/lib/pkgconfig/libmfx.pc" ]]; then
     
-    FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-libmfx --enable-decoder=h264_qsv"
+    FFMPEG_CFG_FLAGS="$FFMPEG_CFG_FLAGS --enable-libmfx --enable-decoder=h264_qsv --enable-decoder=hevc_qsv"
     
     export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig"
 
-    echo "[*] --enable-libmfx --enable-decoder=h264_qsv"
+    echo "[*] --enable-libmfx --enable-decoder=h264_qsv --enable-decoder=hevc_qsv"
 else
     echo "[*] --disable-h264_qsv"
 fi

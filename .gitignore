@@ -81,3 +81,8 @@ examples/macos/Pods
 /examples/windows/x64/Release/*.lib
 /examples/windows/ijkpackage/x64/*.lib
 /examples/windows/x64/Release
+*.vsidx
+examples/windows/.vs/IJKWinDemo/FileContentIndex/read.lock
+examples/windows/.vs/IJKWinDemo/v17/fileList.bin
+examples/windows/.vs/IJKWinDemo/v17/Solution.VC.db-shm
+examples/windows/.vs/IJKWinDemo/v17/Solution.VC.db-wal
