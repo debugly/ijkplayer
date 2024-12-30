@@ -135,7 +135,7 @@ TODO: Add long description of the pod here.
   s.ios.frameworks = 'UIKit', 'OpenGLES'
   s.tvos.frameworks = 'UIKit', 'OpenGLES'
 
-  s.library = 'z', 'iconv', 'xml2', 'bz2', 'c++', 'lzma'
+  s.library = 'z', 'iconv', 'xml2', 'bz2', 'lzma'
   s.frameworks = 'AVFoundation', 'AudioToolbox', 'CoreMedia', 'CoreVideo', 'VideoToolbox', 'Metal'
   
 end
