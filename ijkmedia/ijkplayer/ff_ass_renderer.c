@@ -62,6 +62,7 @@ static void ass_log(int ass_level, const char *fmt, va_list args, void *ctx)
     const char *prefix = "[ass] ";
     char *tmp = av_asprintf("%s%s", prefix, fmt);
     av_vlog(ctx, level, tmp, args);
+    av_free(tmp);
 }
 
 /* Init libass */
