@@ -407,7 +407,6 @@ static int subtitle_thread(void *arg)
     ff_ass_render_release(&com->assRenderer);
     com->retry_callback = NULL;
     com->retry_opaque = NULL;
-    com->st_idx = -1;
     
     return 0;
 }
@@ -649,6 +648,7 @@ int subComponent_close(FFSubComponent **cp)
     if (com->st_idx == -1) {
         return -3;
     }
+    com->st_idx = -1;
     decoder_abort(&com->decoder, com->frameq);
     decoder_destroy(&com->decoder);
     FreeSubtitleBufferArray(&com->sub_buffer_array);
