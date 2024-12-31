@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'IJKMediaPlayerKit'
-  s.version          = '0.11.9'
+  s.version          = '0.12.0'
   s.summary          = 'IJKMediaPlayerKit for ios/macOS/tvOS.'
   
 # This description is used to generate tags and improve search results.
