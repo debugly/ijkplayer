@@ -41,7 +41,7 @@
 #include "../ijkmedia/ijkplayer/ijkmeta.h"
 #include "../ijkmedia/ijkplayer/ff_ffmsg_queue.h"
 
-static const char *kIJKFFRequiredFFmpegVersion = "n6.1.1-25";
+static const char *kIJKFFRequiredFFmpegVersion = "n6.1.2-28";
 
 static void (^_logHandler)(IJKLogLevel level, NSString *tag, NSString *msg);
 
@@ -568,18 +568,7 @@ void ffp_apple_log_extra_print(int level, const char *tag, const char *fmt, ...)
     if (0 == strcmp(dst, expectVersion)) {
         return YES;
     } else {
-        NSString *message = [NSString stringWithFormat:@"actual: %s\nexpect: %s\n", actualVersion, expectVersion];
-        NSLog(@"\n!!!!!!!!!!\n%@!!!!!!!!!!\n", message);
-#if TARGET_OS_IOS
-        if (showAlert) {
-            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"Unexpected FFmpeg version"
-                                                                message:message
-                                                               delegate:nil
-                                                      cancelButtonTitle:@"OK"
-                                                      otherButtonTitles:nil];
-            [alertView show];
-        }
-#endif
+        av_log(NULL, AV_LOG_WARNING, "actual ffmpeg: %s,but expect: %s\n", actualVersion, expectVersion);
         return NO;
     }
 }
@@ -592,18 +581,7 @@ void ffp_apple_log_extra_print(int level, const char *tag, const char *fmt, ...)
     if (0 == strcmp(actualVersion, expectVersion)) {
         return YES;
     } else {
-#if TARGET_OS_IOS
-        if (showAlert) {
-            NSString *message = [NSString stringWithFormat:@"actual: %s\n expect: %s\n",
-                                 actualVersion, expectVersion];
-            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"Unexpected ijkplayer version"
-                                                                message:message
-                                                               delegate:nil
-                                                      cancelButtonTitle:@"OK"
-                                                      otherButtonTitles:nil];
-            [alertView show];
-        }
-#endif
+        av_log(NULL, AV_LOG_WARNING, "actual ijkplayer: %s,but expect: %s\n", actualVersion, expectVersion);
         return NO;
     }
 }
