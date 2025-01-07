@@ -261,6 +261,7 @@ static int decoder_decode_frame(FFPlayer *ffp, Decoder *d, AVFrame *frame, AVSub
                                     }
                                     av_frame_unref(frame);
                                     av_frame_move_ref(frame, sw_frame);
+                                    av_frame_free(&sw_frame);
                                 }
                             }
                         }

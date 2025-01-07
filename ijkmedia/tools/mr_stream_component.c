@@ -120,6 +120,7 @@ static int decoder_decode_frame(MRStreamComponent *sc, AVFrame *frame, AVSubtitl
                                 }
                                 av_frame_unref(frame);
                                 av_frame_move_ref(frame, sw_frame);
+                                av_frame_free(&sw_frame);
                             }
                         }
                         break;
