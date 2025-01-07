@@ -665,7 +665,7 @@ static BOOL hdrAnimationShown = 0;
         [options setFormatOptionValue:@"Accept-Encoding: gzip, deflate" forKey:@"headers"];
     }
     //protocol_whitelist need add httpproxy
-    [options setFormatOptionValue:@"http://127.0.0.1:8888" forKey:@"http_proxy"];
+    //[options setFormatOptionValue:@"http://127.0.0.1:8888" forKey:@"http_proxy"];
     
     NSMutableArray *dus = [NSMutableArray array];
     if ([url.scheme isEqualToString:@"file"] && [url.absoluteString.pathExtension isEqualToString:@"m3u8"]) {
