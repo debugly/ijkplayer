@@ -1,3 +1,11 @@
+tag k0.12.0
+--------------------------------
+- upgrade all libs,FFmpeg use n6.1.2
+- not link c++
+- fix copy_hw_frame memory leak
+- fix ass log memory leak
+- support dash demuxer,#31
+
 tag k0.11.9
 --------------------------------
 
@@ -5,9 +13,11 @@ tag k0.11.9
 - external subtitle read support interrupt
 - ic meta Use prefix matching rules,#53
 - support parse av3a stream, but can't decode it,#45
+- subtitle avformat support options and set ijkapplication,user_agent,http_proxy by default
+- improve the problem of lagging when switching external subtitles
 - fix smb2 url not allow longer than 1024 characters question
-- fix subtitle memory leak
 - fix external subtitle aftert seek shown have a delay bug
+- fix subtitle FF_ASS_Renderer memory leak
 
 tag k0.11.8
 --------------------------------
