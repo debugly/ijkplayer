@@ -103,8 +103,10 @@ const char *ijkmp_version(void)
 
 void ijkmp_change_state_l(IjkMediaPlayer *mp, int new_state)
 {
-    mp->mp_state = new_state;
-    ffp_notify_msg1(mp->ffplayer, FFP_MSG_PLAYBACK_STATE_CHANGED);
+    if (mp->mp_state != new_state) {
+        mp->mp_state = new_state;
+        ffp_notify_msg1(mp->ffplayer, FFP_MSG_PLAYBACK_STATE_CHANGED);
+    }
 }
 
 IjkMediaPlayer *ijkmp_create(int (*msg_loop)(void*))
