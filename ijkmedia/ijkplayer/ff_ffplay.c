@@ -4361,7 +4361,7 @@ void ffp_global_set_log_level(int log_level)
 }
 
 static ijk_inject_callback s_inject_callback;
-int inject_callback(void *opaque, int type, void *data, size_t data_size)
+static int inject_callback(void *opaque, int type, void *data, size_t data_size)
 {
     if (s_inject_callback)
         return s_inject_callback(opaque, type, data, data_size);
@@ -4518,8 +4518,8 @@ static int ijkio_app_func_event(IjkIOApplicationContext *h, int message ,void *d
         ffp->stat.cache_file_pos          = statistic->cache_file_pos;
         ffp->stat.cache_count_bytes       = statistic->cache_count_bytes;
         ffp->stat.logical_file_size       = statistic->logical_file_size;
+        return inject_callback(ffp->inject_opaque, message , data, size);
     }
-
     return 0;
 }
 

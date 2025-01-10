@@ -839,7 +839,9 @@ void ffp_apple_log_extra_print(int level, const char *tag, const char *fmt, ...)
 }
 
 inline static NSString *formatedDurationMilli(int64_t duration) {
-    if (duration >=  1000) {
+    if (duration == 0) {
+        return @"0 sec";
+    } else if (labs(duration) >=  1000) {
         return [NSString stringWithFormat:@"%.2f sec", ((float)duration) / 1000];
     } else {
         return [NSString stringWithFormat:@"%ld msec", (long)duration];
@@ -854,6 +856,9 @@ inline static NSString *formatedDurationBytesAndBitrate(int64_t bytes, int64_t b
 }
 
 inline static NSString *formatedSize(int64_t bytes) {
+    if (bytes < 0) {
+        bytes = - bytes;
+    }
     if (bytes >= 100 * 1024) {
         return [NSString stringWithFormat:@"%.2f MB", ((float)bytes) / 1000 / 1024];
     } else if (bytes >= 100) {
@@ -944,7 +949,7 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
     float vmdiff  = ijkmp_get_property_float(_mediaPlayer, FFP_PROP_FLOAT_VMDIFF, .0f);
     [self setHudValue:[NSString stringWithFormat:@"%.3f %.3f", avdelay, -vmdiff] forKey:@"delay-avdiff"];
 
-    if (self.monitor.httpUrl) {
+    if ([self.contentURL.absoluteString containsString:@"ijkio:cache"]) {
         int64_t bitRate = ijkmp_get_property_int64(_mediaPlayer, FFP_PROP_INT64_BIT_RATE, 0);
         [self setHudValue:[NSString stringWithFormat:@"-%@, %@",
                              formatedSize(_cacheStat.cache_file_forwards),
@@ -960,7 +965,9 @@ inline static NSString *formatedSpeed(int64_t bytes, int64_t elapsed_milli) {
                               formatedSize(_asyncStat.buf_forwards),
                               formatedDurationBytesAndBitrate(_asyncStat.buf_forwards, bitRate)]
                       forKey:@"async-forward"];
-        
+    }
+    
+    if (self.monitor.httpUrl) {
         [self setHudValue:formatedDurationMilli(_monitor.prepareLatency) forKey:@"t-prepared"];
         [self setHudValue:formatedDurationMilli(_monitor.firstVideoFrameLatency) forKey:@"t-render"];
         [self setHudValue:formatedDurationMilli(_monitor.lastPrerollDuration) forKey:@"t-preroll"];
