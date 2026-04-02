@@ -24,13 +24,13 @@
 - iOS
   
   ```
-  pod "IJKMediaFramework", :podspec => 'https://github.com/debugly/ijkplayer/releases/download/k0.8.9/IJKMediaFramework.spec.json'
+  pod "IJKMediaFramework", :podspec => 'https://github.com/debugly/ijkplayer/releases/download/k0.8.9-beta-260402150035/IJKMediaFramework.spec.json'
   ```
 
 - android
   
   ```
-  https://github.com/debugly/ijkplayer/releases/download/k0.8.9/ijkplayer-cmake-release.aar
+  https://github.com/debugly/ijkplayer/releases/download/k0.8.9-beta-260402150035/ijkplayer-cmake-release.aar
   ```
   
   更多版本，查看 [Releases](https://github.com/debugly/ijkplayer/releases) 页面。
