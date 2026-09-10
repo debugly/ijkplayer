@@ -24,7 +24,7 @@
 - iOS
   
   ```
-  pod "IJKMediaFramework", :podspec => 'https://github.com/debugly/ijkplayer/releases/download/k0.8.9-beta-260402150035/IJKMediaFramework.spec.json'
+  pod "IJKMediaFramework", :podspec => 'https://github.com/debugly/ijkplayer/releases/download/k0.8.9-beta-260910182439/IJKMediaFramework.spec.json'
   ```
 
 - android
