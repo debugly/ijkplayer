@@ -1,3 +1,6 @@
+
+## ⚠️⚠️⚠️本仓库不在维护，请尽早迁移到 [fsplayer](https://github.com/debugly/fsplayer) ，它支持iOS、安卓等众多平台，提供了非常强劲的功能。
+
 # ijkplayer
 
 <img src="https://img.shields.io/badge/Platform-%20iOS%20Android-blue.svg">
@@ -56,10 +59,6 @@
   ./install-ffmpeg.sh
   # 使用 Android Studio 打开 ijkplayer 目录工程
   ```
-
-## FSPlayer
-
-如果 ijkplayer 功能不能满足当前复杂的业务需求，则可以使用 ijkplayer 的升级版 [fsplayer](https://github.com/debugly/fsplayer) ，它提供了更加强劲的功能。
 
 ## 定制功能
 
